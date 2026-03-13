@@ -1,7 +1,7 @@
 {
   "name": "catolicosgpt",
-  "version": "2.0.0",
-  "description": "Asistente teológico católico con IA",
+  "version": "4.1.0",
+  "description": "Asistente teológico católico con IA — Catecismo, oraciones, santos y más",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,7 +10,8 @@
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "openai": "^4.28.0"
+    "openai": "^4.28.0",
+    "slugify": "^1.6.6"
   },
   "engines": {
     "node": ">=18.0.0"
