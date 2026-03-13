@@ -1,312 +1,178 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>CatolicosGPT — Asistente Teológico Católico</title>
-
-<meta name="description" content="Tu asistente de fe católica con IA. Teología, oraciones, santos, apariciones marianas y más.">
-<meta name="robots" content="index, follow">
-<meta name="author" content="CatolicosGPT">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Lora&family=Inter&display=swap" rel="stylesheet">
-
-<style>
-
-body{
-font-family:Inter;
-margin:0;
-background:#FAF7F0;
-}
-
-.shell{
-display:flex;
-height:100vh;
-}
-
-.sb{
-width:260px;
-background:#F2EAD8;
-padding:10px;
-}
-
-.sb-item{
-display:flex;
-gap:10px;
-padding:10px;
-cursor:pointer;
-}
-
-.sb-item:hover{
-background:#E8DCC4;
-}
-
-.main{
-flex:1;
-display:flex;
-flex-direction:column;
-}
-
-.chat-inner{
-padding:20px;
-overflow:auto;
-flex:1;
-}
-
-.msg{
-margin-bottom:16px;
-}
-
-.bubble{
-background:white;
-padding:14px;
-border-radius:8px;
-}
-
-.bubble.usr{
-background:#5C3D1E;
-color:white;
-}
-
-.input-area{
-padding:15px;
-border-top:1px solid #ddd;
-}
-
-textarea{
-width:100%;
-padding:10px;
-}
-
-button{
-padding:10px;
-margin-top:8px;
-}
-
-</style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CatolicosGPT — Asistente Teológico Católico</title>
+  <meta name="description" content="Tu asistente de fe católica con IA. Teología, oraciones, santos, apariciones marianas y más.">
+  <meta name="theme-color" content="#FAF7F0">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-
 <body>
 
 <div class="shell">
+  <div class="overlay" id="overlay" onclick="closeSb()"></div>
 
-<nav class="sb">
+  <!-- ══ SIDEBAR ══ -->
+  <nav class="sb" id="sb">
+    <div class="sb-head">
+      <div class="sb-logo-wrap">
+        <svg width="28" height="28" viewBox="0 0 80 80" fill="none">
+          <circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/>
+          <line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
+          <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
+          <path d="M46 24 Q57 28 53 39 Q49 33 43 35" stroke="#C9923A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <circle cx="53" cy="24" r="2.2" fill="#C9923A"/>
+          <circle cx="43" cy="35" r="2.2" fill="#C9923A"/>
+          <path d="M16 56 Q28 49 40 53 Q52 49 64 56" stroke="#7A5230" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="sb-logo-name">Católicos<span>GPT</span></div>
+      </div>
+      <button class="sb-close" onclick="closeSb()">✕</button>
+    </div>
 
-<div class="sb-item" onclick="loadLecturas()">
-📖 Lecturas del día
+    <button class="sb-new" onclick="newChat()">
+      <svg width="13" height="13" viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      <span>Nueva consulta</span>
+    </button>
+
+    <div class="sb-body">
+      <div class="sb-group">Recientes</div>
+      <div id="history-list"></div>
+
+      <div class="sb-divider"></div>
+      <div class="sb-group">Accesos directos</div>
+      <div class="sb-item" onclick="sendChip('¿Cuáles son las lecturas del día de hoy?')">
+        <div class="sb-ico">🌐</div>
+        <span class="sb-lbl">Vatican.va oficial</span>
+      </div>
+    </div>
+
+    <!-- DONAR -->
+    <a class="sb-donate" href="#" onclick="openDonate(); return false;">
+      <span style="font-size:16px">🤲</span>
+      <div class="sb-donate-text">
+        <span class="sb-donate-title">Apoya CatolicosGPT</span>
+        <span class="sb-donate-sub">Donación vía PayPal</span>
+      </div>
+    </a>
+  </nav>
+
+  <!-- ══ MAIN ══ -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="menu-btn" onclick="toggleSb()" aria-label="Menú">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="tb-brand">
+          <svg class="tb-logo" viewBox="0 0 80 80" fill="none">
+            <circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/>
+            <line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
+            <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
+            <path d="M46 24 Q57 28 53 39 Q49 33 43 35" stroke="#C9923A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <circle cx="53" cy="24" r="2.2" fill="#C9923A"/>
+            <circle cx="43" cy="35" r="2.2" fill="#C9923A"/>
+            <path d="M16 56 Q28 49 40 53 Q52 49 64 56" stroke="#7A5230" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="tb-name">Católicos<em>GPT</em></div>
+        </div>
+      </div>
+      <div class="tb-right">
+        <a class="donate-btn" href="#" onclick="openDonate(); return false;" title="Apoya el proyecto">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          <span>Donar</span>
+        </a>
+        <div class="lang-sw">
+          <button class="on" onclick="setLang('es', this)">ES</button>
+          <button onclick="setLang('en', this)">EN</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content" id="content">
+
+      <!-- WELCOME -->
+      <div class="welcome" id="welcome">
+        <svg class="w-logo" viewBox="0 0 80 80" fill="none">
+          <circle cx="40" cy="30" r="22" stroke="#7A5230" stroke-width="2"/>
+          <line x1="40" y1="8" x2="40" y2="52" stroke="#C9923A" stroke-width="3" stroke-linecap="round"/>
+          <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="3" stroke-linecap="round"/>
+          <path d="M46 24 Q58 28 54 40 Q50 34 44 36" stroke="#C9923A" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <circle cx="54" cy="24" r="2.4" fill="#C9923A"/>
+          <circle cx="44" cy="36" r="2.4" fill="#C9923A"/>
+          <path d="M16 56 Q28 48 40 52 Q52 48 64 56" stroke="#7A5230" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <path d="M13 59 Q27 51 40 55 Q53 51 67 59" stroke="#7A5230" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".4"/>
+        </svg>
+        <div class="w-title" id="w-title">¿En qué puedo ayudarte, <em>hermano</em>?</div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="chat-area" id="chat-area" style="display:none">
+        <div class="chat-inner" id="chat-inner"></div>
+      </div>
+
+    </div>
+
+    <!-- INPUT -->
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea
+          class="cin" id="cin" rows="1"
+          placeholder="Pregunta sobre fe, oración, santos, moral…"
+          onkeydown="onKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="send()" aria-label="Enviar">
+          <svg viewBox="0 0 24 24" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint" id="input-hint">CatolicosGPT · Respuestas basadas en el Magisterio y Vatican.va</div>
+    </div>
+
+  </div>
 </div>
 
-<div class="sb-item" onclick="loadLaudes()">
-🕯 Liturgia de las Horas
+<!-- ══ MODAL DONAR ══ -->
+<div class="modal-bg" id="donate-modal">
+  <div class="modal">
+    <svg class="modal-cross" viewBox="0 0 80 80" fill="none">
+      <circle cx="40" cy="30" r="22" stroke="#7A5230" stroke-width="2"/>
+      <line x1="40" y1="8" x2="40" y2="52" stroke="#C9923A" stroke-width="3" stroke-linecap="round"/>
+      <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    <div class="modal-title">Apoya CatolicosGPT</div>
+    <div class="modal-sub">
+      Este proyecto es completamente gratuito y está sostenido por la comunidad católica.<br>
+      Tu donación ayuda a mantener los servidores y la IA funcionando. 🙏
+    </div>
+    <div class="modal-amounts">
+      <button class="amount-btn" onclick="selectAmount(this, '3')">$3 USD</button>
+      <button class="amount-btn on" onclick="selectAmount(this, '5')">$5 USD</button>
+      <button class="amount-btn" onclick="selectAmount(this, '10')">$10 USD</button>
+      <button class="amount-btn" onclick="selectAmount(this, '25')">$25 USD</button>
+    </div>
+    <a class="paypal-btn" id="paypal-link" href="https://www.paypal.com/paypalme/schoolmarketing/5" target="_blank">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M7 11.5C7 8.46243 9.46243 6 12.5 6H16C18.2091 6 20 7.79086 20 10C20 12.2091 18.2091 14 16 14H13L12 19H9L10 14H8C7.44772 14 7 13.5523 7 13V11.5Z" fill="white"/>
+      </svg>
+      <span>Donar con PayPal</span>
+    </a>
+    <button class="modal-close" onclick="closeDonate()">Quizás después</button>
+  </div>
 </div>
 
-<div class="sb-item" onclick="loadRosario()">
-📿 Santo Rosario
-</div>
-
-<div class="sb-item" onclick="loadSanto()">
-☩ Santos
-</div>
-
-<div class="sb-item" onclick="window.open('https://www.vatican.va')">
-🌐 Vatican.va
-</div>
-
-<hr>
-
-<div class="sb-item" onclick="openDonate()">
-🤲 Apoya CatolicosGPT
-</div>
-
-</nav>
-
-<div class="main">
-
-<div class="chat-inner" id="chat-inner"></div>
-
-<div class="input-area">
-
-<textarea id="cin"></textarea>
-
-<button onclick="send()">Enviar</button>
-
-</div>
-
-</div>
-
-</div>
-
-<script>
-
-let isLoading=false
-let chatHistory=[]
-
-
-// ============================
-// RENDER CHAT
-// ============================
-
-function renderBubble(text,isUser=false){
-
-const chat=document.getElementById("chat-inner")
-
-const wrap=document.createElement("div")
-wrap.className="msg"
-
-const bubble=document.createElement("div")
-bubble.className="bubble "+(isUser?"usr":"")
-
-bubble.innerHTML=text.replace(/\n/g,"<br>")
-
-wrap.appendChild(bubble)
-
-chat.appendChild(wrap)
-
-chat.scrollTop=chat.scrollHeight
-
-}
-
-
-// ============================
-// CHAT IA
-// ============================
-
-async function send(){
-
-const input=document.getElementById("cin")
-const text=input.value.trim()
-
-if(!text||isLoading)return
-
-isLoading=true
-
-renderBubble(text,true)
-
-chatHistory.push({role:"user",content:text})
-
-input.value=""
-
-try{
-
-const r=await fetch("/api/chat",{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({messages:chatHistory})
-})
-
-const data=await r.json()
-
-renderBubble(data.reply)
-
-chatHistory.push({role:"assistant",content:data.reply})
-
-}catch(e){
-
-renderBubble("Error al conectar con CatolicosGPT")
-
-}
-
-isLoading=false
-
-}
-
-
-
-// ============================
-// LECTURAS
-// ============================
-
-async function loadLecturas(){
-
-const r=await fetch("/api/lecturas")
-const data=await r.json()
-
-renderBubble(`
-📖 <b>LECTURAS DEL DÍA</b>
-
-<b>Primera lectura</b>
-
-${data.first_reading}
-
-<b>Salmo</b>
-
-${data.psalm}
-
-<b>Evangelio</b>
-
-${data.gospel}
-`)
-
-}
-
-
-// ============================
-// LAUDES
-// ============================
-
-async function loadLaudes(){
-
-const r=await fetch("/api/laudes")
-const data=await r.json()
-
-renderBubble(`
-🕯 <b>LITURGIA DE LAS HORAS – LAUDES</b>
-
-${data.laudes}
-`)
-
-}
-
-
-// ============================
-// ROSARIO
-// ============================
-
-async function loadRosario(){
-
-const r=await fetch("/api/rosario")
-const data=await r.json()
-
-renderBubble(data.rosario)
-
-}
-
-
-// ============================
-// SANTO DEL DIA
-// ============================
-
-async function loadSanto(){
-
-const r=await fetch("/api/santo")
-const data=await r.json()
-
-renderBubble(`
-☩ <b>SANTO DEL DÍA</b>
-
-${data.santo}
-`)
-
-}
-
-
-// ============================
-// DONACIONES
-// ============================
-
-function openDonate(){
-
-window.open("https://www.paypal.com/paypalme/schoolmarketing")
-
-}
-
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>

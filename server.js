@@ -1,207 +1,98 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fetch = require('node-fetch');
-const OpenAI = require("openai");
+const OpenAI = require('openai');
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const SYSTEM_PROMPT = `
-Eres CatolicosGPT, un asistente teológico católico experto y cercano.
+const SYSTEM_PROMPT = `Eres CatolicosGPT, un asistente teológico católico fiel al Magisterio de la Iglesia Católica Romana.
 
-Hablas como un sacerdote sabio y pastoral.
-Siempre respetas el Magisterio de la Iglesia Católica.
+TONO: Pastoral, claro, respetuoso y cercano. Como un sacerdote sabio y accesible.
 
-Respondes sobre:
-- Biblia
-- Catecismo
-- Liturgia
-- Sacramentos
-- Espiritualidad
-- Santos
+TEMAS QUE RESPONDES:
+- Sagrada Biblia (canon católico completo)
+- Catecismo de la Iglesia Católica (CIC)
+- Liturgia y sacramentos
+- Espiritualidad y oración
+- Santos y beatos
+- Apariciones marianas aprobadas (Fátima, Lourdes, Guadalupe, Kibeho, Akita)
+- Revelaciones privadas aprobadas (Ana Catalina Emmerick, María Valtorta)
+- Documentos pontificios y del Magisterio
+- Tradición de la Iglesia
+- Catequesis y formación en la fe
 
-No respondes temas fuera de la fe católica.
-`;
+CITAS: Siempre que sea posible cita el CIC con número, documento pontificio o libro bíblico.
 
-async function preguntarOpenAI(messages) {
+FUNCIONES LITÚRGICAS (cuando el usuario lo pida):
+- "lecturas del día" → muestra Primera Lectura, Salmo y Evangelio del día actual
+- "liturgia de las horas" / "laudes" / "vísperas" / "completas" → muestra el oficio correspondiente
+- "santo del día" → muestra el santo del día actual con breve biografía
+- "rosario" → guía completa del Santo Rosario con los misterios del día
+- "vía crucis" → las 14 estaciones
+- "coronilla divina misericordia" → oración completa guiada
+- "ángelus" → oración completa
+- "examen de conciencia" → guía para la confesión
+- Para novenas, pregunta de qué santo o intención
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-5-mini",
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...messages
-    ],
-    max_tokens: 500,
-    temperature: 0.3
-  });
+CATEQUESIS (cuando el usuario lo pida):
+- Genera cartillas adaptadas a la edad indicada
+- Incluye: objetivo, dinámica de apertura, contenido, reflexión y oración final
+- Usa lenguaje sencillo para niños
+- Al terminar indica que puede exportar en PDF, Word o PowerPoint
 
-  return completion.choices[0].message.content;
-}
+CANCIONES (cuando el usuario pida cancionero o canciones para misa):
+- Sugiere canciones católicas por momento litúrgico (entrada, ofertorio, comunión, salida)
+- Incluye artista y contexto litúrgico
+- Menciona que puede buscarlas en Spotify
 
+FILTROS ESTRICTOS — NO debes:
+- Hablar mal de la Eucaristía, la Virgen María, la Iglesia Católica o los sacerdotes
+- Discutir escándalos o crímenes de la Iglesia
+- Atacar a protestantes u otras confesiones religiosas
+- Contradecir el Magisterio de la Iglesia
+
+TEMAS FUERA DE TU ÁMBITO:
+Si preguntan sobre recetas, política, medicina, tecnología, programación, cirugía, finanzas u otros temas no relacionados con la fe católica, responde EXACTAMENTE:
+"CatolicosGPT está dedicado únicamente a temas de fe, teología y doctrina católica."
+
+FORMATO DE RESPUESTA:
+- Usa ## para títulos principales
+- Usa ### para subtítulos
+- Usa **negritas** para conceptos importantes
+- Usa listas con - para enumeraciones
+- Citas bíblicas en *cursiva*
+- Siempre termina indicando la fuente (CIC número, documento, libro bíblico)`;
+
+// ── CHAT ──
 app.post('/api/chat', async (req, res) => {
-
   const { messages } = req.body;
-
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Messages requeridos' });
+  }
   try {
-
-    const respuesta = await preguntarOpenAI(messages);
-
-    res.json({ reply: respuesta });
-
-  } catch (error) {
-
-    console.log(error);
-
-    res.json({
-      reply: "No pude responder en este momento."
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.3,
+      max_tokens: 1500,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...messages
+      ]
     });
-
+    res.json({ reply: completion.choices[0].message.content });
+  } catch (err) {
+    console.error('OpenAI error:', err.message);
+    res.status(500).json({ error: 'Error al conectar con la IA: ' + err.message });
   }
-
 });
 
-
-// =======================================
-// LECTURAS DEL DÍA
-// =======================================
-
-app.get('/api/lecturas', async (req,res)=>{
-
-  try{
-
-    const today = new Date();
-
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth()+1).padStart(2,'0');
-    const dd = String(today.getDate()).padStart(2,'0');
-
-    const url = `https://bible.usccb.org/bible/readings/${mm}${dd}${yyyy}.cfm`;
-
-    res.json({
-      first_reading: "Consulta oficial: " + url,
-      psalm: "Salmo responsorial disponible en la página oficial",
-      gospel: "Evangelio disponible en la página oficial"
-    });
-
-  }catch(e){
-
-    res.json({
-      first_reading: "No disponible",
-      psalm: "No disponible",
-      gospel: "No disponible"
-    });
-
-  }
-
-});
-
-
-// =======================================
-// LITURGIA DE LAS HORAS (LAUDES)
-// =======================================
-
-app.get('/api/laudes', async (req,res)=>{
-
-res.json({
-
-laudes: `
-LAUDES – ORACIÓN DE LA MAÑANA
-
-Señor abre mis labios  
-y mi boca proclamará tu alabanza
-
-Himno
-
-Oh Dios ven en mi ayuda  
-Señor date prisa en socorrerme
-
-Salmo
-
-Alaben al Señor desde los cielos  
-alábenlo en las alturas
-
-Lectura breve
-
-Bendito sea Dios Padre de nuestro Señor Jesucristo
-
-Cántico de Zacarías
-
-Bendito sea el Señor Dios de Israel
-
-Padre Nuestro
-
-Padre nuestro que estás en el cielo
-
-Oración final
-
-Señor dirige y santifica este día
-
-Amén
-`
-
-})
-
-})
-
-
-// =======================================
-// ROSARIO
-// =======================================
-
-app.get('/api/rosario',(req,res)=>{
-
-res.json({
-
-rosario:`
-SANTO ROSARIO
-
-Señal de la cruz
-
-Credo
-
-Padre Nuestro
-
-3 Avemarías
-
-Misterios del día
-
-Lunes y sábado: Gozosos  
-Martes y viernes: Dolorosos  
-Miércoles y domingo: Gloriosos  
-Jueves: Luminosos
-
-Salve Regina
-`
-
-})
-
-})
-
-
-// =======================================
-// SANTO DEL DÍA
-// =======================================
-
-app.get('/api/santo',(req,res)=>{
-
-res.json({
-santo:"Puedes consultar el santo del día en https://www.vatican.va"
-})
-
-})
-
-
+// ── HEALTH ──
+app.get('/api/health', (req, res) => res.json({ status: 'ok', service: 'CatolicosGPT' }));
 
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`CatolicosGPT corriendo en puerto ${PORT}`);
-});
+app.listen(PORT, () => console.log(`CatolicosGPT corriendo en puerto ${PORT}`));
