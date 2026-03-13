@@ -15,24 +15,36 @@ const openai = new OpenAI({
 });
 
 const SYSTEM_PROMPT = `
-Eres CatolicosGPT, un asistente teológico católico experto.
+Eres CatolicosGPT, un asistente teológico católico experto y cercano.
 
-Hablas con respeto y claridad.
-Siempre sigues las enseñanzas del Magisterio de la Iglesia.
+Hablas como un sacerdote sabio y pastoral.
+Siempre respetas el Magisterio de la Iglesia Católica.
 
-Solo respondes temas relacionados con:
+Respondes sobre:
 - Biblia
 - Catecismo
 - Liturgia
 - Sacramentos
+- Espiritualidad
 - Santos
-- Espiritualidad católica
+
+No respondes temas fuera de la fe católica.
 `;
 
+async function preguntarOpenAI(messages) {
 
-// ============================
-// CHAT IA
-// ============================
+  const completion = await openai.chat.completions.create({
+    model: "gpt-5-mini",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messages
+    ],
+    max_tokens: 500,
+    temperature: 0.3
+  });
+
+  return completion.choices[0].message.content;
+}
 
 app.post('/api/chat', async (req, res) => {
 
@@ -40,19 +52,9 @@ app.post('/api/chat', async (req, res) => {
 
   try {
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5-mini",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...messages
-      ],
-      max_tokens: 500,
-      temperature: 0.3
-    });
+    const respuesta = await preguntarOpenAI(messages);
 
-    res.json({
-      reply: completion.choices[0].message.content
-    });
+    res.json({ reply: respuesta });
 
   } catch (error) {
 
@@ -68,83 +70,84 @@ app.post('/api/chat', async (req, res) => {
 
 
 // =======================================
-// LECTURAS DEL DÍA (Universalis)
+// LECTURAS DEL DÍA
 // =======================================
 
 app.get('/api/lecturas', async (req,res)=>{
 
-try{
+  try{
 
-const today = new Date()
+    const today = new Date();
 
-const yyyy = today.getFullYear()
-const mm = String(today.getMonth()+1).padStart(2,'0')
-const dd = String(today.getDate()).padStart(2,'0')
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const dd = String(today.getDate()).padStart(2,'0');
 
-const url = `https://universalis.com/${yyyy}${mm}${dd}/jsonpmass.js`
+    const url = `https://bible.usccb.org/bible/readings/${mm}${dd}${yyyy}.cfm`;
 
-const response = await fetch(url)
-const text = await response.text()
+    res.json({
+      first_reading: "Consulta oficial: " + url,
+      psalm: "Salmo responsorial disponible en la página oficial",
+      gospel: "Evangelio disponible en la página oficial"
+    });
 
-const json = JSON.parse(text.replace("universalisCallback(", "").slice(0,-2))
+  }catch(e){
 
-const first = json.Mass_R1 || "Lectura no disponible"
-const psalm = json.Mass_Ps || "Salmo no disponible"
-const gospel = json.Mass_G || "Evangelio no disponible"
+    res.json({
+      first_reading: "No disponible",
+      psalm: "No disponible",
+      gospel: "No disponible"
+    });
 
-res.json({
-first_reading:first,
-psalm:psalm,
-gospel:gospel
-})
+  }
 
-}catch(e){
-
-console.log(e)
-
-res.json({
-first_reading:"No disponible",
-psalm:"No disponible",
-gospel:"No disponible"
-})
-
-}
-
-})
+});
 
 
 // =======================================
-// LAUDES (Universalis)
+// LITURGIA DE LAS HORAS (LAUDES)
 // =======================================
 
 app.get('/api/laudes', async (req,res)=>{
 
-try{
-
-const today = new Date()
-
-const yyyy = today.getFullYear()
-const mm = String(today.getMonth()+1).padStart(2,'0')
-const dd = String(today.getDate()).padStart(2,'0')
-
-const url = `https://universalis.com/${yyyy}${mm}${dd}/jsonp-lauds.js`
-
-const response = await fetch(url)
-const text = await response.text()
-
-const json = JSON.parse(text.replace("universalisCallback(", "").slice(0,-2))
-
 res.json({
-laudes: json.text || "Laudes no disponibles hoy"
+
+laudes: `
+LAUDES – ORACIÓN DE LA MAÑANA
+
+Señor abre mis labios  
+y mi boca proclamará tu alabanza
+
+Himno
+
+Oh Dios ven en mi ayuda  
+Señor date prisa en socorrerme
+
+Salmo
+
+Alaben al Señor desde los cielos  
+alábenlo en las alturas
+
+Lectura breve
+
+Bendito sea Dios Padre de nuestro Señor Jesucristo
+
+Cántico de Zacarías
+
+Bendito sea el Señor Dios de Israel
+
+Padre Nuestro
+
+Padre nuestro que estás en el cielo
+
+Oración final
+
+Señor dirige y santifica este día
+
+Amén
+`
+
 })
-
-}catch(e){
-
-res.json({
-laudes:"No disponible"
-})
-
-}
 
 })
 
@@ -158,8 +161,7 @@ app.get('/api/rosario',(req,res)=>{
 res.json({
 
 rosario:`
-
-📿 SANTO ROSARIO
+SANTO ROSARIO
 
 Señal de la cruz
 
@@ -171,13 +173,12 @@ Padre Nuestro
 
 Misterios del día
 
-Lunes y sábado — Gozosos  
-Martes y viernes — Dolorosos  
-Miércoles y domingo — Gloriosos  
-Jueves — Luminosos  
+Lunes y sábado: Gozosos  
+Martes y viernes: Dolorosos  
+Miércoles y domingo: Gloriosos  
+Jueves: Luminosos
 
 Salve Regina
-
 `
 
 })
@@ -191,22 +192,8 @@ Salve Regina
 
 app.get('/api/santo',(req,res)=>{
 
-const today = new Date()
-
-const santos = [
-"San José",
-"San Francisco de Asís",
-"San Benito",
-"Santa Teresa de Jesús",
-"San Juan Pablo II",
-"San Agustín",
-"San Ignacio de Loyola"
-]
-
-const santo = santos[today.getDate() % santos.length]
-
 res.json({
-santo:santo
+santo:"Puedes consultar el santo del día en https://www.vatican.va"
 })
 
 })
