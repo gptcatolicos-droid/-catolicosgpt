@@ -1,6 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const OpenAI = require("openai");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 const app = express();
 app.use(cors());
@@ -8,6 +13,18 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const SYSTEM_PROMPT = `Eres CatolicosGPT, un asistente teológico católico experto y cercano. 
+async function preguntarOpenAI(messages) {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-5",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messages
+    ]
+  });
+
+  return completion.choices[0].message.content;
+}
+
 
 IDENTIDAD:
 - Hablas con calidez, como un sacerdote sabio y accesible
@@ -55,7 +72,7 @@ app.post('/api/chat', async (req, res) => {
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'Messages requeridos' });
   }
-
+let respuesta;
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -74,7 +91,14 @@ app.post('/api/chat', async (req, res) => {
 
     const data = await response.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
-    res.json({ reply: data.content[0].text });
+    respuesta = data.content[0].text;
+
+if (!respuesta) {
+  respuesta = await preguntarOpenAI(messages);
+}
+
+res.json({ reply: respuesta });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al conectar con la IA' });
