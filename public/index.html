@@ -351,241 +351,254 @@
 </div>
 
 <script>
-  // ── STATE ──
-  let sbOpen = false;
-  let isLoading = false;
-  let currentLang = 'es';
-  let selectedAmount = '5';
-  let chatHistory = [];
-  let conversations = JSON.parse(localStorage.getItem('cgpt_convs') || '[]');
 
-  const i18n = {
-    es: { placeholder: 'Pregunta sobre fe, oración, santos, moral…', hint: 'CatolicosGPT · Respuestas basadas en el Magisterio y Vatican.va', welcome: '¿En qué puedo ayudarte, <em>hermano</em>?', you: 'TÚ' },
-    en: { placeholder: 'Ask about faith, prayer, saints, morality…', hint: 'CatolicosGPT · Answers based on the Magisterium and Vatican.va', welcome: 'How can I help you, <em>brother</em>?', you: 'YOU' }
-  };
+let sbOpen = false;
+let isLoading = false;
+let currentLang = 'es';
+let selectedAmount = '5';
+let chatHistory = [];
+let conversations = JSON.parse(localStorage.getItem('cgpt_convs') || '[]');
 
-  // ── SIDEBAR ──
-  function toggleSb() { sbOpen ? closeSb() : openSb(); }
-  function openSb() {
-    document.getElementById('sb').classList.add('open');
-    document.getElementById('overlay').classList.add('show');
-    sbOpen = true;
-    renderHistory();
-  }
-  function closeSb() {
-    document.getElementById('sb').classList.remove('open');
-    document.getElementById('overlay').classList.remove('show');
-    sbOpen = false;
-  }
+const PAYPAL_URL = "https://www.paypal.com/paypalme/schoolmarketing";
 
-  // ── HISTORY ──
-  function renderHistory() {
-    const el = document.getElementById('history-list');
-    if (!conversations.length) { el.innerHTML = '<div style="padding:6px 14px;font-family:Lora,serif;font-size:12px;color:var(--ink4);font-style:italic">Sin conversaciones aún</div>'; return; }
-    el.innerHTML = conversations.slice(-8).reverse().map((c, i) =>
-      `<div class="sb-item" onclick="loadConv(${conversations.length-1-i});closeSb()">
-        <div class="sb-ico">💬</div>
-        <span class="sb-lbl">${c.title}</span>
-        <span class="sb-time">${c.time}</span>
-       </div>`
-    ).join('');
+const i18n = {
+  es: { placeholder: 'Pregunta sobre fe, oración, santos, moral…', hint: 'CatolicosGPT · Respuestas basadas en el Magisterio y Vatican.va', welcome: '¿En qué puedo ayudarte, <em>hermano</em>?', you: 'TÚ' },
+  en: { placeholder: 'Ask about faith, prayer, saints, morality…', hint: 'CatolicosGPT · Answers based on the Magisterium and Vatican.va', welcome: 'How can I help you, <em>brother</em>?', you: 'YOU' }
+};
+
+function toggleSb(){ sbOpen ? closeSb() : openSb() }
+
+function openSb(){
+  document.getElementById('sb').classList.add('open')
+  document.getElementById('overlay').classList.add('show')
+  sbOpen=true
+  renderHistory()
+}
+
+function closeSb(){
+  document.getElementById('sb').classList.remove('open')
+  document.getElementById('overlay').classList.remove('show')
+  sbOpen=false
+}
+
+function renderHistory(){
+  const el=document.getElementById('history-list')
+  if(!conversations.length){
+    el.innerHTML='<div style="padding:6px 14px;font-family:Lora,serif;font-size:12px;color:var(--ink4);font-style:italic">Sin conversaciones aún</div>'
+    return
   }
 
-  function saveConversation(title) {
-    const now = new Date();
-    const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
-    conversations.push({ title: title.slice(0,38), time, messages: [...chatHistory] });
-    if (conversations.length > 20) conversations.shift();
-    localStorage.setItem('cgpt_convs', JSON.stringify(conversations));
+  el.innerHTML=conversations.slice(-8).reverse().map((c,i)=>
+  `<div class="sb-item" onclick="loadConv(${conversations.length-1-i});closeSb()">
+  <div class="sb-ico">💬</div>
+  <span class="sb-lbl">${c.title}</span>
+  <span class="sb-time">${c.time}</span>
+  </div>`).join('')
+}
+
+function saveConversation(title){
+  const now=new Date()
+  const time=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')
+  conversations.push({title:title.slice(0,38),time,messages:[...chatHistory]})
+  if(conversations.length>20)conversations.shift()
+  localStorage.setItem('cgpt_convs',JSON.stringify(conversations))
+}
+
+function loadConv(i){
+  const c=conversations[i]
+  chatHistory=[...c.messages]
+
+  document.getElementById('welcome').style.display='none'
+  document.getElementById('chat-area').style.display='block'
+
+  const wrap=document.getElementById('chat-inner')
+  wrap.innerHTML=''
+
+  c.messages.forEach(m=>renderBubble(m.content,m.role==='user',false))
+}
+
+function setLang(l,btn){
+  currentLang=l
+  document.querySelectorAll('.lang-sw button').forEach(b=>b.classList.remove('on'))
+  btn.classList.add('on')
+  document.getElementById('cin').placeholder=i18n[l].placeholder
+  document.getElementById('input-hint').textContent=i18n[l].hint
+  document.getElementById('w-title').innerHTML=i18n[l].welcome
+}
+
+function renderBubble(text,isUser,withExport=false){
+
+  document.getElementById('welcome').style.display='none'
+  document.getElementById('chat-area').style.display='block'
+
+  const wrap=document.getElementById('chat-inner')
+
+  const d=document.createElement('div')
+  d.className='msg'+(isUser?' u':'')
+
+  const av=document.createElement('div')
+  av.className='av '+(isUser?'usr':'bot')
+
+  av.innerHTML=isUser
+  ? i18n[currentLang].you
+  : '<svg width="14" height="14" viewBox="0 0 80 80"><line x1="40" y1="8" x2="40" y2="52" stroke="#E8A84C" stroke-width="5"/><line x1="27" y1="20" x2="53" y2="20" stroke="#E8A84C" stroke-width="5"/></svg>'
+
+  const b=document.createElement('div')
+  b.className='bubble '+(isUser?'usr':'bot')
+
+  const formatted=text
+  .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+  .replace(/\*(.*?)\*/g,'<em>$1</em>')
+  .replace(/\n/g,'<br>')
+
+  b.innerHTML=formatted
+
+  if(!isUser){
+    b.innerHTML+='<div class="src-row"><span class="src">Magisterio</span><span class="src">Vatican.va</span></div>'
   }
 
-  function loadConv(i) {
-    const c = conversations[i];
-    chatHistory = [...c.messages];
-    document.getElementById('welcome').style.display = 'none';
-    document.getElementById('chat-area').style.display = 'block';
-    const wrap = document.getElementById('chat-inner');
-    wrap.innerHTML = '';
-    c.messages.forEach(m => renderBubble(m.content, m.role === 'user', false));
+  d.appendChild(av)
+  d.appendChild(b)
+
+  wrap.appendChild(d)
+  wrap.scrollTop=wrap.scrollHeight
+}
+
+function addTyping(){
+  const wrap=document.getElementById('chat-inner')
+
+  const d=document.createElement('div')
+  d.className='msg'
+  d.id='typing-indicator'
+
+  const av=document.createElement('div')
+  av.className='av bot'
+
+  const b=document.createElement('div')
+  b.className='bubble bot typing'
+  b.innerHTML='<span></span><span></span><span></span>'
+
+  d.appendChild(av)
+  d.appendChild(b)
+  wrap.appendChild(d)
+
+  wrap.scrollTop=wrap.scrollHeight
+}
+
+function removeTyping(){
+  const t=document.getElementById('typing-indicator')
+  if(t)t.remove()
+}
+
+async function send(){
+
+  const cin=document.getElementById('cin')
+  const val=cin.value.trim()
+
+  if(!val||isLoading)return
+
+  isLoading=true
+  document.getElementById('send-btn').disabled=true
+
+  chatHistory.push({role:'user',content:val})
+  renderBubble(val,true)
+
+  cin.value=''
+  cin.style.height='auto'
+
+  addTyping()
+
+  try{
+
+    const res=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:chatHistory})
+    })
+
+    const data=await res.json()
+
+    removeTyping()
+
+    const reply=data.reply||'Error al responder.'
+
+    chatHistory.push({role:'assistant',content:reply})
+
+    renderBubble(reply,false)
+
+    if(chatHistory.length===2)saveConversation(val)
+
+  }catch(e){
+
+    removeTyping()
+    renderBubble('Error de conexión.',false)
+
   }
 
-  // ── LANG ──
-  function setLang(l, btn) {
-    currentLang = l;
-    document.querySelectorAll('.lang-sw button').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    document.getElementById('cin').placeholder = i18n[l].placeholder;
-    document.getElementById('input-hint').textContent = i18n[l].hint;
-    document.getElementById('w-title').innerHTML = i18n[l].welcome;
+  isLoading=false
+  document.getElementById('send-btn').disabled=false
+}
+
+function sendChip(text){
+
+  const input=document.getElementById('cin')
+
+  input.value=text
+
+  setTimeout(()=>{
+    send()
+  },150)
+
+}
+
+function onKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault()
+    send()
   }
+}
 
-  // ── CHAT ──
-  function renderBubble(text, isUser, withExport = false) {
-    document.getElementById('welcome').style.display = 'none';
-    document.getElementById('chat-area').style.display = 'block';
-    const wrap = document.getElementById('chat-inner');
-    const d = document.createElement('div');
-    d.className = 'msg' + (isUser ? ' u' : '');
-    const av = document.createElement('div');
-    av.className = 'av ' + (isUser ? 'usr' : 'bot');
-    av.innerHTML = isUser
-      ? (i18n[currentLang].you)
-      : '<svg width="14" height="14" viewBox="0 0 80 80" fill="none"><line x1="40" y1="8" x2="40" y2="52" stroke="#E8A84C" stroke-width="5" stroke-linecap="round"/><line x1="27" y1="20" x2="53" y2="20" stroke="#E8A84C" stroke-width="5" stroke-linecap="round"/></svg>';
-    const b = document.createElement('div');
-    b.className = 'bubble ' + (isUser ? 'usr' : 'bot');
-    // Formatear markdown completo
-    const formatted = text
-      .replace(/^### (.*$)/gim, '<h4 style="font-family:\'Playfair Display\',serif;font-size:15px;color:var(--brown);margin:10px 0 4px;font-weight:600">$1</h4>')
-      .replace(/^## (.*$)/gim, '<h3 style="font-family:\'Playfair Display\',serif;font-size:17px;color:var(--brown);margin:12px 0 6px;font-weight:700">$1</h3>')
-      .replace(/^# (.*$)/gim, '<h2 style="font-family:\'Playfair Display\',serif;font-size:19px;color:var(--brown);margin:14px 0 8px;font-weight:700">$1</h2>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/^- (.*$)/gim, '<li style="margin-left:16px;margin-bottom:3px">$1</li>')
-      .replace(/^(\d+)\. (.*$)/gim, '<li style="margin-left:16px;margin-bottom:3px"><strong style="color:var(--ocre)">$1.</strong> $2</li>')
-      .replace(/(<li.*<\/li>)/gs, '<ul style="list-style:none;margin:6px 0">$1</ul>')
-      .replace(/\n/g, '<br>');
-    b.innerHTML = formatted;
-    if (!isUser) {
-      b.innerHTML += '<div class="src-row"><span class="src">Magisterio</span><span class="src">Vatican.va</span></div>';
-      if (withExport) {
-        b.innerHTML += `<div class="export-row">
-          <button class="exp-btn pdf" onclick="exportPDF(this)">📕 PDF</button>
-          <button class="exp-btn word" onclick="exportWord(this)">📝 Word</button>
-          <button class="exp-btn ppt" onclick="exportPPT(this)">📊 PPT</button>
-        </div>`;
-      }
-    }
-    d.appendChild(av); d.appendChild(b);
-    wrap.appendChild(d);
-    wrap.scrollTop = wrap.scrollHeight;
-  }
+function autoResize(el){
+  el.style.height='auto'
+  el.style.height=Math.min(el.scrollHeight,140)+'px'
+}
 
-  function addTyping() {
-    const wrap = document.getElementById('chat-inner');
-    const d = document.createElement('div');
-    d.className = 'msg'; d.id = 'typing-indicator';
-    const av = document.createElement('div');
-    av.className = 'av bot';
-    av.innerHTML = '<svg width="14" height="14" viewBox="0 0 80 80" fill="none"><line x1="40" y1="8" x2="40" y2="52" stroke="#E8A84C" stroke-width="5" stroke-linecap="round"/><line x1="27" y1="20" x2="53" y2="20" stroke="#E8A84C" stroke-width="5" stroke-linecap="round"/></svg>';
-    const b = document.createElement('div');
-    b.className = 'bubble bot typing';
-    b.innerHTML = '<span></span><span></span><span></span>';
-    d.appendChild(av); d.appendChild(b);
-    wrap.appendChild(d);
-    wrap.scrollTop = wrap.scrollHeight;
-  }
+function newChat(){
+  chatHistory=[]
+  document.getElementById('welcome').style.display='flex'
+  document.getElementById('chat-area').style.display='none'
+  document.getElementById('chat-inner').innerHTML=''
+  closeSb()
+}
 
-  function removeTyping() {
-    const t = document.getElementById('typing-indicator');
-    if (t) t.remove();
-  }
+function openDonate(){
+  document.getElementById('donate-modal').classList.add('show')
+}
 
-  async function send() {
-    const cin = document.getElementById('cin');
-    const val = cin.value.trim();
-    if (!val || isLoading) return;
-    isLoading = true;
-    document.getElementById('send-btn').disabled = true;
+function closeDonate(){
+  document.getElementById('donate-modal').classList.remove('show')
+}
 
-    chatHistory.push({ role: 'user', content: val });
-    renderBubble(val, true);
-    cin.value = ''; cin.style.height = 'auto';
-    addTyping();
+function selectAmount(btn,amount){
 
-    // Detectar si pide cartilla/exportable
-    const needsExport = /cartilla|catequesis|oración|novena|rosario|vía crucis|homilía/i.test(val);
+  selectedAmount=amount
 
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: chatHistory })
-      });
-      const data = await res.json();
-      removeTyping();
-      const reply = data.reply || 'Lo siento, hubo un error. Por favor intenta de nuevo.';
-      chatHistory.push({ role: 'assistant', content: reply });
-      renderBubble(reply, false, needsExport);
-      // Guardar conversación
-      if (chatHistory.length === 2) saveConversation(val);
-    } catch (e) {
-      removeTyping();
-      renderBubble('Error de conexión. Verifica tu internet e intenta de nuevo.', false);
-    }
-    isLoading = false;
-    document.getElementById('send-btn').disabled = false;
-  }
+  document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('on'))
 
-  function sendChip(t) {
-    closeSb();
-    setTimeout(() => {
-      document.getElementById('cin').value = t;
-      send();
-    }, 300);
-  }
+  btn.classList.add('on')
 
-  function onKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-  }
+  const link=document.getElementById('paypal-link')
 
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
-  }
+  link.href=PAYPAL_URL
+}
 
-  function newChat() {
-    chatHistory = [];
-    document.getElementById('welcome').style.display = 'flex';
-    document.getElementById('chat-area').style.display = 'none';
-    document.getElementById('chat-inner').innerHTML = '';
-    closeSb();
-  }
+document.getElementById('paypal-link').href=PAYPAL_URL
 
-  // ── EXPORTS ──
-  function getBubbleText(btn) {
-    return btn.closest('.bubble').innerText.replace(/📕 PDF|📝 Word|📊 PPT|Magisterio|Vatican\.va/g,'').trim();
-  }
+document.getElementById('donate-modal').addEventListener('click',function(e){
+  if(e.target===this)closeDonate()
+})
 
-  function exportPDF(btn) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const text = getBubbleText(btn);
-    doc.setFont('helvetica');
-    doc.setFontSize(14);
-    doc.text('CatolicosGPT', 20, 20);
-    doc.setFontSize(11);
-    const lines = doc.splitTextToSize(text, 170);
-    doc.text(lines, 20, 35);
-    doc.save('catolicosgpt.pdf');
-  }
-
-  function exportWord(btn) {
-    const text = getBubbleText(btn);
-    const html = `<html><head><meta charset="UTF-8"></head><body><h2>CatolicosGPT</h2><p>${text.replace(/\n/g,'</p><p>')}</p></body></html>`;
-    const blob = new Blob([html], { type: 'application/msword' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'catolicosgpt.doc'; a.click();
-  }
-
-  function exportPPT(btn) {
-    const text = getBubbleText(btn);
-    alert('PPT: ' + text.slice(0, 100) + '…\n\n(Integración completa con PptxGenJS disponible en versión Pro)');
-  }
-
-  // ── DONAR ──
-  function openDonate() { document.getElementById('donate-modal').classList.add('show'); }
-  function closeDonate() { document.getElementById('donate-modal').classList.remove('show'); }
-
-  function selectAmount(btn, amount) {
-    selectedAmount = amount;
-    document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    const link = document.getElementById('paypal-link');
-    link.href = `https://www.paypal.com/paypalme/schoolmarketing`;
-  }
-
-  document.getElementById('donate-modal').addEventListener('click', function(e) {
-    if (e.target === this) closeDonate();
-  });
 </script>
+
 </body>
 </html>
