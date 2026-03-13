@@ -54,6 +54,8 @@ flex-direction:column;
 
 .chat-inner{
 padding:20px;
+overflow:auto;
+flex:1;
 }
 
 .msg{
@@ -81,6 +83,11 @@ width:100%;
 padding:10px;
 }
 
+button{
+padding:10px;
+margin-top:8px;
+}
+
 </style>
 
 </head>
@@ -91,22 +98,19 @@ padding:10px;
 
 <nav class="sb">
 
-<div class="sb-item" onclick="loadLecturas();closeSb()"
->
+<div class="sb-item" onclick="loadLecturas()">
 📖 Lecturas del día
 </div>
 
-<div class="sb-item" onclick="loadLaudes();closeSb()"
->
+<div class="sb-item" onclick="loadLaudes()">
 🕯 Liturgia de las Horas
 </div>
 
-<div class="sb-item" onclick="loadRosario();closeSb()"
->
+<div class="sb-item" onclick="loadRosario()">
 📿 Santo Rosario
 </div>
 
-<div class="sb-item" onclick="sendChip('¿Quién es el santo del día de hoy?')">
+<div class="sb-item" onclick="loadSanto()">
 ☩ Santos
 </div>
 
@@ -124,11 +128,11 @@ padding:10px;
 
 <div class="main">
 
-<div class="chat-inner" id="chat"></div>
+<div class="chat-inner" id="chat-inner"></div>
 
 <div class="input-area">
 
-<textarea id="input"></textarea>
+<textarea id="cin"></textarea>
 
 <button onclick="send()">Enviar</button>
 
@@ -140,42 +144,26 @@ padding:10px;
 
 <script>
 
-// ============================
-// ESTADO
-// ============================
-
-let isLoading = false
-let chatHistory = []
+let isLoading=false
+let chatHistory=[]
 
 
 // ============================
-// RENDER BURBUJAS CHAT
+// RENDER CHAT
 // ============================
 
 function renderBubble(text,isUser=false){
 
 const chat=document.getElementById("chat-inner")
-document.getElementById("welcome").style.display="none"
-document.getElementById("chat-area").style.display="block"
 
 const wrap=document.createElement("div")
-wrap.className="msg"+(isUser?" u":"")
-
-const avatar=document.createElement("div")
-avatar.className="av "+(isUser?"usr":"bot")
-avatar.innerHTML=isUser?"TÚ":"✝"
+wrap.className="msg"
 
 const bubble=document.createElement("div")
-bubble.className="bubble "+(isUser?"usr":"bot")
+bubble.className="bubble "+(isUser?"usr":"")
 
-const formatted=text
-.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
-.replace(/\*(.*?)\*/g,"<em>$1</em>")
-.replace(/\n/g,"<br>")
+bubble.innerHTML=text.replace(/\n/g,"<br>")
 
-bubble.innerHTML=formatted
-
-wrap.appendChild(avatar)
 wrap.appendChild(bubble)
 
 chat.appendChild(wrap)
@@ -183,40 +171,6 @@ chat.appendChild(wrap)
 chat.scrollTop=chat.scrollHeight
 
 }
-
-
-
-// ============================
-// INDICADOR ESCRIBIENDO
-// ============================
-
-function typing(){
-
-const chat=document.getElementById("chat-inner")
-
-const wrap=document.createElement("div")
-wrap.className="msg"
-wrap.id="typing"
-
-wrap.innerHTML=`
-<div class="av bot">✝</div>
-<div class="bubble bot typing">
-<span></span><span></span><span></span>
-</div>
-`
-
-chat.appendChild(wrap)
-chat.scrollTop=chat.scrollHeight
-
-}
-
-function removeTyping(){
-
-const t=document.getElementById("typing")
-if(t)t.remove()
-
-}
-
 
 
 // ============================
@@ -238,8 +192,6 @@ chatHistory.push({role:"user",content:text})
 
 input.value=""
 
-typing()
-
 try{
 
 const r=await fetch("/api/chat",{
@@ -250,15 +202,12 @@ body:JSON.stringify({messages:chatHistory})
 
 const data=await r.json()
 
-removeTyping()
-
 renderBubble(data.reply)
 
 chatHistory.push({role:"assistant",content:data.reply})
 
 }catch(e){
 
-removeTyping()
 renderBubble("Error al conectar con CatolicosGPT")
 
 }
@@ -270,89 +219,49 @@ isLoading=false
 
 
 // ============================
-// LECTURAS DEL DIA
+// LECTURAS
 // ============================
 
 async function loadLecturas(){
 
-try{
-
-typing()
-
 const r=await fetch("/api/lecturas")
-
 const data=await r.json()
 
-removeTyping()
+renderBubble(`
+📖 <b>LECTURAS DEL DÍA</b>
 
-const texto=`
-
-📖 **LECTURAS DEL DÍA**
-
-**Primera lectura**
+<b>Primera lectura</b>
 
 ${data.first_reading}
 
-**Salmo**
+<b>Salmo</b>
 
 ${data.psalm}
 
-**Evangelio**
+<b>Evangelio</b>
 
 ${data.gospel}
-
-`
-
-renderBubble(texto,false)
-
-}catch(e){
-
-removeTyping()
-
-renderBubble("No se pudieron cargar las lecturas del día.")
+`)
 
 }
-
-}
-
 
 
 // ============================
-// LITURGIA DE LAS HORAS
+// LAUDES
 // ============================
 
 async function loadLaudes(){
 
-try{
-
-typing()
-
 const r=await fetch("/api/laudes")
-
 const data=await r.json()
 
-removeTyping()
-
-const texto=`
-
-🕯 **LITURGIA DE LAS HORAS – LAUDES**
+renderBubble(`
+🕯 <b>LITURGIA DE LAS HORAS – LAUDES</b>
 
 ${data.laudes}
-
-`
-
-renderBubble(texto,false)
-
-}catch(e){
-
-removeTyping()
-
-renderBubble("No se pudo cargar la Liturgia de las Horas.")
+`)
 
 }
-
-}
-
 
 
 // ============================
@@ -361,86 +270,30 @@ renderBubble("No se pudo cargar la Liturgia de las Horas.")
 
 async function loadRosario(){
 
-try{
-
-typing()
-
 const r=await fetch("/api/rosario")
-
 const data=await r.json()
 
-removeTyping()
-
-renderBubble(data.rosario,false)
-
-}catch(e){
-
-removeTyping()
-
-renderBubble("No se pudo cargar el Rosario.")
+renderBubble(data.rosario)
 
 }
-
-}
-
 
 
 // ============================
-// INPUT ENTER
+// SANTO DEL DIA
 // ============================
 
-function onKey(e){
+async function loadSanto(){
 
-if(e.key==="Enter"&&!e.shiftKey){
+const r=await fetch("/api/santo")
+const data=await r.json()
 
-e.preventDefault()
+renderBubble(`
+☩ <b>SANTO DEL DÍA</b>
 
-send()
-
-}
-
-}
-
-
-
-// ============================
-// NUEVO CHAT
-// ============================
-
-function newChat(){
-
-chatHistory=[]
-
-document.getElementById("chat-inner").innerHTML=""
-
-document.getElementById("welcome").style.display="flex"
-
-document.getElementById("chat-area").style.display="none"
+${data.santo}
+`)
 
 }
-
-
-
-// ============================
-// SIDEBAR
-// ============================
-
-function closeSb(){
-
-document.getElementById("sb").classList.remove("open")
-
-document.getElementById("overlay").classList.remove("show")
-
-}
-
-function toggleSb(){
-
-document.getElementById("sb").classList.toggle("open")
-
-document.getElementById("overlay").classList.toggle("show")
-
-}
-
 
 
 // ============================
@@ -449,19 +302,11 @@ document.getElementById("overlay").classList.toggle("show")
 
 function openDonate(){
 
-document.getElementById("donate-modal").classList.add("show")
-
-}
-
-function closeDonate(){
-
-document.getElementById("donate-modal").classList.remove("show")
+window.open("https://www.paypal.com/paypalme/schoolmarketing")
 
 }
 
 </script>
 
-
 </body>
 </html>
-
