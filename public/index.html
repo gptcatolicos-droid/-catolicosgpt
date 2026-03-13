@@ -232,7 +232,10 @@
 
       <div class="sb-divider"></div>
       <div class="sb-group">Herramientas</div>
-      <div class="sb-item" onclick="cargarLecturas();closeSb()"
+      <div class="sb-item" onclick="loadLecturas();closeSb()">
+  <div class="sb-ico">📖</div>
+  <span class="sb-lbl">Lecturas del día</span>
+</div>
 ><div class="sb-ico">📖</div><span class="sb-lbl">Lecturas del día</span></div>
       <div class="sb-item" onclick="sendChip('Guíame en la Liturgia de las Horas de hoy — Laudes');closeSb()"><div class="sb-ico">🕯</div><span class="sb-lbl">Liturgia de las Horas</span></div>
       <div class="sb-item" onclick="sendChip('Guíame en el Santo Rosario de hoy');closeSb()"><div class="sb-ico">📿</div><span class="sb-lbl">Santo Rosario</span></div>
@@ -632,6 +635,35 @@ ${data.gospel}
   }catch(e){
 
     renderBubble("No pude cargar las lecturas del día.",false)
+
+  }
+
+}
+async function loadLecturas(){
+
+  try{
+
+    const res = await fetch('/api/lecturas')
+    const data = await res.json()
+
+    const texto = `
+# 📖 Lecturas del día
+
+**Primera lectura**
+${data.first_reading}
+
+**Salmo**
+${data.psalm}
+
+**Evangelio**
+${data.gospel}
+`
+
+    renderBubble(texto,false)
+
+  }catch(e){
+
+    renderBubble("No se pudieron cargar las lecturas del día.",false)
 
   }
 
