@@ -112,6 +112,38 @@ app.post('/api/chat', async (req, res) => {
   });
 
 });
+app.get('/api/lecturas', async (req,res)=>{
+
+  try{
+
+    const today = new Date()
+
+    const yyyy = today.getFullYear()
+    const mm = String(today.getMonth()+1).padStart(2,'0')
+    const dd = String(today.getDate()).padStart(2,'0')
+
+    const url = `https://api.bible.usccb.org/v1/readings/${yyyy}-${mm}-${dd}`
+
+    const r = await fetch(url)
+    const data = await r.json()
+
+    res.json({
+      first_reading: data.first_reading,
+      psalm: data.psalm,
+      gospel: data.gospel
+    })
+
+  }catch(e){
+
+    res.json({
+      first_reading: "No disponible",
+      psalm: "No disponible",
+      gospel: "No disponible"
+    })
+
+  }
+
+});
 
 const PORT = process.env.PORT || 3000;
 
