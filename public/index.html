@@ -232,7 +232,8 @@
 
       <div class="sb-divider"></div>
       <div class="sb-group">Herramientas</div>
-      <div class="sb-item" onclick="sendChip('¿Cuáles son las lecturas del día de hoy?');closeSb()"><div class="sb-ico">📖</div><span class="sb-lbl">Lecturas del día</span></div>
+      <div class="sb-item" onclick="cargarLecturas();closeSb()"
+><div class="sb-ico">📖</div><span class="sb-lbl">Lecturas del día</span></div>
       <div class="sb-item" onclick="sendChip('Guíame en la Liturgia de las Horas de hoy — Laudes');closeSb()"><div class="sb-ico">🕯</div><span class="sb-lbl">Liturgia de las Horas</span></div>
       <div class="sb-item" onclick="sendChip('Guíame en el Santo Rosario de hoy');closeSb()"><div class="sb-ico">📿</div><span class="sb-lbl">Santo Rosario</span></div>
       <div class="sb-item" onclick="sendChip('Necesito material de catequesis para niños. ¿Para qué edad y qué tema?');closeSb()"><div class="sb-ico">✏️</div><span class="sb-lbl">Catequesis infantil</span></div>
@@ -597,6 +598,45 @@ document.getElementById('paypal-link').href=PAYPAL_URL
 document.getElementById('donate-modal').addEventListener('click',function(e){
   if(e.target===this)closeDonate()
 })
+
+  async function cargarLecturas(){
+
+  const today = new Date()
+
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth()+1).padStart(2,'0')
+  const dd = String(today.getDate()).padStart(2,'0')
+
+  const url = `/api/lecturas?date=${yyyy}-${mm}-${dd}`
+
+  try{
+
+    const res = await fetch(url)
+    const data = await res.json()
+
+    const texto = `
+📖 **Lecturas del día**
+
+**Primera lectura:**  
+${data.first_reading}
+
+**Salmo:**  
+${data.psalm}
+
+**Evangelio:**  
+${data.gospel}
+`
+
+    renderBubble(texto,false)
+
+  }catch(e){
+
+    renderBubble("No pude cargar las lecturas del día.",false)
+
+  }
+
+}
+
 
 </script>
 
