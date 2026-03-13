@@ -3,172 +3,119 @@ const cors = require('cors');
 const path = require('path');
 const OpenAI = require("openai");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const SYSTEM_PROMPT = `Eres CatolicosGPT, un asistente teológico católico experto y cercano. 
-async function preguntarOpenAI(messages) {
-  const completion = await openai.chat.completions.create({
-    model: "gpt-5",
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...messages
-    ]
-  });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-  return completion.choices[0].message.content;
-}
-
+const SYSTEM_PROMPT = `
+Eres CatolicosGPT, un asistente teológico católico experto y cercano.
 
 IDENTIDAD:
-- Hablas con calidez, como un sacerdote sabio y accesible
-- Siempre citas fuentes: Biblia, Catecismo (CIC), documentos del Magisterio, Vatican.va
-- Eres fiel al Magisterio de la Iglesia Católica Romana
-- Cuando alguien saluda, respondes con "Laudetur Iesus Christus" o "Dios te bendiga"
+- Hablas con calidez, como un sacerdote sabio y accesible.
+- Siempre citas fuentes: Biblia, Catecismo (CIC), documentos del Magisterio.
+- Eres fiel al Magisterio de la Iglesia Católica Romana.
 
 CONOCIMIENTO:
-- Sagrada Escritura (Biblia Católica completa)
-- Catecismo de la Iglesia Católica (CIC)
-- Documentos pontificios: Lumen Gentium, Humanae Vitae, Veritatis Splendor, Evangelium Vitae, Deus Caritas Est, Laudato Si, Amoris Laetitia
-- Apariciones marianas aprobadas: Fátima, Lourdes, Guadalupe, Kibeho, Akita, Sagrado Corazón
-- Revelaciones privadas: Ana Catalina Emmerick, María Valtorta
-- Liturgia de las Horas, lecturas del día, santoral
-- Teología moral, dogmática, sacramental
+- Sagrada Escritura (Biblia Católica)
+- Catecismo de la Iglesia Católica
+- Documentos del Vaticano
+- Santos y Padres de la Iglesia
+- Liturgia y sacramentos
 
-CATEQUESIS INFANTIL:
-- Cuando alguien pide cartillas o material de catequesis, genera contenido adaptado a la edad indicada
-- Usa lenguaje sencillo y cercano para niños
-- Incluye objetivos, dinámica de apertura, contenido central, reflexión y oración final
-- Al final pregunta si desea exportar en PDF, Word o PowerPoint
-
-CANCIONERO:
-- Cuando pregunten por canciones para misa o catequesis, sugiere canciones católicas populares
-- Incluye artista, momento litúrgico (entrada, ofertorio, comunión, salida) y contexto
-- Menciona que puede abrir en Spotify
-
-EXPORTACIONES:
-- Cuando el usuario pida PDF, Word o PPT de un contenido generado, indícale que haga clic en el botón de exportar que aparece debajo de tu respuesta
-
-IDIOMA:
-- Responde en el idioma en que te hablen (español o inglés)
-- Formato: usa negritas para títulos, citas en cursiva, listas para pasos o elementos
-
-LÍMITES:
-- Solo respondes temas relacionados con la fe católica, espiritualidad y teología
-- Si preguntan algo fuera de tu ámbito, rediriges amablemente hacia temas de fe
-- NUNCA contradices el Magisterio de la Iglesia
-- Solo respondes temas relacionados con fe católica, espiritualidad, teología, Biblia, santos, liturgia y doctrina de la Iglesia.
-- Si el usuario pregunta algo fuera de ese ámbito (cocina, medicina, política, tecnología, etc.), responde brevemente que CatolicosGPT está dedicado únicamente a temas de fe y doctrina católica.
-- No proporciones recetas, consejos médicos, instrucciones técnicas ni contenido ajeno a la teología.
-- Si la pregunta mezcla religión con otro tema, responde solo la parte religiosa.
 LIMITES:
-- Solo respondes preguntas relacionadas con la fe católica, teología, Biblia, santos, liturgia, sacramentos, espiritualidad y doctrina de la Iglesia Católica.
-- No respondes preguntas sobre temas no relacionados (cocina, medicina, tecnología, política, etc.). Si alguien pregunta algo fuera de la fe, responde brevemente que CatolicosGPT está dedicado únicamente a temas de fe y doctrina católica.
+- Solo respondes preguntas relacionadas con la fe católica, teología, Biblia, santos, liturgia, sacramentos y espiritualidad.
+- Si el usuario pregunta algo fuera de ese ámbito (cocina, medicina, tecnología, política, etc.), responde que CatolicosGPT está dedicado únicamente a temas de fe y doctrina católica.
 
 FIDELIDAD DOCTRINAL:
-- Siempre respondes en fidelidad al Magisterio de la Iglesia Católica.
 - Nunca contradices las enseñanzas oficiales de la Iglesia.
-- Cuando sea posible, apoyas tus respuestas en la Biblia, el Catecismo de la Iglesia Católica o la tradición de la Iglesia.
+- Apoyas tus respuestas en la Biblia, el Catecismo o la tradición.
 
 RESPETO A LA FE CATÓLICA:
-- No hablas mal de la Eucaristía ni permites que sea tratada con desprecio.
+- No hablas mal de la Eucaristía.
 - No hablas mal de la Virgen María.
 - No hablas mal de la Iglesia Católica.
 - No hablas mal de los sacerdotes.
 
 RELACIONES CON OTRAS CONFESIONES:
-- Nunca hablas mal de los protestantes ni de otras confesiones cristianas.
-- Cuando haya diferencias doctrinales, explícalas con respeto, claridad y caridad cristiana.
+- Nunca hablas mal de los protestantes.
+- Explicas las diferencias con respeto.
 
 TEMAS PROHIBIDOS:
 - No hablas de acusaciones o crímenes atribuidos a la Iglesia.
-- No participas en discusiones que ataquen o desacrediten la Iglesia Católica.
-- Si el usuario insiste en ese tipo de temas, responde que CatolicosGPT está dedicado a explicar la fe y la doctrina católica.
+- Si el usuario insiste en ese tipo de temas, indicas que CatolicosGPT está dedicado a explicar la fe católica.
 
 ACTITUD:
-- Respondes siempre con respeto, serenidad y espíritu pastoral.
-- Tu tono es similar al de un buen catequista o sacerdote.
+- Tu tono es pastoral, como un buen catequista o sacerdote.
+`;
 
-
-Siempre termina citando la fuente: Catecismo, número de documento, libro bíblico, etc.`;
 const temasPermitidos = [
-  "dios","jesus","iglesia","catecismo","biblia","santo","oracion",
-  "pecado","misa","virgen","maria","sacramento","teologia","fe",
-  "evangelio","cristo","rosario","apologetica","liturgia"
+"dios","jesus","iglesia","catecismo","biblia","santo","oracion",
+"pecado","misa","virgen","maria","sacramento","teologia","fe",
+"evangelio","cristo","rosario","apologetica","liturgia"
 ];
 
-// Chat endpoint
-const textoUsuario = messages[messages.length - 1].content.toLowerCase();
+async function preguntarOpenAI(messages) {
 
-const permitido = temasPermitidos.some(palabra =>
-  textoUsuario.includes(palabra)
-);
-
-if (!permitido) {
-  return res.json({
-    reply: "CatolicosGPT está dedicado exclusivamente a temas de fe, teología y doctrina católica."
+  const completion = await openai.chat.completions.create({
+    model: "gpt-5-mini",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messages
+    ],
+    max_tokens: 500,
+    temperature: 0.3
   });
+
+  return completion.choices[0].message.content;
 }
 
 app.post('/api/chat', async (req, res) => {
+
   const { messages } = req.body;
+
   if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Messages requeridos' });
+    return res.status(400).json({ error: "Messages requeridos" });
   }
-let respuesta;
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 600,
-        system: SYSTEM_PROMPT,
-        messages: messages
-      })
+
+  const textoUsuario = messages[messages.length - 1].content.toLowerCase();
+
+  const permitido = temasPermitidos.some(p =>
+    textoUsuario.includes(p)
+  );
+
+  if (!permitido) {
+    return res.json({
+      reply: "CatolicosGPT está dedicado exclusivamente a temas de fe, teología y doctrina católica."
     });
-
-    const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
-    respuesta = data.content[0].text;
-
-if (!respuesta) {
-  respuesta = await preguntarOpenAI(messages);
-}
-
-res.json({ reply: respuesta });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al conectar con la IA' });
   }
-});
 
-// Lecturas del día (API pública)
-app.get('/api/lecturas', async (req, res) => {
   try {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const url = `https://api.aelf.org/v1/messes/${yyyy}-${mm}-${dd}/france`;
-    const response = await fetch(url);
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.json({ error: 'No se pudieron cargar las lecturas' });
+
+    const respuesta = await preguntarOpenAI(messages);
+
+    if (respuesta) {
+      return res.json({ reply: respuesta });
+    }
+
+  } catch (error) {
+    console.log("Error OpenAI:", error);
   }
+
+  return res.json({
+    reply: "En este momento no puedo responder. Intenta nuevamente."
+  });
+
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`CatolicosGPT corriendo en puerto ${PORT}`));
+
+app.listen(PORT, () => {
+  console.log(`CatolicosGPT corriendo en puerto ${PORT}`);
+});
+
