@@ -1,676 +1,364 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CatolicosGPT — Asistente Teológico Católico</title>
-  <meta name="description" content="Tu asistente de fe católica con IA. Teología, oraciones, santos, apariciones marianas y más.">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CatolicosGPT — Asistente Teológico Católico</title>
+
+<meta name="description" content="Tu asistente de fe católica con IA. Teología, oraciones, santos, apariciones marianas y más.">
 <meta name="robots" content="index, follow">
 <meta name="author" content="CatolicosGPT">
-<meta name="keywords" content="IA católica, catecismo, teología católica, inteligencia artificial católica, asistente católico, doctrina católica">
-<meta property="og:title" content="CatolicosGPT – IA Católica">
-<meta property="og:description" content="Asistente católico con inteligencia artificial. Catecismo, teología, santos y Biblia.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://catolicosgpt.com">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg:#FAF7F0; --bg2:#F2EAD8; --bg3:#E8DCC4; --bg4:#DDD0A8;
-      --brown:#5C3D1E; --brown2:#7A5230; --brown3:#9A6B40;
-      --ocre:#C9923A; --ocre2:#E8A84C; --ocre-bg:#FBF0E0;
-      --red:#8B1A1A; --green:#1E6B3A;
-      --border:#D4C098; --border2:#C4AA72;
-      --ink:#18100A; --ink2:#3A2810; --ink3:#7A6038; --ink4:#A88858;
-      --shadow:rgba(92,61,30,.12);
-      --paypal:#003087;
-    }
-    html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); overflow: hidden; }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    .shell { display: flex; height: 100vh; position: relative; overflow: hidden; }
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Lora&family=Inter&display=swap" rel="stylesheet">
 
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.2); z-index: 99; display: none; backdrop-filter: blur(2px); }
-    .overlay.show { display: block; }
+<style>
 
-    /* SIDEBAR */
-    .sb {
-      position: fixed; left: 0; top: 0; bottom: 0; width: 268px;
-      background: var(--bg2); border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      transform: translateX(-100%);
-      transition: transform .28s cubic-bezier(.4,0,.2,1);
-      z-index: 100; box-shadow: 4px 0 24px rgba(0,0,0,.1);
-    }
-    .sb.open { transform: translateX(0); }
-    .sb-head {
-      padding: 14px 14px 12px; border-bottom: 1px solid var(--border);
-      background: var(--bg3); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-    }
-    .sb-logo-wrap { display: flex; align-items: center; gap: 9px; }
-    .sb-logo-name { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--brown); }
-    .sb-logo-name span { color: var(--ocre); }
-    .sb-close { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border2); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink4); font-size: 16px; transition: background .12s; }
-    .sb-close:hover { background: var(--bg4); }
-    .sb-new { margin: 10px 10px 6px; padding: 9px 12px; background: var(--brown); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; width: calc(100% - 20px); transition: background .13s; }
-    .sb-new:hover { background: var(--brown2); }
-    .sb-new span { font-family: 'Lora', serif; font-size: 13px; color: #fff; font-weight: 500; }
-    .sb-body { flex: 1; overflow-y: auto; padding: 4px 0 8px; }
-    .sb-body::-webkit-scrollbar { width: 4px; }
-    .sb-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-    .sb-group { padding: 12px 14px 4px; font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; color: var(--ink4); text-transform: uppercase; letter-spacing: .1em; }
-    .sb-item { display: flex; align-items: center; gap: 9px; padding: 7.5px 14px; cursor: pointer; border-left: 3px solid transparent; transition: all .12s; }
-    .sb-item:hover { background: rgba(92,61,30,.05); }
-    .sb-item.on { background: rgba(201,146,58,.1); border-left-color: var(--ocre); }
-    .sb-ico { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
-    .sb-lbl { font-family: 'Lora', serif; font-size: 13px; color: var(--ink3); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sb-item.on .sb-lbl { color: var(--brown); font-weight: 500; }
-    .sb-time { font-family: 'Inter', sans-serif; font-size: 10px; color: var(--ink4); flex-shrink: 0; }
-    .sb-divider { border: none; border-top: 1px solid var(--border); margin: 5px 12px; }
+body{
+font-family:Inter;
+margin:0;
+background:#FAF7F0;
+}
 
-    /* DONAR BUTTON en sidebar */
-    .sb-donate {
-      margin: 8px 10px 12px;
-      padding: 9px 12px;
-      background: var(--paypal); border: none; border-radius: 8px;
-      cursor: pointer; display: flex; align-items: center; gap: 8px;
-      width: calc(100% - 20px); transition: background .13s; text-decoration: none;
-    }
-    .sb-donate:hover { background: #00256B; }
-    .sb-donate-ico { font-size: 15px; }
-    .sb-donate-text { display: flex; flex-direction: column; }
-    .sb-donate-title { font-family: 'Lora', serif; font-size: 13px; color: #fff; font-weight: 500; }
-    .sb-donate-sub { font-family: 'Inter', sans-serif; font-size: 9.5px; color: rgba(255,255,255,.65); margin-top: 1px; }
+.shell{
+display:flex;
+height:100vh;
+}
 
-    /* MAIN */
-    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    .topbar { height: 54px; padding: 0 16px; border-bottom: 1px solid var(--border); background: var(--bg); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-    .tb-left { display: flex; align-items: center; gap: 12px; }
-    .menu-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: transparent; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: background .12s; }
-    .menu-btn:hover { background: var(--bg3); }
-    .menu-btn span { display: block; width: 15px; height: 1.5px; background: var(--ink3); border-radius: 2px; }
-    .tb-brand { display: flex; align-items: center; gap: 9px; }
-    .tb-logo { width: 30px; height: 30px; }
-    .tb-name { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: var(--brown); }
-    .tb-name em { color: var(--ocre); font-style: normal; }
-    .tb-right { display: flex; align-items: center; gap: 8px; }
+.sb{
+width:260px;
+background:#F2EAD8;
+padding:10px;
+}
 
-    /* Donar botón en topbar (visible siempre) */
-    .donate-btn {
-      display: flex; align-items: center; gap: 6px;
-      padding: 6px 13px; background: var(--paypal); border: none; border-radius: 20px;
-      cursor: pointer; text-decoration: none; transition: background .13s;
-    }
-    .donate-btn:hover { background: #00256B; }
-    .donate-btn span { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #fff; }
+.sb-item{
+display:flex;
+gap:10px;
+padding:10px;
+cursor:pointer;
+}
 
-    .lang-sw { display: flex; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; overflow: hidden; }
-    .lang-sw button { padding: 5px 12px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; border: none; background: transparent; color: var(--ink4); cursor: pointer; transition: all .12s; }
-    .lang-sw button.on { background: var(--brown); color: #fff; }
+.sb-item:hover{
+background:#E8DCC4;
+}
 
-    /* CONTENT */
-    .content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-    .content::-webkit-scrollbar { width: 4px; }
-    .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.main{
+flex:1;
+display:flex;
+flex-direction:column;
+}
 
-    /* WELCOME */
-    .welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; animation: fadeIn .4s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .w-logo { width: 72px; height: 72px; opacity: .9; }
-    .w-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 500; color: var(--brown); text-align: center; line-height: 1.4; }
-    .w-title em { color: var(--ocre); font-style: italic; }
+.chat-inner{
+padding:20px;
+}
 
-    /* CHAT */
-    .chat-area { flex: 1; overflow-y: auto; padding: 20px 0; }
-    .chat-area::-webkit-scrollbar { width: 4px; }
-    .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-    .chat-inner { max-width: 720px; margin: 0 auto; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
+.msg{
+margin-bottom:16px;
+}
 
-    .msg { display: flex; gap: 10px; align-items: flex-start; animation: msgIn .25s ease; }
-    @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-    .msg.u { flex-direction: row-reverse; }
-    .av { width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
-    .av.bot { background: var(--brown); border-color: var(--brown2); }
-    .av.usr { background: var(--bg3); color: var(--ink3); font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; }
-    .bubble { max-width: 82%; padding: 13px 17px; font-family: 'Lora', serif; font-size: 14.5px; line-height: 1.85; border-radius: 14px; }
-    .bubble.bot { background: #fff; border: 1px solid var(--border); color: var(--ink); border-radius: 3px 14px 14px 14px; box-shadow: 0 2px 8px var(--shadow); }
-    .bubble.usr { background: var(--brown); color: #FAF0E0; border-radius: 14px 3px 14px 14px; }
-    .bubble strong { color: var(--brown2); }
-    .bubble.usr strong { color: var(--ocre2); }
-    .bubble em { color: var(--ink4); font-style: italic; }
+.bubble{
+background:white;
+padding:14px;
+border-radius:8px;
+}
 
-    .src-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-    .src { font-family: 'Inter', sans-serif; font-size: 10px; padding: 2px 9px; background: var(--ocre-bg); color: var(--brown2); border: 1px solid var(--border2); border-radius: 5px; font-weight: 500; }
+.bubble.usr{
+background:#5C3D1E;
+color:white;
+}
 
-    .export-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-    .exp-btn { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; padding: 4px 11px; border-radius: 6px; border: none; cursor: pointer; transition: all .12s; }
-    .exp-btn.pdf { background: var(--red); color: #fff; }
-    .exp-btn.pdf:hover { background: #6B1010; }
-    .exp-btn.word { background: #1E50A0; color: #fff; }
-    .exp-btn.word:hover { background: #163C7A; }
-    .exp-btn.ppt { background: var(--brown); color: #fff; }
-    .exp-btn.ppt:hover { background: var(--brown2); }
+.input-area{
+padding:15px;
+border-top:1px solid #ddd;
+}
 
-    .typing { display: flex; align-items: center; gap: 5px; padding: 14px 17px; }
-    .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--ink4); animation: bounce .9s infinite ease-in-out; }
-    .typing span:nth-child(2) { animation-delay: .15s; }
-    .typing span:nth-child(3) { animation-delay: .3s; }
-    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+textarea{
+width:100%;
+padding:10px;
+}
 
-    /* MODAL DONAR */
-    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 200; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-    .modal-bg.show { display: flex; }
-    .modal { background: #fff; border-radius: 16px; padding: 32px 28px; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,.18); animation: modalIn .25s ease; }
-    @keyframes modalIn { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: scale(1); } }
-    .modal-cross { width: 56px; height: 56px; margin: 0 auto 14px; }
-    .modal-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--brown); margin-bottom: 8px; }
-    .modal-sub { font-family: 'Lora', serif; font-size: 14px; color: var(--ink4); font-style: italic; line-height: 1.7; margin-bottom: 20px; }
-    .modal-amounts { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
-    .amount-btn { padding: 8px 18px; border: 2px solid var(--border2); border-radius: 20px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--brown); background: var(--ocre-bg); cursor: pointer; transition: all .13s; }
-    .amount-btn:hover, .amount-btn.on { background: var(--brown); color: #fff; border-color: var(--brown); }
-    .paypal-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 13px; background: var(--paypal); border: none; border-radius: 10px; cursor: pointer; text-decoration: none; transition: background .13s; margin-bottom: 10px; }
-    .paypal-btn:hover { background: #00256B; }
-    .paypal-btn span { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; color: #fff; }
-    .modal-close { font-family: 'Lora', serif; font-size: 13px; color: var(--ink4); cursor: pointer; font-style: italic; background: none; border: none; }
-    .modal-close:hover { color: var(--brown); }
+</style>
 
-    /* INPUT */
-    .input-area { padding: 14px 20px 18px; background: var(--bg); border-top: 1px solid var(--border); flex-shrink: 0; }
-    .input-wrap { max-width: 720px; margin: 0 auto; position: relative; }
-    .cin { width: 100%; padding: 14px 54px 14px 18px; background: #fff; border: 1px solid var(--border2); border-radius: 26px; font-family: 'Lora', serif; font-size: 14.5px; color: var(--ink); outline: none; resize: none; line-height: 1.5; box-shadow: 0 2px 10px var(--shadow); transition: border-color .15s; max-height: 140px; overflow-y: auto; }
-    .cin::placeholder { color: var(--ink4); font-style: italic; }
-    .cin:focus { border-color: var(--brown); }
-    .send-btn { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; background: var(--brown); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .13s; }
-    .send-btn:hover { background: var(--brown2); }
-    .send-btn svg { stroke: #fff; fill: none; width: 15px; height: 15px; }
-    .send-btn:disabled { background: var(--bg4); cursor: not-allowed; }
-    .input-hint { text-align: center; font-family: 'Inter', sans-serif; font-size: 10px; color: var(--ink4); margin-top: 8px; }
-
-    /* RESPONSIVE */
-    @media (max-width: 600px) {
-      .tb-name { font-size: 15px; }
-      .donate-btn span { display: none; }
-      .donate-btn { padding: 6px 10px; }
-      .bubble { max-width: 92%; font-size: 14px; }
-    }
-  </style>
 </head>
+
 <body>
 
 <div class="shell">
-  <div class="overlay" id="overlay" onclick="closeSb()"></div>
 
-  <!-- SIDEBAR -->
-  <nav class="sb" id="sb">
-    <div class="sb-head">
-      <div class="sb-logo-wrap">
-        <svg width="28" height="28" viewBox="0 0 80 80" fill="none">
-          <circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/>
-          <line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
-          <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
-          <path d="M46 24 Q57 28 53 39 Q49 33 43 35" stroke="#C9923A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-          <circle cx="53" cy="24" r="2.2" fill="#C9923A"/>
-          <circle cx="43" cy="35" r="2.2" fill="#C9923A"/>
-          <path d="M16 56 Q28 49 40 53 Q52 49 64 56" stroke="#7A5230" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-        </svg>
-        <div class="sb-logo-name">Católicos<span>GPT</span></div>
-      </div>
-      <button class="sb-close" onclick="closeSb()">✕</button>
-    </div>
+<nav class="sb">
 
-    <button class="sb-new" onclick="newChat()">
-      <svg width="13" height="13" viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      <span>Nueva consulta</span>
-    </button>
-
-    <div class="sb-body">
-      <div class="sb-group">Recientes</div>
-      <div id="history-list"></div>
-
-      <div class="sb-divider"></div>
-      <div class="sb-group">Herramientas</div>
-      <div class="sb-item" onclick="loadLecturas();closeSb()">
-  <div class="sb-ico">📖</div>
-  <span class="sb-lbl">Lecturas del día</span>
-</div>
-><div class="sb-ico">📖</div><span class="sb-lbl">Lecturas del día</span></div>
-      <div class="sb-item" onclick="sendChip('Guíame en la Liturgia de las Horas de hoy — Laudes');closeSb()"><div class="sb-ico">🕯</div><span class="sb-lbl">Liturgia de las Horas</span></div>
-      <div class="sb-item" onclick="sendChip('Guíame en el Santo Rosario de hoy');closeSb()"><div class="sb-ico">📿</div><span class="sb-lbl">Santo Rosario</span></div>
-      <div class="sb-item" onclick="sendChip('Necesito material de catequesis para niños. ¿Para qué edad y qué tema?');closeSb()"><div class="sb-ico">✏️</div><span class="sb-lbl">Catequesis infantil</span></div>
-      <div class="sb-item" onclick="sendChip('Sugiéreme canciones católicas para la misa de hoy');closeSb()"><div class="sb-ico">🎵</div><span class="sb-lbl">Cancionero católico</span></div>
-      <div class="sb-item" onclick="sendChip('¿Quién es el santo del día de hoy?');closeSb()"><div class="sb-ico">☩</div><span class="sb-lbl">Santos y Beatos</span></div>
-      <div class="sb-item" onclick="sendChip('Háblame de las apariciones marianas aprobadas por la Iglesia');closeSb()"><div class="sb-ico">✨</div><span class="sb-lbl">Apariciones marianas</span></div>
-      <div class="sb-item" onclick="sendChip('Quiero consultar los documentos del Magisterio — ¿cuál te interesa?');closeSb()"><div class="sb-ico">📜</div><span class="sb-lbl">Documentos pontificios</span></div>
-      <div class="sb-item" onclick="window.open('https://www.vatican.va','_blank');closeSb()"><div class="sb-ico">🌐</div><span class="sb-lbl">Vatican.va oficial</span></div>
-
-      <div class="sb-divider"></div>
-    </div>
-
-    <!-- DONAR en sidebar -->
-    <a class="sb-donate" href="#" onclick="openDonate();return false;">
-      <span class="sb-donate-ico">🤲</span>
-      <div class="sb-donate-text">
-        <span class="sb-donate-title">Apoya CatolicosGPT</span>
-        <span class="sb-donate-sub">Donación vía PayPal</span>
-      </div>
-    </a>
-  </nav>
-
-  <!-- MAIN -->
-  <div class="main">
-    <div class="topbar">
-      <div class="tb-left">
-        <button class="menu-btn" onclick="toggleSb()" aria-label="Menú">
-          <span></span><span></span><span></span>
-        </button>
-        <div class="tb-brand">
-          <svg class="tb-logo" viewBox="0 0 80 80" fill="none">
-            <circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/>
-            <line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
-            <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
-            <path d="M46 24 Q57 28 53 39 Q49 33 43 35" stroke="#C9923A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-            <circle cx="53" cy="24" r="2.2" fill="#C9923A"/>
-            <circle cx="43" cy="35" r="2.2" fill="#C9923A"/>
-            <path d="M16 56 Q28 49 40 53 Q52 49 64 56" stroke="#7A5230" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-          </svg>
-          <div class="tb-name">Católicos<em>GPT</em></div>
-        </div>
-      </div>
-      <div class="tb-right">
-        <a class="donate-btn" href="#" onclick="openDonate();return false;" title="Apoya el proyecto">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span>Donar</span>
-        </a>
-        <div class="lang-sw">
-          <button class="on" onclick="setLang('es',this)">ES</button>
-          <button onclick="setLang('en',this)">EN</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="content" id="content">
-      <!-- WELCOME -->
-      <div class="welcome" id="welcome">
-        <svg class="w-logo" viewBox="0 0 80 80" fill="none">
-          <circle cx="40" cy="30" r="22" stroke="#7A5230" stroke-width="2"/>
-          <line x1="40" y1="8" x2="40" y2="52" stroke="#C9923A" stroke-width="3" stroke-linecap="round"/>
-          <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="3" stroke-linecap="round"/>
-          <path d="M46 24 Q58 28 54 40 Q50 34 44 36" stroke="#C9923A" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-          <circle cx="54" cy="24" r="2.4" fill="#C9923A"/>
-          <circle cx="44" cy="36" r="2.4" fill="#C9923A"/>
-          <path d="M16 56 Q28 48 40 52 Q52 48 64 56" stroke="#7A5230" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-          <path d="M13 59 Q27 51 40 55 Q53 51 67 59" stroke="#7A5230" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".4"/>
-        </svg>
-        <div class="w-title" id="w-title">¿En qué puedo ayudarte, <em>hermano</em>?</div>
-      </div>
-
-      <!-- CHAT -->
-      <div class="chat-area" id="chat-area" style="display:none">
-        <div class="chat-inner" id="chat-inner"></div>
-      </div>
-    </div>
-
-    <div class="input-area">
-      <div class="input-wrap">
-        <textarea class="cin" id="cin" rows="1"
-          placeholder="Pregunta sobre fe, oración, santos, moral…"
-          onkeydown="onKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" id="send-btn" onclick="send()">
-          <svg viewBox="0 0 24 24" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
-      </div>
-      <div class="input-hint" id="input-hint">CatolicosGPT · Respuestas basadas en el Magisterio y Vatican.va</div>
-    </div>
-  </div>
+<div class="sb-item" onclick="loadLecturas()">
+📖 Lecturas del día
 </div>
 
-<!-- MODAL DONAR -->
-<div class="modal-bg" id="donate-modal">
-  <div class="modal">
-    <svg class="modal-cross" viewBox="0 0 80 80" fill="none">
-      <circle cx="40" cy="30" r="22" stroke="#7A5230" stroke-width="2"/>
-      <line x1="40" y1="8" x2="40" y2="52" stroke="#C9923A" stroke-width="3" stroke-linecap="round"/>
-      <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="3" stroke-linecap="round"/>
-    </svg>
-    <div class="modal-title">Apoya CatolicosGPT</div>
-    <div class="modal-sub">
-      Este proyecto es completamente gratuito y está sostenido por la comunidad católica.<br>
-      Tu donación ayuda a pagar los servidores y la IA para seguir creciendo. 🙏
-    </div>
-    <div class="modal-amounts">
-      <button class="amount-btn" onclick="selectAmount(this,'3')">$3 USD</button>
-      <button class="amount-btn on" onclick="selectAmount(this,'5')">$5 USD</button>
-      <button class="amount-btn" onclick="selectAmount(this,'10')">$10 USD</button>
-      <button class="amount-btn" onclick="selectAmount(this,'25')">$25 USD</button>
-    </div>
-    <a class="paypal-btn" id="paypal-link" href="https://www.paypal.com/paypalme/schoolmarketing" target="_blank">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 11.5C7 8.46243 9.46243 6 12.5 6H16C18.2091 6 20 7.79086 20 10C20 12.2091 18.2091 14 16 14H13L12 19H9L10 14H8C7.44772 14 7 13.5523 7 13V11.5Z" fill="white"/><path d="M4 14C4 11.7909 5.79086 10 8 10H9.5L8.5 15H7C5.89543 15 5 14.1046 5 13V14Z" fill="rgba(255,255,255,0.5)"/></svg>
-      <span>Donar con PayPal</span>
-    </a>
-    <button class="modal-close" onclick="closeDonate()">Quizás después</button>
-  </div>
+<div class="sb-item" onclick="loadLaudes()">
+🕯 Liturgia de las Horas
+</div>
+
+<div class="sb-item" onclick="loadRosario()">
+📿 Santo Rosario
+</div>
+
+<div class="sb-item" onclick="sendChip('¿Quién es el santo del día de hoy?')">
+☩ Santos
+</div>
+
+<div class="sb-item" onclick="window.open('https://www.vatican.va')">
+🌐 Vatican.va
+</div>
+
+<hr>
+
+<div class="sb-item" onclick="openDonate()">
+🤲 Apoya CatolicosGPT
+</div>
+
+</nav>
+
+<div class="main">
+
+<div class="chat-inner" id="chat"></div>
+
+<div class="input-area">
+
+<textarea id="input"></textarea>
+
+<button onclick="send()">Enviar</button>
+
+</div>
+
+</div>
+
 </div>
 
 <script>
 
-let sbOpen = false;
-let isLoading = false;
-let currentLang = 'es';
-let selectedAmount = '5';
-let chatHistory = [];
-let conversations = JSON.parse(localStorage.getItem('cgpt_convs') || '[]');
+const PAYPAL_URL="https://www.paypal.com/paypalme/schoolmarketing"
 
-const PAYPAL_URL = "https://www.paypal.com/paypalme/schoolmarketing";
+let chat=document.getElementById("chat")
 
-const i18n = {
-  es: { placeholder: 'Pregunta sobre fe, oración, santos, moral…', hint: 'CatolicosGPT · Respuestas basadas en el Magisterio y Vatican.va', welcome: '¿En qué puedo ayudarte, <em>hermano</em>?', you: 'TÚ' },
-  en: { placeholder: 'Ask about faith, prayer, saints, morality…', hint: 'CatolicosGPT · Answers based on the Magisterium and Vatican.va', welcome: 'How can I help you, <em>brother</em>?', you: 'YOU' }
-};
+function renderBubble(text,user=false){
 
-function toggleSb(){ sbOpen ? closeSb() : openSb() }
+let div=document.createElement("div")
+div.className="msg"
 
-function openSb(){
-  document.getElementById('sb').classList.add('open')
-  document.getElementById('overlay').classList.add('show')
-  sbOpen=true
-  renderHistory()
+let bubble=document.createElement("div")
+bubble.className="bubble"
+
+if(user) bubble.className+=" usr"
+
+bubble.innerHTML=text.replace(/\n/g,"<br>")
+
+div.appendChild(bubble)
+
+chat.appendChild(div)
+
+chat.scrollTop=chat.scrollHeight
+
 }
 
-function closeSb(){
-  document.getElementById('sb').classList.remove('open')
-  document.getElementById('overlay').classList.remove('show')
-  sbOpen=false
-}
+function send(){
 
-function renderHistory(){
-  const el=document.getElementById('history-list')
-  if(!conversations.length){
-    el.innerHTML='<div style="padding:6px 14px;font-family:Lora,serif;font-size:12px;color:var(--ink4);font-style:italic">Sin conversaciones aún</div>'
-    return
-  }
+let input=document.getElementById("input")
 
-  el.innerHTML=conversations.slice(-8).reverse().map((c,i)=>
-  `<div class="sb-item" onclick="loadConv(${conversations.length-1-i});closeSb()">
-  <div class="sb-ico">💬</div>
-  <span class="sb-lbl">${c.title}</span>
-  <span class="sb-time">${c.time}</span>
-  </div>`).join('')
-}
+let val=input.value.trim()
 
-function saveConversation(title){
-  const now=new Date()
-  const time=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')
-  conversations.push({title:title.slice(0,38),time,messages:[...chatHistory]})
-  if(conversations.length>20)conversations.shift()
-  localStorage.setItem('cgpt_convs',JSON.stringify(conversations))
-}
+if(!val)return
 
-function loadConv(i){
-  const c=conversations[i]
-  chatHistory=[...c.messages]
+renderBubble(val,true)
 
-  document.getElementById('welcome').style.display='none'
-  document.getElementById('chat-area').style.display='block'
+input.value=""
 
-  const wrap=document.getElementById('chat-inner')
-  wrap.innerHTML=''
+fetch("/api/chat",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({messages:[{role:"user",content:val}]})
+})
+.then(r=>r.json())
+.then(d=>{
 
-  c.messages.forEach(m=>renderBubble(m.content,m.role==='user',false))
-}
+renderBubble(d.reply)
 
-function setLang(l,btn){
-  currentLang=l
-  document.querySelectorAll('.lang-sw button').forEach(b=>b.classList.remove('on'))
-  btn.classList.add('on')
-  document.getElementById('cin').placeholder=i18n[l].placeholder
-  document.getElementById('input-hint').textContent=i18n[l].hint
-  document.getElementById('w-title').innerHTML=i18n[l].welcome
-}
+})
 
-function renderBubble(text,isUser,withExport=false){
-
-  document.getElementById('welcome').style.display='none'
-  document.getElementById('chat-area').style.display='block'
-
-  const wrap=document.getElementById('chat-inner')
-
-  const d=document.createElement('div')
-  d.className='msg'+(isUser?' u':'')
-
-  const av=document.createElement('div')
-  av.className='av '+(isUser?'usr':'bot')
-
-  av.innerHTML=isUser
-  ? i18n[currentLang].you
-  : '<svg width="14" height="14" viewBox="0 0 80 80"><line x1="40" y1="8" x2="40" y2="52" stroke="#E8A84C" stroke-width="5"/><line x1="27" y1="20" x2="53" y2="20" stroke="#E8A84C" stroke-width="5"/></svg>'
-
-  const b=document.createElement('div')
-  b.className='bubble '+(isUser?'usr':'bot')
-
-  const formatted=text
-  .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-  .replace(/\*(.*?)\*/g,'<em>$1</em>')
-  .replace(/\n/g,'<br>')
-
-  b.innerHTML=formatted
-
-  if(!isUser){
-    b.innerHTML+='<div class="src-row"><span class="src">Magisterio</span><span class="src">Vatican.va</span></div>'
-  }
-
-  d.appendChild(av)
-  d.appendChild(b)
-
-  wrap.appendChild(d)
-  wrap.scrollTop=wrap.scrollHeight
-}
-
-function addTyping(){
-  const wrap=document.getElementById('chat-inner')
-
-  const d=document.createElement('div')
-  d.className='msg'
-  d.id='typing-indicator'
-
-  const av=document.createElement('div')
-  av.className='av bot'
-
-  const b=document.createElement('div')
-  b.className='bubble bot typing'
-  b.innerHTML='<span></span><span></span><span></span>'
-
-  d.appendChild(av)
-  d.appendChild(b)
-  wrap.appendChild(d)
-
-  wrap.scrollTop=wrap.scrollHeight
-}
-
-function removeTyping(){
-  const t=document.getElementById('typing-indicator')
-  if(t)t.remove()
-}
-
-async function send(){
-
-  const cin=document.getElementById('cin')
-  const val=cin.value.trim()
-
-  if(!val||isLoading)return
-
-  isLoading=true
-  document.getElementById('send-btn').disabled=true
-
-  chatHistory.push({role:'user',content:val})
-  renderBubble(val,true)
-
-  cin.value=''
-  cin.style.height='auto'
-
-  addTyping()
-
-  try{
-
-    const res=await fetch('/api/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({messages:chatHistory})
-    })
-
-    const data=await res.json()
-
-    removeTyping()
-
-    const reply=data.reply||'Error al responder.'
-
-    chatHistory.push({role:'assistant',content:reply})
-
-    renderBubble(reply,false)
-
-    if(chatHistory.length===2)saveConversation(val)
-
-  }catch(e){
-
-    removeTyping()
-    renderBubble('Error de conexión.',false)
-
-  }
-
-  isLoading=false
-  document.getElementById('send-btn').disabled=false
 }
 
 function sendChip(text){
 
-  const input=document.getElementById('cin')
+renderBubble(text,true)
 
-  input.value=text
+fetch("/api/chat",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({messages:[{role:"user",content:text}]})
+})
+.then(r=>r.json())
+.then(d=>{
 
-  setTimeout(()=>{
-    send()
-  },150)
+renderBubble(d.reply)
+
+})
 
 }
 
-function onKey(e){
-  if(e.key==='Enter'&&!e.shiftKey){
-    e.preventDefault()
-    send()
-  }
+async function loadLecturas(){
+
+renderBubble("📖 Cargando lecturas del día...")
+
+try{
+
+const res=await fetch("/api/lecturas")
+
+const data=await res.json()
+
+const texto=`
+
+📖 **Lecturas del día**
+
+Primera lectura  
+${data.first_reading}
+
+Salmo  
+${data.psalm}
+
+Evangelio  
+${data.gospel}
+
+`
+
+renderBubble(texto)
+
+}catch(e){
+
+renderBubble("No se pudieron cargar las lecturas.")
+
 }
 
-function autoResize(el){
-  el.style.height='auto'
-  el.style.height=Math.min(el.scrollHeight,140)+'px'
 }
 
-function newChat(){
-  chatHistory=[]
-  document.getElementById('welcome').style.display='flex'
-  document.getElementById('chat-area').style.display='none'
-  document.getElementById('chat-inner').innerHTML=''
-  closeSb()
+function loadLaudes(){
+
+const texto=`
+
+🕯 **Laudes — Oración de la mañana**
+
+Señor, abre mis labios  
+y mi boca proclamará tu alabanza.
+
+---
+
+**Himno**
+
+Oh Dios, ven en mi ayuda  
+Señor date prisa en socorrerme
+
+---
+
+**Salmo**
+
+Alaben al Señor desde los cielos  
+alábenlo en las alturas
+
+---
+
+**Lectura breve**
+
+Bendito sea Dios Padre  
+que nos bendijo en Cristo
+
+---
+
+**Cántico de Zacarías**
+
+Bendito sea el Señor Dios de Israel  
+porque visitó y redimió a su pueblo
+
+---
+
+**Padre Nuestro**
+
+Padre nuestro que estás en el cielo...
+
+---
+
+**Oración**
+
+Señor Dios  
+dirige y santifica este día
+
+Amén
+
+`
+
+renderBubble(texto)
+
+}
+
+function loadRosario(){
+
+const texto=`
+
+📿 **Santo Rosario**
+
+Señal de la cruz
+
+En el nombre del Padre  
+del Hijo  
+y del Espíritu Santo
+
+---
+
+**Credo**
+
+Creo en Dios Padre Todopoderoso
+
+---
+
+**Padre Nuestro**
+
+Padre nuestro que estás en el cielo
+
+---
+
+**3 Avemarías**
+
+Dios te salve María
+
+---
+
+**Misterios del día**
+
+Lunes / Sábado → Gozosos  
+Martes / Viernes → Dolorosos  
+Miércoles / Domingo → Gloriosos  
+Jueves → Luminosos
+
+---
+
+**Salve**
+
+Dios te salve Reina y Madre
+
+Amén
+
+`
+
+renderBubble(texto)
+
 }
 
 function openDonate(){
-  document.getElementById('donate-modal').classList.add('show')
-}
 
-function closeDonate(){
-  document.getElementById('donate-modal').classList.remove('show')
-}
-
-function selectAmount(btn,amount){
-
-  selectedAmount=amount
-
-  document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('on'))
-
-  btn.classList.add('on')
-
-  const link=document.getElementById('paypal-link')
-
-  link.href=PAYPAL_URL
-}
-
-document.getElementById('paypal-link').href=PAYPAL_URL
-
-document.getElementById('donate-modal').addEventListener('click',function(e){
-  if(e.target===this)closeDonate()
-})
-
-  async function cargarLecturas(){
-
-  const today = new Date()
-
-  const yyyy = today.getFullYear()
-  const mm = String(today.getMonth()+1).padStart(2,'0')
-  const dd = String(today.getDate()).padStart(2,'0')
-
-  const url = `/api/lecturas?date=${yyyy}-${mm}-${dd}`
-
-  try{
-
-    const res = await fetch(url)
-    const data = await res.json()
-
-    const texto = `
-📖 **Lecturas del día**
-
-**Primera lectura:**  
-${data.first_reading}
-
-**Salmo:**  
-${data.psalm}
-
-**Evangelio:**  
-${data.gospel}
-`
-
-    renderBubble(texto,false)
-
-  }catch(e){
-
-    renderBubble("No pude cargar las lecturas del día.",false)
-
-  }
+window.open(PAYPAL_URL)
 
 }
-async function loadLecturas(){
-
-  try{
-
-    const res = await fetch('/api/lecturas')
-    const data = await res.json()
-
-    const texto = `
-# 📖 Lecturas del día
-
-**Primera lectura**
-${data.first_reading}
-
-**Salmo**
-${data.psalm}
-
-**Evangelio**
-${data.gospel}
-`
-
-    renderBubble(texto,false)
-
-  }catch(e){
-
-    renderBubble("No se pudieron cargar las lecturas del día.",false)
-
-  }
-
-}
-
 
 </script>
 
 </body>
 </html>
+
