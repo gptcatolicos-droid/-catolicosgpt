@@ -91,15 +91,18 @@ padding:10px;
 
 <nav class="sb">
 
-<div class="sb-item" onclick="loadLecturas()">
+<div class="sb-item" onclick="loadLecturas();closeSb()"
+>
 📖 Lecturas del día
 </div>
 
-<div class="sb-item" onclick="loadLaudes()">
+<div class="sb-item" onclick="loadLaudes();closeSb()"
+>
 🕯 Liturgia de las Horas
 </div>
 
-<div class="sb-item" onclick="loadRosario()">
+<div class="sb-item" onclick="loadRosario();closeSb()"
+>
 📿 Santo Rosario
 </div>
 
@@ -137,227 +140,327 @@ padding:10px;
 
 <script>
 
-const PAYPAL_URL="https://www.paypal.com/paypalme/schoolmarketing"
+// ============================
+// ESTADO
+// ============================
 
-let chat=document.getElementById("chat")
+let isLoading = false
+let chatHistory = []
 
-function renderBubble(text,user=false){
 
-let div=document.createElement("div")
-div.className="msg"
+// ============================
+// RENDER BURBUJAS CHAT
+// ============================
 
-let bubble=document.createElement("div")
-bubble.className="bubble"
+function renderBubble(text,isUser=false){
 
-if(user) bubble.className+=" usr"
+const chat=document.getElementById("chat-inner")
+document.getElementById("welcome").style.display="none"
+document.getElementById("chat-area").style.display="block"
 
-bubble.innerHTML=text.replace(/\n/g,"<br>")
+const wrap=document.createElement("div")
+wrap.className="msg"+(isUser?" u":"")
 
-div.appendChild(bubble)
+const avatar=document.createElement("div")
+avatar.className="av "+(isUser?"usr":"bot")
+avatar.innerHTML=isUser?"TÚ":"✝"
 
-chat.appendChild(div)
+const bubble=document.createElement("div")
+bubble.className="bubble "+(isUser?"usr":"bot")
+
+const formatted=text
+.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
+.replace(/\*(.*?)\*/g,"<em>$1</em>")
+.replace(/\n/g,"<br>")
+
+bubble.innerHTML=formatted
+
+wrap.appendChild(avatar)
+wrap.appendChild(bubble)
+
+chat.appendChild(wrap)
 
 chat.scrollTop=chat.scrollHeight
 
 }
 
-function send(){
 
-let input=document.getElementById("input")
 
-let val=input.value.trim()
+// ============================
+// INDICADOR ESCRIBIENDO
+// ============================
 
-if(!val)return
+function typing(){
 
-renderBubble(val,true)
+const chat=document.getElementById("chat-inner")
 
-input.value=""
+const wrap=document.createElement("div")
+wrap.className="msg"
+wrap.id="typing"
 
-fetch("/api/chat",{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({messages:[{role:"user",content:val}]})
-})
-.then(r=>r.json())
-.then(d=>{
+wrap.innerHTML=`
+<div class="av bot">✝</div>
+<div class="bubble bot typing">
+<span></span><span></span><span></span>
+</div>
+`
 
-renderBubble(d.reply)
-
-})
+chat.appendChild(wrap)
+chat.scrollTop=chat.scrollHeight
 
 }
 
-function sendChip(text){
+function removeTyping(){
+
+const t=document.getElementById("typing")
+if(t)t.remove()
+
+}
+
+
+
+// ============================
+// CHAT IA
+// ============================
+
+async function send(){
+
+const input=document.getElementById("cin")
+const text=input.value.trim()
+
+if(!text||isLoading)return
+
+isLoading=true
 
 renderBubble(text,true)
 
-fetch("/api/chat",{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({messages:[{role:"user",content:text}]})
-})
-.then(r=>r.json())
-.then(d=>{
+chatHistory.push({role:"user",content:text})
 
-renderBubble(d.reply)
+input.value=""
 
-})
-
-}
-
-async function loadLecturas(){
-
-renderBubble("📖 Cargando lecturas del día...")
+typing()
 
 try{
 
-const res=await fetch("/api/lecturas")
+const r=await fetch("/api/chat",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({messages:chatHistory})
+})
 
-const data=await res.json()
+const data=await r.json()
+
+removeTyping()
+
+renderBubble(data.reply)
+
+chatHistory.push({role:"assistant",content:data.reply})
+
+}catch(e){
+
+removeTyping()
+renderBubble("Error al conectar con CatolicosGPT")
+
+}
+
+isLoading=false
+
+}
+
+
+
+// ============================
+// LECTURAS DEL DIA
+// ============================
+
+async function loadLecturas(){
+
+try{
+
+typing()
+
+const r=await fetch("/api/lecturas")
+
+const data=await r.json()
+
+removeTyping()
 
 const texto=`
 
-📖 **Lecturas del día**
+📖 **LECTURAS DEL DÍA**
 
-Primera lectura  
+**Primera lectura**
+
 ${data.first_reading}
 
-Salmo  
+**Salmo**
+
 ${data.psalm}
 
-Evangelio  
+**Evangelio**
+
 ${data.gospel}
 
 `
 
-renderBubble(texto)
+renderBubble(texto,false)
 
 }catch(e){
 
-renderBubble("No se pudieron cargar las lecturas.")
+removeTyping()
+
+renderBubble("No se pudieron cargar las lecturas del día.")
 
 }
 
 }
 
-function loadLaudes(){
+
+
+// ============================
+// LITURGIA DE LAS HORAS
+// ============================
+
+async function loadLaudes(){
+
+try{
+
+typing()
+
+const r=await fetch("/api/laudes")
+
+const data=await r.json()
+
+removeTyping()
 
 const texto=`
 
-🕯 **Laudes — Oración de la mañana**
+🕯 **LITURGIA DE LAS HORAS – LAUDES**
 
-Señor, abre mis labios  
-y mi boca proclamará tu alabanza.
-
----
-
-**Himno**
-
-Oh Dios, ven en mi ayuda  
-Señor date prisa en socorrerme
-
----
-
-**Salmo**
-
-Alaben al Señor desde los cielos  
-alábenlo en las alturas
-
----
-
-**Lectura breve**
-
-Bendito sea Dios Padre  
-que nos bendijo en Cristo
-
----
-
-**Cántico de Zacarías**
-
-Bendito sea el Señor Dios de Israel  
-porque visitó y redimió a su pueblo
-
----
-
-**Padre Nuestro**
-
-Padre nuestro que estás en el cielo...
-
----
-
-**Oración**
-
-Señor Dios  
-dirige y santifica este día
-
-Amén
+${data.laudes}
 
 `
 
-renderBubble(texto)
+renderBubble(texto,false)
+
+}catch(e){
+
+removeTyping()
+
+renderBubble("No se pudo cargar la Liturgia de las Horas.")
 
 }
 
-function loadRosario(){
+}
 
-const texto=`
 
-📿 **Santo Rosario**
 
-Señal de la cruz
+// ============================
+// ROSARIO
+// ============================
 
-En el nombre del Padre  
-del Hijo  
-y del Espíritu Santo
+async function loadRosario(){
 
----
+try{
 
-**Credo**
+typing()
 
-Creo en Dios Padre Todopoderoso
+const r=await fetch("/api/rosario")
 
----
+const data=await r.json()
 
-**Padre Nuestro**
+removeTyping()
 
-Padre nuestro que estás en el cielo
+renderBubble(data.rosario,false)
 
----
+}catch(e){
 
-**3 Avemarías**
+removeTyping()
 
-Dios te salve María
-
----
-
-**Misterios del día**
-
-Lunes / Sábado → Gozosos  
-Martes / Viernes → Dolorosos  
-Miércoles / Domingo → Gloriosos  
-Jueves → Luminosos
-
----
-
-**Salve**
-
-Dios te salve Reina y Madre
-
-Amén
-
-`
-
-renderBubble(texto)
+renderBubble("No se pudo cargar el Rosario.")
 
 }
+
+}
+
+
+
+// ============================
+// INPUT ENTER
+// ============================
+
+function onKey(e){
+
+if(e.key==="Enter"&&!e.shiftKey){
+
+e.preventDefault()
+
+send()
+
+}
+
+}
+
+
+
+// ============================
+// NUEVO CHAT
+// ============================
+
+function newChat(){
+
+chatHistory=[]
+
+document.getElementById("chat-inner").innerHTML=""
+
+document.getElementById("welcome").style.display="flex"
+
+document.getElementById("chat-area").style.display="none"
+
+}
+
+
+
+// ============================
+// SIDEBAR
+// ============================
+
+function closeSb(){
+
+document.getElementById("sb").classList.remove("open")
+
+document.getElementById("overlay").classList.remove("show")
+
+}
+
+function toggleSb(){
+
+document.getElementById("sb").classList.toggle("open")
+
+document.getElementById("overlay").classList.toggle("show")
+
+}
+
+
+
+// ============================
+// DONACIONES
+// ============================
 
 function openDonate(){
 
-window.open(PAYPAL_URL)
+document.getElementById("donate-modal").classList.add("show")
+
+}
+
+function closeDonate(){
+
+document.getElementById("donate-modal").classList.remove("show")
 
 }
 
 </script>
+
 
 </body>
 </html>
