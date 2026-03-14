@@ -89,42 +89,44 @@ function setLang(l, btn) {
 // MARKDOWN PARSER
 // ══════════════════════════════
 function parseMarkdown(text) {
-  // ── PASO 1: Detectar y convertir tablas markdown ──
-  // Separar el texto en líneas para procesar tablas
-  const lines = text.split('\n');
-  const processedLines = [];
-  let i = 0;
+  // Normalizar saltos de línea
+  text = text.replace(/\\\\n/g, '\n').replace(/\\n/g, '\n');
 
+  // ── TABLAS: procesar línea por línea ──
+  const lines = text.split('\n');
+  const out = [];
+  let i = 0;
   while (i < lines.length) {
-    const line = lines[i];
-    // Detectar inicio de tabla: línea con pipes |
-    if (/^\|.+\|/.test(line.trim())) {
-      const tableLines = [];
-      while (i < lines.length && /^\|/.test(lines[i].trim())) {
-        tableLines.push(lines[i]);
+    const trimmed = lines[i].trim();
+    if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.includes('|', 1)) {
+      // Recolectar todas las líneas de la tabla
+      const tLines = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        tLines.push(lines[i].trim());
         i++;
       }
-      // Convertir a HTML
-      let tableHtml = '<div style="overflow-x:auto;margin:12px 0;width:100%"><table>';
-      let isFirst = true;
-      tableLines.forEach(tl => {
-        if (/^\|[-:|\s]+\|$/.test(tl.trim())) return; // separador
+      // Renderizar tabla
+      let tHtml = '<div style="overflow-x:auto;margin:14px 0;border-radius:8px;border:1px solid var(--border);box-shadow:0 1px 4px var(--shadow)"><table style="width:100%;border-collapse:collapse">';
+      let firstRow = true;
+      tLines.forEach(tl => {
+        // Saltar línea separadora |---|
+        if (/^\|[\s\-:]+[\|\-][\s\-:]+\|/.test(tl)) return;
         const cells = tl.split('|').map(c => c.trim()).filter(c => c !== '');
-        if (cells.length === 0) return;
-        const tag = isFirst ? 'th' : 'td';
-        tableHtml += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
-        isFirst = false;
+        if (!cells.length) return;
+        const tag = firstRow ? 'th' : 'td';
+        tHtml += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+        firstRow = false;
       });
-      tableHtml += '</table></div>';
-      processedLines.push(tableHtml);
+      tHtml += '</table></div>';
+      out.push(tHtml);
     } else {
-      processedLines.push(line);
+      out.push(lines[i]);
       i++;
     }
   }
-  text = processedLines.join('\n');
+  text = out.join('\n');
 
-  // ── PASO 2: Resto del markdown ──
+  // ── RESTO DEL MARKDOWN ──
   let html = text
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -138,9 +140,7 @@ function parseMarkdown(text) {
     .replace(/\n{2,}/g, '</p><p>')
     .replace(/\n/g, '<br>');
 
-  // Envolver listas
   html = html.replace(/(<li>.*?<\/li>(<br>)?)+/gs, m => `<ul>${m.replace(/<br>/g,'')}</ul>`);
-
   return html;
 }
 
@@ -360,48 +360,152 @@ async function exportPDF(btn) {
   if (!window.jspdf) { alert('Cargando... intenta en un momento.'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-  const text = getBubbleText(btn);
 
-  // Logo
-  try {
-    const logoImg = document.getElementById('logo-hidden');
-    if (logoImg && logoImg.complete) {
-      const canvas = document.createElement('canvas');
-      canvas.width = logoImg.naturalWidth;
-      canvas.height = logoImg.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(logoImg, 0, 0);
-      const logoData = canvas.toDataURL('image/png');
-      doc.addImage(logoData, 'PNG', 75, 10, 60, 30);
-    }
-  } catch(e) {}
+  // ── LOGO SVG dibujado ──
+  const margin = 20;
+  let y = 15;
 
-  // Header
+  // Cruz dorada (logo)
+  doc.setDrawColor(201, 146, 58);
+  doc.setLineWidth(1.2);
+  doc.line(105, y, 105, y + 18);       // vertical
+  doc.line(99, y + 6, 111, y + 6);     // horizontal
+  doc.setDrawColor(122, 82, 48);
+  doc.setLineWidth(0.8);
+  doc.circle(105, y + 9, 8);           // círculo
+  y += 24;
+
+  // Título
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
+  doc.setFontSize(18);
   doc.setTextColor(92, 61, 30);
-  doc.text('CatolicosGPT', 105, 48, { align: 'center' });
+  doc.text('CatolicosGPT', 105, y, { align: 'center' });
+  y += 7;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(168, 136, 88);
-  doc.text('catolicosgpt.com · Basado en el Magisterio de la Iglesia Católica', 105, 54, { align: 'center' });
+  doc.text('catolicosgpt.com · Basado en el Magisterio de la Iglesia Católica', 105, y, { align: 'center' });
+  y += 5;
 
-  // Línea separadora
-  doc.setDrawColor(212, 192, 152);
-  doc.line(20, 57, 190, 57);
+  // Línea separadora dorada
+  doc.setDrawColor(201, 146, 58);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, 210 - margin, y);
+  y += 8;
 
-  // Contenido
+  // ── CONTENIDO: parsear el HTML del bubble ──
+  const bubble = btn.closest('.bubble');
+  const clone = bubble.cloneNode(true);
+  clone.querySelectorAll('.src-row,.action-row,.suggestions').forEach(el => el.remove());
+
+  // Procesar nodo por nodo para mantener formato
+  function processNode(node, indentLevel) {
+    if (node.nodeType === 3) { // texto
+      return node.textContent;
+    }
+    if (node.nodeType !== 1) return '';
+    const tag = node.tagName.toLowerCase();
+    let text = Array.from(node.childNodes).map(n => processNode(n, indentLevel)).join('');
+    if (tag === 'h2') return '\n\n[H2]' + text + '[/H2]\n';
+    if (tag === 'h3') return '\n\n[H3]' + text + '[/H3]\n';
+    if (tag === 'h4') return '\n[H4]' + text + '[/H4]\n';
+    if (tag === 'strong') return '[B]' + text + '[/B]';
+    if (tag === 'em') return '[I]' + text + '[/I]';
+    if (tag === 'li') return '\n  • ' + text;
+    if (tag === 'br') return '\n';
+    if (tag === 'hr') return '\n─────────────────────\n';
+    if (tag === 'p') return '\n' + text + '\n';
+    if (tag === 'tr') {
+      const cells = Array.from(node.querySelectorAll('th,td')).map(c => c.textContent.trim());
+      return cells.join(' | ') + '\n';
+    }
+    if (tag === 'table') {
+      return '\n[TABLA]\n' + text + '[/TABLA]\n';
+    }
+    return text;
+  }
+
+  const rawText = processNode(clone, 0);
+  const segments = rawText.split('\n');
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   doc.setTextColor(24, 16, 10);
-  const lines = doc.splitTextToSize(text, 170);
-  doc.text(lines, 20, 65);
+
+  const pageH = 280;
+  const lineH = 6;
+  const maxW = 170;
+
+  segments.forEach(seg => {
+    if (y > pageH) { doc.addPage(); y = 20; }
+
+    if (seg.includes('[H2]')) {
+      const t = seg.replace('[H2]','').replace('[/H2]','').trim();
+      if (!t) return;
+      y += 3;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(92, 61, 30);
+      doc.text(t, margin, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(24, 16, 10);
+    } else if (seg.includes('[H3]')) {
+      const t = seg.replace('[H3]','').replace('[/H3]','').trim();
+      if (!t) return;
+      y += 2;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(122, 82, 48);
+      doc.text(t, margin, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(24, 16, 10);
+    } else if (seg.includes('[TABLA]') || seg.includes('[/TABLA]')) {
+      // ignorar marcadores
+    } else if (seg.includes(' | ')) {
+      // Fila de tabla
+      const cells = seg.split(' | ');
+      const colW = maxW / cells.length;
+      doc.setFontSize(10);
+      doc.setDrawColor(212, 192, 152);
+      doc.rect(margin, y - 4, maxW, lineH + 1);
+      cells.forEach((cell, ci) => {
+        doc.text(cell.trim().slice(0, 25), margin + (ci * colW) + 2, y);
+      });
+      y += lineH + 1;
+      doc.setFontSize(11);
+    } else if (seg.trim().startsWith('•')) {
+      const t = seg.trim();
+      if (!t || t === '•') return;
+      doc.setTextColor(201, 146, 58);
+      doc.text('•', margin + 2, y);
+      doc.setTextColor(24, 16, 10);
+      const lines = doc.splitTextToSize(t.replace('•','').trim(), maxW - 8);
+      doc.text(lines, margin + 8, y);
+      y += lines.length * lineH;
+    } else if (seg.includes('─────')) {
+      doc.setDrawColor(212, 192, 152);
+      doc.line(margin, y, 210 - margin, y);
+      y += 4;
+    } else {
+      const clean = seg.replace(/\[B\]|\[\/B\]|\[I\]|\[\/I\]|\[H4\]|\[\/H4\]/g, '').trim();
+      if (!clean) { y += 2; return; }
+      const lines = doc.splitTextToSize(clean, maxW);
+      if (y + lines.length * lineH > pageH) { doc.addPage(); y = 20; }
+      doc.text(lines, margin, y);
+      y += lines.length * lineH + 1;
+    }
+  });
 
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(168, 136, 88);
-  doc.text(`Generado el ${new Date().toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })}`, 105, 285, { align: 'center' });
+  const fecha = new Date().toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+  doc.text(`Generado el ${fecha} · catolicosgpt.com`, 105, 288, { align: 'center' });
 
   doc.save('catolicosgpt.pdf');
 }
