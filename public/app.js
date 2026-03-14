@@ -603,3 +603,321 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cin').focus();
   }
 });
+
+// ══════════════════════════════════════════════
+// PANELES — Breviario y Calendario
+// ══════════════════════════════════════════════
+
+function openPanel(id) {
+  document.getElementById('panel-' + id).classList.add('open');
+  document.getElementById('po-' + id).classList.add('show');
+  if (id === 'breviario') initBreviario();
+  if (id === 'calendario') initCalendario();
+}
+
+function closePanel(id) {
+  document.getElementById('panel-' + id).classList.remove('open');
+  document.getElementById('po-' + id).classList.remove('show');
+}
+
+// ── BREVIARIO ──────────────────────────────────
+
+const HORAS_DATA = {
+  laudes: {
+    nombre: 'Laudes',
+    prompt: 'Rezar las Laudes completas de hoy paso a paso, guíame versículo por versículo',
+    content: `
+      <div class="brev-rubrica">V. Señor, ábreme los labios.</div>
+      <div class="brev-verso"><span class="r">R/.</span> Y mi boca proclamará tu alabanza.</div>
+      <div class="brev-section-title">Himno</div>
+      <div class="brev-verso" style="font-size:14px">
+        Ya viene el alba, brillan los cielos,<br>
+        la noche oscura va a terminar.<br>
+        Cristo nos llama, rompe cadenas,<br>
+        los corazones llena de paz.
+      </div>
+      <div class="brev-salmo-ref">Salmo 50 (51) — Miserere</div>
+      <div class="brev-rubrica">Antífona: El Señor me ha enviado a dar la buena noticia a los pobres.</div>
+      <div class="brev-verso">
+        Misericordia, Señor, que soy un pecador;<br>
+        por tu bondad, borra mi culpa;<br>
+        por tu inmensa compasión, borra mis delitos.<br><br>
+        Lava del todo mi maldad,<br>limpia mi pecado.<br><br>
+        <span style="color:var(--ink4);font-size:13px;font-style:italic">Gloria al Padre, y al Hijo,<br>y al Espíritu Santo. Amén.</span>
+      </div>
+      <div class="brev-salmo-ref">Lectura breve — Rm 8, 35.37</div>
+      <div class="brev-verso" style="font-style:italic;font-size:14px;color:var(--ink3)">
+        «¿Quién nos separará del amor de Cristo?<br>
+        En todo esto salimos victoriosos<br>
+        gracias a aquel que nos amó.»
+      </div>
+      <div class="brev-rubrica">Preces</div>
+      <div class="brev-verso" style="font-size:14px">
+        Santificados por el sueño de la noche,<br>te ofrecemos las primicias del nuevo día.<br>
+        <span class="r">— Señor, te pedimos.</span>
+      </div>
+      <div class="brev-rubrica">Oración conclusiva</div>
+      <div class="brev-verso" style="font-size:14px">
+        Señor Dios, que con el amanecer del nuevo día<br>
+        renuevas nuestra esperanza en ti:<br>
+        acompáñanos durante esta jornada<br>
+        para que todo lo que hagamos sea para tu gloria.<br>
+        Por Jesucristo, nuestro Señor. <span class="r">Amén.</span>
+      </div>`
+  },
+  intermedia: {
+    nombre: 'Hora Intermedia',
+    prompt: 'Rezar la Hora Intermedia de hoy completa — Sexta del mediodía',
+    content: `
+      <div class="brev-rubrica">V. Dios mío, ven en mi auxilio.</div>
+      <div class="brev-verso"><span class="r">R/.</span> Señor, date prisa en socorrerme.</div>
+      <div class="brev-section-title">Himno — Sexta</div>
+      <div class="brev-verso" style="font-size:14px">
+        Ven, Santo Espíritu, de los cielos,<br>
+        manda tu luz desde el cielo.<br>
+        Padre de los pobres, ven,<br>
+        dador de dones, ven.
+      </div>
+      <div class="brev-salmo-ref">Salmo 118 (119) — La Ley del Señor</div>
+      <div class="brev-rubrica">Antífona: Enséñame tus mandatos, Señor.</div>
+      <div class="brev-verso">
+        Dichosos los que caminan sin tacha,<br>
+        los que marchan según la ley del Señor.<br>
+        Dichosos los que guardan sus preceptos<br>
+        y le buscan de todo corazón.<br><br>
+        <span style="color:var(--ink4);font-size:13px;font-style:italic">Gloria al Padre... Amén.</span>
+      </div>
+      <div class="brev-salmo-ref">Lectura breve — Gal 2, 19b-20</div>
+      <div class="brev-verso" style="font-style:italic;font-size:14px;color:var(--ink3)">
+        «Estoy crucificado con Cristo;<br>
+        vivo yo, pero no soy yo,<br>es Cristo quien vive en mí.»
+      </div>`
+  },
+  visperas: {
+    nombre: 'Vísperas',
+    prompt: 'Rezar las Vísperas completas de hoy paso a paso',
+    content: `
+      <div class="brev-rubrica">V. Dios mío, ven en mi auxilio.</div>
+      <div class="brev-verso"><span class="r">R/.</span> Señor, date prisa en socorrerme.</div>
+      <div class="brev-section-title">Himno vespertino</div>
+      <div class="brev-verso" style="font-size:14px">
+        El sol que declina muere en el poniente;<br>
+        tú eres, oh Cristo, la luz que no muere,<br>
+        ilumina nuestra noche oscura,<br>
+        llena de paz nuestra alma insegura.
+      </div>
+      <div class="brev-salmo-ref">Cántico — Flp 2, 6-11</div>
+      <div class="brev-rubrica">Antífona: Cristo fue obediente hasta la muerte, y muerte de Cruz.</div>
+      <div class="brev-verso">
+        Cristo, siendo de condición divina,<br>
+        no retuvo ávidamente el ser igual a Dios;<br>
+        al contrario, se despojó de su grandeza,<br>
+        tomó la condición de esclavo<br>
+        y se hizo semejante a los hombres.<br><br>
+        Por eso Dios le exaltó sobre todo<br>
+        y le otorgó el Nombre sobre todo nombre.<br><br>
+        <span style="color:var(--ink4);font-size:13px;font-style:italic">Gloria al Padre... Amén.</span>
+      </div>
+      <div class="brev-salmo-ref">Magnificat — Lc 1, 46-55</div>
+      <div class="brev-rubrica">Antífona: Santa María, ruega por nosotros.</div>
+      <div class="brev-verso" style="font-style:italic;font-size:14px;color:var(--ink3)">
+        «Proclama mi alma la grandeza del Señor,<br>
+        se alegra mi espíritu en Dios mi Salvador;<br>
+        porque ha mirado la humillación de su sierva.»
+      </div>`
+  },
+  completas: {
+    nombre: 'Completas',
+    prompt: 'Rezar las Completas de hoy para antes de dormir, guíame paso a paso',
+    content: `
+      <div class="brev-rubrica">Examen de conciencia breve</div>
+      <div class="brev-verso" style="font-size:13.5px;color:var(--ink3);font-style:italic;line-height:1.8">
+        Dedica un momento a repasar tu día:<br>
+        ¿Cómo respondiste al amor de Dios?<br>
+        ¿Actuaste con caridad hacia los demás?
+      </div>
+      <div class="brev-rubrica">V. Dios mío, ven en mi auxilio.</div>
+      <div class="brev-verso"><span class="r">R/.</span> Señor, date prisa en socorrerme.</div>
+      <div class="brev-salmo-ref">Salmo 90 (91) — Bajo la protección de Dios</div>
+      <div class="brev-rubrica">Antífona: Guárdanos, Señor, mientras velamos.</div>
+      <div class="brev-verso">
+        El que habita bajo la protección del Altísimo,<br>
+        se aloja a la sombra del Omnipotente.<br>
+        Yo digo al Señor: «Tú eres mi refugio y fortaleza,<br>
+        mi Dios, en quien confío.»<br><br>
+        <span style="color:var(--ink4);font-size:13px;font-style:italic">Gloria al Padre... Amén.</span>
+      </div>
+      <div class="brev-salmo-ref">Antífona final de la Virgen — Salve Regina</div>
+      <div class="brev-verso" style="font-style:italic;font-size:14px;color:var(--ink3)">
+        Salve, Regina, Mater misericordiae;<br>
+        vita, dulcedo et spes nostra, salve.<br>
+        Ad te clamamus, exsules filii Hevae...<br><br>
+        <span style="color:var(--ink);font-style:normal">Salve, oh Reina, Madre de misericordia,<br>
+        vida, dulzura y esperanza nuestra, salve.</span>
+      </div>`
+  }
+};
+
+let horaActual = 'laudes';
+
+function initBreviario() {
+  const now = new Date();
+  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('brev-date-label').textContent =
+    `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+  renderHora(horaActual);
+}
+
+function selectHora(hora, el) {
+  horaActual = hora;
+  document.querySelectorAll('.hora-pill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  renderHora(hora);
+}
+
+function renderHora(hora) {
+  const h = HORAS_DATA[hora];
+  document.getElementById('brev-content').innerHTML = h.content;
+  document.getElementById('brev-guided-btn').onclick = () => {
+    closePanel('breviario');
+    setTimeout(() => sendChip(h.prompt), 350);
+  };
+}
+
+function exportBrevPDF() {
+  closePanel('breviario');
+  setTimeout(() => sendChip('Exportar las ' + HORAS_DATA[horaActual].nombre + ' de hoy en PDF con formato litúrgico'), 350);
+}
+
+// ── CALENDARIO ────────────────────────────────
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+const FEASTS = {
+  '3-13': {n:'San Rodrigo de Córdoba',t:'feria',d:'Mártir de Córdoba (857). Murió decapitado junto a San Salomón.'},
+  '3-17': {n:'San Patricio',t:'memoria',d:'Apóstol de Irlanda. Patrón nacional de Irlanda.'},
+  '3-19': {n:'San José, Esposo de María',t:'solemnidad',d:'Patrono de la Iglesia Universal. Solemnidad de primer rango.'},
+  '3-25': {n:'Anunciación del Señor',t:'solemnidad',d:'El ángel Gabriel anuncia a María. El Verbo se hace carne.'},
+  '4-2':  {n:'San Francisco de Paula',t:'memoria',d:'Fundador de los Mínimos. Ermitaño calabrés.'},
+  '4-5':  {n:'Domingo de Ramos',t:'semana-santa',d:'Entrada triunfal de Jesús en Jerusalén. Inicio de la Semana Santa.'},
+  '4-9':  {n:'Jueves Santo',t:'semana-santa',d:'Institución de la Eucaristía y el Sacerdocio ministerial. Triduo Pascual.'},
+  '4-10': {n:'Viernes Santo',t:'semana-santa',d:'Pasión y Muerte del Señor. Ayuno y abstinencia obligatorios.'},
+  '4-11': {n:'Sábado Santo',t:'semana-santa',d:'Vigilia Pascual. La noche más sagrada del año.'},
+  '4-12': {n:'Domingo de Resurrección — Pascua',t:'pascua',d:'¡Alleluia! Cristo ha resucitado. Solemnidad de Solemnidades.'},
+  '4-23': {n:'San Jorge',t:'memoria',d:'Mártir. Patrón de Inglaterra, Cataluña, Portugal.'},
+  '4-29': {n:'Santa Catalina de Siena',t:'fiesta',d:'Doctora de la Iglesia. Copatrona de Europa.'},
+  '5-1':  {n:'San José Obrero',t:'memoria',d:'Dignidad del trabajo humano. Creado por Pío XII en 1955.'},
+  '5-13': {n:'Nuestra Señora de Fátima',t:'memoria',d:'Primera aparición en 1917. El 13 de mayo de 1981, atentado a JPII.'},
+  '5-26': {n:'San Felipe Neri',t:'memoria',d:'El Santo Apóstol de Roma. Fundó el Oratorio.'},
+  '6-13': {n:'San Antonio de Padua',t:'memoria',d:'Doctor de la Iglesia. Patrono para encontrar objetos perdidos.'},
+  '6-24': {n:'Natividad de San Juan Bautista',t:'solemnidad',d:'El Precursor. Único nacimiento celebrado como solemnidad además de Jesús.'},
+  '6-29': {n:'Santos Pedro y Pablo',t:'solemnidad',d:'Los dos pilares de la Iglesia. Mártires en Roma bajo Nerón.'},
+  '7-22': {n:'Santa María Magdalena',t:'fiesta',d:'Apóstola de los Apóstoles. Primera testigo de la Resurrección.'},
+  '7-25': {n:'Santiago Apóstol',t:'fiesta',d:'Patrón de España. Su tumba en Santiago de Compostela.'},
+  '8-6':  {n:'Transfiguración del Señor',t:'fiesta',d:'Jesús se transfigura ante Pedro, Santiago y Juan.'},
+  '8-15': {n:'Asunción de María',t:'solemnidad',d:'Dogma definido por Pío XII en 1950. María asunta en cuerpo y alma.'},
+  '8-28': {n:'San Agustín de Hipona',t:'memoria',d:'Doctor de la Iglesia. «Nos hiciste para Ti, Señor.»'},
+  '9-8':  {n:'Natividad de María',t:'fiesta',d:'Nacimiento de la Virgen María.'},
+  '10-1': {n:'Santa Teresita del Niño Jesús',t:'memoria',d:'Doctora de la Iglesia. La pequeña vía espiritual.'},
+  '10-4': {n:'San Francisco de Asís',t:'memoria',d:'El poverello. Fundador de los Franciscanos. Estigmatizado.'},
+  '10-7': {n:'Nuestra Señora del Rosario',t:'memoria',d:'En memoria de la batalla de Lepanto (1571).'},
+  '10-15':{n:'Santa Teresa de Ávila',t:'fiesta',d:'Doctora de la Iglesia. Reformó el Carmelo. Mística extraordinaria.'},
+  '11-1': {n:'Todos los Santos',t:'solemnidad',d:'Celebración de todos los santos canonizados y no canonizados.'},
+  '11-2': {n:'Conmemoración de los Fieles Difuntos',t:'conmemoracion',d:'Día de los muertos. Oración por las almas del Purgatorio.'},
+  '12-8': {n:'Inmaculada Concepción de María',t:'solemnidad',d:'Dogma de 1854. María concebida sin pecado original.'},
+  '12-12':{n:'Nuestra Señora de Guadalupe',t:'fiesta',d:'Patrona de América. Aparición a Juan Diego (1531).'},
+  '12-25':{n:'Natividad del Señor',t:'solemnidad',d:'Navidad. «El Verbo se hizo carne y habitó entre nosotros.»'},
+};
+
+const TIPO_STYLES = {
+  solemnidad: {bg:'rgba(139,26,26,.08)',c:'#8B1A1A',b:'rgba(139,26,26,.2)',label:'Solemnidad',dot:'#8B1A1A'},
+  fiesta:      {bg:'var(--ocre-bg)',c:'var(--brown)',b:'var(--border2)',label:'Fiesta',dot:'#C9923A'},
+  memoria:     {bg:'rgba(74,32,128,.08)',c:'#4A2080',b:'rgba(74,32,128,.2)',label:'Memoria',dot:'#4A2080'},
+  'semana-santa':{bg:'rgba(139,26,26,.08)',c:'#8B1A1A',b:'rgba(139,26,26,.2)',label:'Semana Santa',dot:'#8B1A1A'},
+  pascua:      {bg:'rgba(30,107,58,.08)',c:'#1E6B3A',b:'rgba(30,107,58,.2)',label:'Pascua',dot:'#1E6B3A'},
+  conmemoracion:{bg:'var(--bg3)',c:'var(--ink3)',b:'var(--border)',label:'Conmemoración',dot:'#888'},
+  feria:       {bg:'var(--bg3)',c:'var(--ink3)',b:'var(--border)',label:'Feria',dot:'#D4C098'},
+};
+
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function initCalendario() {
+  renderCalendario();
+  // Mostrar hoy por defecto
+  const today = new Date();
+  const key = `${today.getMonth()+1}-${today.getDate()}`;
+  showCalDetail(today.getDate(), today.getMonth()+1, today.getFullYear(), FEASTS[key]);
+}
+
+function renderCalendario() {
+  document.getElementById('cal-month-title').textContent = `${MESES[calMonth]} ${calYear}`;
+  // Tiempo litúrgico aproximado
+  const tiempos = getTiempoLiturgico(calYear, calMonth);
+  document.getElementById('tiempo-pill').textContent = tiempos;
+
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  // Celdas vacías iniciales
+  for (let i = 0; i < first; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'cal-day';
+    grid.appendChild(empty);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dow = (first + d - 1) % 7;
+    const isToday = d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+    const key = `${calMonth+1}-${d}`;
+    const feast = FEASTS[key];
+    const dotColor = feast ? (TIPO_STYLES[feast.t]?.dot || '#D4C098') : '#D4C098';
+
+    const el = document.createElement('div');
+    el.className = 'cal-day' + (dow === 0 ? ' sunday' : '') + (isToday ? ' today' : '');
+    const shortName = feast ? feast.n.split(' ').slice(-1)[0].slice(0,5) : '';
+    el.innerHTML = `<span class="cal-day-num">${d}</span>
+      <div class="cal-day-dot" style="background:${dotColor}"></div>
+      ${feast ? `<span class="cal-day-name">${shortName}</span>` : ''}`;
+    el.onclick = () => showCalDetail(d, calMonth + 1, calYear, feast);
+    grid.appendChild(el);
+  }
+}
+
+function showCalDetail(d, m, y, feast) {
+  const dow = new Date(y, m-1, d).getDay();
+  const el = document.getElementById('cal-detail');
+  const ts = feast ? (TIPO_STYLES[feast.t] || TIPO_STYLES.feria) : TIPO_STYLES.feria;
+  const title = feast ? feast.n : 'Feria — Tiempo Ordinario';
+  const desc = feast ? feast.d : 'Día ordinario del calendario litúrgico.';
+
+  el.innerHTML = `
+    <div class="cal-detail-date">${DIAS_SEMANA[dow].toUpperCase()} ${d} DE ${MESES[m-1].toUpperCase()} ${y}</div>
+    <div class="cal-detail-title">${title}</div>
+    <div class="cal-detail-desc">${desc}</div>
+    <div class="cal-detail-tags">
+      <span class="cal-tag" style="background:${ts.bg};color:${ts.c};border:1px solid ${ts.b}">${ts.label}</span>
+    </div>`;
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendario();
+}
+
+function getTiempoLiturgico(year, month) {
+  const m = month + 1;
+  if (m === 12 && new Date(year, month, 1).getDate() >= 1) return 'Adviento / Navidad';
+  if (m === 1) return 'Tiempo de Navidad / Ordinario';
+  if (m === 2 || m === 3) return 'Tiempo de Cuaresma';
+  if (m === 4 && new Date(year, month, 12).getDay() === 0) return 'Tiempo Pascual';
+  if (m >= 5 && m <= 11) return 'Tiempo Ordinario';
+  return 'Tiempo Ordinario';
+}
