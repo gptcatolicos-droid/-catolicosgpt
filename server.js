@@ -24,7 +24,12 @@ const BIBLIA = loadDataset('biblia');
 const HISTORIA = loadDataset('historia_iglesia');
 const SANTOS = loadDataset('santos');
 const DOCUMENTOS = loadDataset('documentos_vaticano');
-console.log('Datasets cargados:', ['catecismo','biblia','historia','santos','documentos'].join(', '));
+const ORACIONES = loadDataset('oraciones');
+const FAQ = loadDataset('faq_catolico');
+const MORAL = loadDataset('moral_escatologia');
+const PAPA = loadDataset('papa_leon_xiv');
+const NOVENAS = loadDataset('novenas');
+console.log('Datasets V5 cargados: catecismo, biblia, historia, santos, documentos, oraciones, FAQ, moral, papa, novenas');
 
 // ══════════════════════════════
 // SEO PAGES — almacén en memoria + archivo
@@ -247,17 +252,30 @@ ${cic_muestra.slice(0,15).join('\n')}
 [Dataset completo disponible — cita siempre con número CIC cuando sea posible]
 
 BIBLIA — PASAJES CARGADOS:
-${biblia_muestra.slice(0,8).join('\n')}
+${biblia_muestra.slice(0,6).join('\n')}
 
 SANTOS — SANTO DE HOY (${fechaHoy}):
 ${santos_hoy.length ? santos_hoy.join('\n') : 'Consultar dataset de santos'}
 
-DOCUMENTOS VATICANO DISPONIBLES:
-${DOCUMENTOS.encíclicas_doctrinales?.map(d => `- ${d.nombre} (${d.año}, ${d.papa}): ${d.resumen?.slice(0,80)}`).join('\n') || ''}
-${DOCUMENTOS.encíclicas_sociales?.map(d => `- ${d.nombre} (${d.año}, ${d.papa}): ${d.tema}`).join('\n') || ''}
+PAPA ACTUAL — LEÓN XIV:
+Nombre: ${PAPA.nombre_completo} | Elegido: ${PAPA.elegido} | Origen: ${PAPA.origen}
+Lema: "${PAPA.lema_episcopal}" — ${PAPA.lema_significado}
+Temas prioritarios: ${PAPA.temas_prioritarios?.slice(0,3).join(', ')}
 
-HISTORIA DE LA IGLESIA — PERÍODOS:
-${HISTORIA.periodos?.map(p => `- ${p.periodo} (${p.años})`).join('\n') || ''}
+DOCUMENTOS VATICANO:
+${DOCUMENTOS.encíclicas_doctrinales?.slice(0,5).map(d => `- ${d.nombre} (${d.año}): ${d.resumen?.slice(0,60)}`).join('\n') || ''}
+
+ORACIONES DISPONIBLES:
+${ORACIONES.oraciones_principales?.map(o => `- ${o.nombre}`).join(', ') || ''}
+
+FAQ — CATEGORÍAS CARGADAS:
+${Object.keys(FAQ.categorias || {}).join(', ')}
+
+MORAL Y ESCATOLOGÍA — TEMAS:
+Aborto, eutanasia, matrimonio, homosexualidad, anticonceptivos, purgatorio, infierno, escatología, exorcismo, mística
+
+HISTORIA — PERÍODOS:
+${HISTORIA.periodos?.map(p => `${p.periodo} (${p.años})`).join(' | ')}
 ════════════════════════
 
 REGLA DE ORO:
@@ -291,11 +309,24 @@ Cuando el usuario pida tabla, cronología, línea de tiempo, comparación o list
   - Las sugerencias de preguntas relacionadas
 
 FUNCIONES LITÚRGICAS — SIEMPRE COMPLETO SIN RESUMIR:
-- "lecturas del día" → IMPORTANTE: Las lecturas vienen de la API litúrgica oficial.
-  El frontend ya las carga desde /api/lecturas-dia automáticamente cuando el usuario hace clic en "Lecturas del día".
-  Si el usuario te pide las lecturas por chat, dile que haga clic en "Lecturas del día" en el menú lateral para ver las lecturas oficiales del día.
-  Si insiste en que se las des por chat, proporciona las lecturas reales del calendario litúrgico romano para la fecha ${fechaHoy} según el Leccionario oficial. Cita correctamente: libro bíblico, capítulo y versículos exactos.
-  NUNCA inventes lecturas genéricas ni resúmenes. Si no conoces las lecturas exactas de hoy, dilo claramente.
+- NOVENAS — MUY IMPORTANTE:
+Tienes un dataset completo de novenas con los textos EXACTOS y COMPLETOS.
+Novenas disponibles: San José, Divina Misericordia, Virgen de Guadalupe, Navidad (Aguinaldos).
+Cuando el usuario pida una novena:
+→ SIEMPRE usa el texto del dataset NOVENAS, NUNCA improvises.
+→ Muestra: oración preparatoria + meditación del día + oración final COMPLETAS.
+→ Si no especifica el día, pregunta en qué día está o muestra el Día 1 completo.
+→ Para otras novenas no en el dataset, genera el texto completo con las oraciones reales del santo, nunca un resumen.
+→ REGLA: Una novena sin el texto completo de las oraciones NO ES UNA NOVENA.
+
+Novenas en dataset:
+${NOVENAS.novenas?.map(n => `- ${n.nombre}: ${n.fechas}`).join('\n') || ''}
+
+"lecturas del día" → El sistema ya tiene una vista especial que carga las lecturas automáticamente.
+  NUNCA digas al usuario que haga clic en el menú lateral - el frontend intercepta estos mensajes.
+  Si por alguna razón llegas a recibir esta solicitud, da las lecturas reales del Leccionario Romano para la fecha ${fechaHoy} con texto bíblico completo.
+  Formato: ##PRIMERA_LECTURA## Referencia: X Texto: [texto] ##SALMO## ##EVANGELIO##
+  NUNCA das un resumen - siempre el texto completo.
 - "laudes/vísperas/completas" → Oficio completo del día
 - "santo del día" → Nombre, fechas, biografía, festividad
 - "rosario" → Guía completa con Misterios ${misteriosRosario[now.getDay()]}

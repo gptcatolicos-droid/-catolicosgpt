@@ -235,6 +235,24 @@
         </div>
       </div>
 
+      <!-- LECTURAS VIEW -->
+      <div id="view-lecturas" style="display:none" class="main-view">
+        <div class="view-header">
+          <button class="view-back" onclick="closeView()">&#8592; Volver</button>
+          <div class="view-title">&#128214; Lecturas del día</div>
+        </div>
+        <div class="view-body">
+          <div class="panel-date" id="lecturas-date"></div>
+          <div id="lecturas-content">
+            <div style="text-align:center;padding:30px;font-family:Lora,serif;color:var(--ink4);font-style:italic">Cargando lecturas...</div>
+          </div>
+          <div class="view-actions" style="margin-top:16px">
+            <button class="bact-primary" onclick="sendChip('Reflexiona sobre las lecturas de hoy y dame una homilía breve');closeView()">&#128172; Reflexión</button>
+            <button class="bact-sec" onclick="sendChip('Explícame el contexto histórico de las lecturas de hoy');closeView()">&#128218; Contexto</button>
+          </div>
+        </div>
+      </div>
+
       <!-- CALENDARIO VIEW -->
       <div id="view-calendario" style="display:none" class="main-view">
         <div class="view-header">

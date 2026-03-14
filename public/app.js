@@ -274,6 +274,30 @@ async function send() {
   const val = cin.value.trim();
   if (!val || isLoading) return;
 
+  // ── INTERCEPTAR COMANDOS ESPECIALES ──
+  const lower = val.toLowerCase();
+
+  // Lecturas del día → abrir vista directamente, NO mandar a la IA
+  if (/lecturas del d[ií]a|lecturas de hoy|ver lecturas|lecturas de la misa/.test(lower)) {
+    cin.value = ''; cin.style.height = 'auto';
+    loadLecturasReales();
+    return;
+  }
+
+  // Breviario → abrir vista
+  if (/^(breviario|laudes$|v[ií]speras$|completas$|hora intermedia$)/.test(lower)) {
+    cin.value = ''; cin.style.height = 'auto';
+    openView('breviario');
+    return;
+  }
+
+  // Calendario → abrir vista
+  if (/^calendario lit[uú]rgico$/.test(lower)) {
+    cin.value = ''; cin.style.height = 'auto';
+    openView('calendario');
+    return;
+  }
+
   isLoading = true;
   document.getElementById('send-btn').disabled = true;
 
@@ -283,8 +307,7 @@ async function send() {
   cin.value = ''; cin.style.height = 'auto';
   addTyping();
 
-  // Determinar si mostrar botones de exportar
-  const needsActions = /cartilla|catequesis|novena|rosario|vía crucis|via crucis|homilía|homilia|oración|oracion|lecturas|laudes|vísperas|visperas|completas|tabla|línea de tiempo|cronología|actividad|clase/i.test(val);
+  const needsActions = /cartilla|catequesis|novena|rosario|v[ií]a crucis|hom[ií]l[ií]a|oraci[oó]n|lecturas|laudes|v[ií]speras|completas|tabla|l[ií]nea de tiempo|cronolog[ií]a|actividad|clase/i.test(val);
 
   try {
     const res = await fetch('/api/chat', {
@@ -612,23 +635,23 @@ document.addEventListener('DOMContentLoaded', () => {
 function openPanel(id) { openView(id); } // alias para compatibilidad
 
 function openView(id) {
-  // Guardar chat en recientes antes de cambiar vista
-  if (chatHistory.length > 0 && chatHistory.length === 2) {
+  // Guardar chat en recientes si hay conversación activa
+  if (chatHistory.length >= 2) {
     saveConversation(chatHistory[0].content);
   }
   // Ocultar todo
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('chat-area').style.display = 'none';
   document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-  // Mostrar vista
+  // Mostrar vista solicitada
   const view = document.getElementById('view-' + id);
   if (view) {
     view.style.display = 'flex';
-    // Ocultar input del chat
     document.querySelector('.input-area').style.display = 'none';
   }
   if (id === 'breviario') initBreviario();
   if (id === 'calendario') initCalendario();
+  if (id === 'lecturas') initLecturas();
 }
 
 function closeView() {
@@ -817,114 +840,234 @@ function exportBrevPDF() {
 
 // ── LECTURAS REALES DESDE API ──────────────────
 async function loadLecturasReales() {
-  closeView();
-  // Mostrar typing mientras carga
-  document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'block';
-  document.querySelector('.input-area').style.display = '';
-  addTyping();
-  
+  closeSb();
+  // Mostrar vista de lecturas directamente en el frame principal
+  openView('lecturas');
+}
+
+async function initLecturas() {
+  const container = document.getElementById('lecturas-content');
+  const dateEl = document.getElementById('lecturas-date');
+  if (!container) return;
+
+  const now = new Date();
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+
+  if (dateEl) dateEl.textContent = fechaStr.toUpperCase();
+
+  container.innerHTML = `<div style="text-align:center;padding:30px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
+    Cargando lecturas del ${fechaStr}...
+  </div>`;
+
+  // Intentar API real primero
+  let cargado = false;
   try {
-    const res = await fetch('/api/lecturas-dia');
-    const json = await res.json();
-    removeTyping();
-    
+    const mm = String(now.getMonth()+1).padStart(2,'0');
+    const dd = String(now.getDate()).padStart(2,'0');
+    const yyyy = now.getFullYear();
+    const resp = await fetch(`/api/lecturas-dia`, { signal: AbortSignal.timeout(8000) });
+    const json = await resp.json();
+
     if (json.ok && json.data) {
-      const d = json.data;
-      let html = '';
-      const now = new Date();
-      const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-      const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-      
-      html += `## Lecturas del día — ${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}
-
-`;
-      
-      // Procesar lecturas de la API AELF
-      const messes = d.messes || d.lectures_lecture || [];
-      if (messes.length > 0) {
-        messes.forEach(lectura => {
-          if (lectura.type === 'lecture_1' || lectura.key === 'lecture_1') {
-            html += `### Primera Lectura
-*${lectura.ref || ''}*
-${lectura.intro_text || ''}
-
-${lectura.text || ''}
-
-`;
-          } else if (lectura.type === 'psaume' || lectura.key === 'psaume') {
-            html += `### Salmo Responsorial
-*${lectura.ref || ''}*
-${lectura.text || ''}
-
-`;
-          } else if (lectura.type === 'lecture_2' || lectura.key === 'lecture_2') {
-            html += `### Segunda Lectura
-*${lectura.ref || ''}*
-${lectura.text || ''}
-
-`;
-          } else if (lectura.type === 'evangile' || lectura.key === 'evangile') {
-            html += `### Evangelio
-*${lectura.ref || ''}*
-${lectura.intro_text || ''}
-
-${lectura.text || ''}
-
-*Palabra del Señor.*
-
-`;
-          }
-        });
-      } else {
-        // Estructura alternativa de AELF
-        const partes = d.lectures || [];
-        partes.forEach(p => {
-          html += `### ${p.type || p.key || 'Lectura'}
-*${p.ref || ''}*
-${p.text || ''}
-
-`;
-        });
+      const html = buildLecturasHTML(json.data, fechaStr);
+      if (html && html.length > 200) {
+        container.innerHTML = html;
+        cargado = true;
       }
-      
-      if (!html || html.length < 100) {
-        throw new Error('Respuesta vacía de la API');
-      }
-      
-      const msg = { role: 'assistant', content: html };
-      chatHistory.push({ role: 'user', content: 'Lecturas del día' });
-      chatHistory.push(msg);
-      renderBubble('Lecturas del día', true);
-      renderBubble(html, false, false, 'lecturas');
-      saveConversation('Lecturas del día');
-      
-    } else {
-      throw new Error(json.error || 'API no disponible');
     }
   } catch(e) {
-    removeTyping();
-    // Fallback: pedir a la IA
-    renderBubble('Lecturas del día', true);
-    chatHistory.push({ role: 'user', content: 'Lecturas del día de hoy — muéstrame las lecturas reales del calendario litúrgico romano completas con los textos bíblicos exactos' });
-    addTyping();
+    console.log('API AELF no disponible:', e.message);
+  }
+
+  // Si la API falló — pedir a la IA con prompt muy preciso
+  if (!cargado) {
+    container.innerHTML = `<div style="text-align:center;padding:20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
+      Conectando con el servidor litúrgico...
+    </div>`;
+
     try {
+      const prompt = `Dame las lecturas completas de la Misa del día de HOY ${fechaStr} según el Leccionario Romano oficial.
+
+FORMATO EXACTO (usa exactamente estas etiquetas):
+---PRIMERA_LECTURA---
+Referencia: [Libro Cap, versículos]
+[texto bíblico completo]
+---SALMO---
+Referencia: [Salmo N]
+Estribillo: [R/. texto del estribillo]
+[texto del salmo]
+---EVANGELIO---
+Referencia: [Libro Cap, versículos]
+[texto bíblico completo]
+*Palabra del Señor.*
+
+NO des resúmenes. Dame los textos bíblicos completos tal como aparecen en el Leccionario.`;
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: chatHistory })
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
       });
       const data = await res.json();
-      removeTyping();
-      const reply = data.reply || 'Error al cargar las lecturas.';
-      chatHistory.push({ role: 'assistant', content: reply });
-      renderBubble(reply, false, false, 'lecturas');
-      saveConversation('Lecturas del día');
+
+      if (data.reply && data.reply.length > 300) {
+        container.innerHTML = buildLecturasFromText(data.reply, fechaStr);
+      } else {
+        throw new Error('Respuesta insuficiente');
+      }
     } catch(e2) {
-      removeTyping();
-      renderBubble('No se pudieron cargar las lecturas. Inténtalo de nuevo.', false);
+      container.innerHTML = `
+        <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
+          <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--brown);margin-bottom:10px">
+            No se pudieron cargar las lecturas automáticamente
+          </div>
+          <div style="font-family:'Lora',serif;font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:16px">
+            Puedes consultarlas en Vatican.va o pedir que la IA te las explique
+          </div>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <button onclick="closeView();setTimeout(()=>sendChip('Dame las lecturas bíblicas completas de la misa de hoy ${fechaStr} — Primera Lectura, Salmo y Evangelio con los textos completos'),300)"
+              style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-family:'Lora',serif;font-size:13px;cursor:pointer">
+              📖 Ver en el chat
+            </button>
+            <a href="https://www.vaticannews.va/es/palabra-de-dios.html" target="_blank"
+              style="background:transparent;color:var(--brown);border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-family:'Lora',serif;font-size:13px;text-decoration:none">
+              🌐 Vatican News
+            </a>
+          </div>
+        </div>`;
     }
   }
+}
+
+function buildLecturasFromText(text, fechaStr) {
+  let html = '';
+  // Parsear por secciones ---ETIQUETA---
+  const sections = text.split(/---([A-Z_]+)---/);
+
+  for (let i = 1; i < sections.length; i += 2) {
+    const tag = sections[i];
+    const body = (sections[i+1] || '').trim();
+    if (!body) continue;
+
+    const lines = body.split('\n');
+    const refLine = lines.find(l => l.startsWith('Referencia:'));
+    const ref = refLine ? refLine.replace('Referencia:', '').trim() : '';
+    const estrLine = lines.find(l => l.startsWith('Estribillo:'));
+    const estr = estrLine ? estrLine.replace('Estribillo:', '').trim() : '';
+    const texto = lines.filter(l =>
+      !l.startsWith('Referencia:') && !l.startsWith('Estribillo:')
+    ).join('\n').trim();
+
+    if (tag === 'PRIMERA_LECTURA') {
+      html += lecturBlock('Primera Lectura', ref, '', texto, '#8B1A1A');
+    } else if (tag === 'SALMO') {
+      html += salmoBlock(ref, estr, texto);
+    } else if (tag === 'SEGUNDA_LECTURA') {
+      html += lecturBlock('Segunda Lectura', ref, '', texto, '#8B1A1A');
+    } else if (tag === 'EVANGELIO') {
+      html += lecturBlock('Evangelio', ref, '', texto, '#1E6B3A');
+    }
+  }
+
+  // Si no parseó bien, mostrar el texto formateado directamente
+  if (!html) {
+    html = `<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);font-style:italic">
+      ${parseMarkdown(text)}
+    </div>`;
+  }
+
+  return html;
+}
+
+function buildLecturasHTML(data, fechaStr) {
+  let html = '';
+  // Manejar diferentes estructuras de la API AELF
+  const lectures = data.messes || data.lectures || data.messes_du_jour || [];
+  
+  if (Array.isArray(lectures) && lectures.length > 0) {
+    lectures.forEach(item => {
+      const type = (item.type || item.key || '').toLowerCase();
+      const ref = item.ref || item.reference || '';
+      const text = item.text || item.long_text || item.short_text || '';
+      const intro = item.intro_text || '';
+      
+      if (type.includes('lecture_1') || type.includes('reading_1') || type === 'lecture 1') {
+        html += lecturBlock('Primera Lectura', ref, intro, text, '#8B1A1A');
+      } else if (type.includes('psaume') || type.includes('psalm')) {
+        html += salmoBlock(ref, item.refrain_text || '', text);
+      } else if (type.includes('lecture_2') || type.includes('reading_2')) {
+        html += lecturBlock('Segunda Lectura', ref, intro, text, '#8B1A1A');
+      } else if (type.includes('evangile') || type.includes('gospel') || type.includes('evangelio')) {
+        html += lecturBlock('Evangelio', ref, intro, text, '#1E6B3A');
+      }
+    });
+  }
+  
+  if (!html) html = buildLecturasFromAI('', fechaStr);
+  return html;
+}
+
+function buildLecturasFromAI(aiText, fechaStr) {
+  if (!aiText) return '<div style="padding:20px;color:var(--ink4);font-family:Lora,serif;text-align:center;font-style:italic">Sin datos disponibles</div>';
+  
+  let html = '';
+  // Parsear formato especial ##SECCION##
+  const parts = aiText.split(/##([A-Z_]+)##/);
+  let current = '';
+  
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i].trim();
+    if (!part) continue;
+    
+    if (part === 'PRIMERA_LECTURA') { current = 'primera'; continue; }
+    if (part === 'SALMO') { current = 'salmo'; continue; }
+    if (part === 'SEGUNDA_LECTURA') { current = 'segunda'; continue; }
+    if (part === 'EVANGELIO') { current = 'evangelio'; continue; }
+    
+    // Extraer referencia y texto
+    const refMatch = part.match(/Referencia:\s*(.+)/);
+    const textoMatch = part.match(/Texto:\s*([\s\S]+?)(?=Estribillo:|$)/);
+    const estrMatch = part.match(/Estribillo:\s*(.+)/);
+    const ref = refMatch ? refMatch[1].trim() : '';
+    const texto = textoMatch ? textoMatch[1].trim() : part;
+    
+    if (current === 'primera') html += lecturBlock('Primera Lectura', ref, '', texto, '#8B1A1A');
+    else if (current === 'salmo') html += salmoBlock(ref, estrMatch ? estrMatch[1] : '', texto);
+    else if (current === 'segunda') html += lecturBlock('Segunda Lectura', ref, '', texto, '#8B1A1A');
+    else if (current === 'evangelio') html += lecturBlock('Evangelio', ref, '', texto, '#1E6B3A');
+  }
+  
+  if (!html) {
+    // Fallback: mostrar el texto de la IA formateado
+    html = `<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;font-family:Lora,serif;font-size:14.5px;line-height:1.9;color:var(--ink)">
+      ${parseMarkdown(aiText)}
+    </div>`;
+  }
+  
+  return html;
+}
+
+function lecturBlock(titulo, ref, intro, texto, color) {
+  return `<div style="margin-bottom:20px">
+    <div style="font-family:Inter,sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:${color};margin-bottom:6px">${titulo}</div>
+    ${ref ? `<div style="font-family:Lora,serif;font-size:13px;font-style:italic;color:var(--ocre);font-weight:500;margin-bottom:8px">${ref}</div>` : ''}
+    ${intro ? `<div style="font-family:Lora,serif;font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:8px">${intro}</div>` : ''}
+    <div style="font-family:Playfair Display,Georgia,serif;font-size:16px;line-height:2;color:var(--ink);font-style:italic">${texto.replace(/\n/g,'<br>')}</div>
+    <div style="margin-top:10px;font-family:Inter,sans-serif;font-size:10px;font-weight:600;color:${color};text-transform:uppercase;letter-spacing:.08em">Palabra de Dios</div>
+    <div style="border-top:1px solid var(--border);margin-top:12px"></div>
+  </div>`;
+}
+
+function salmoBlock(ref, estribillo, texto) {
+  return `<div style="margin-bottom:20px">
+    <div style="font-family:Inter,sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#4A2080;margin-bottom:6px">Salmo Responsorial</div>
+    ${ref ? `<div style="font-family:Lora,serif;font-size:13px;font-style:italic;color:var(--ocre);margin-bottom:8px">${ref}</div>` : ''}
+    ${estribillo ? `<div style="font-family:Playfair Display,Georgia,serif;font-size:15px;color:#8B1A1A;font-style:italic;margin-bottom:8px;padding:8px 12px;background:rgba(139,26,26,.05);border-left:3px solid #8B1A1A;border-radius:0 6px 6px 0">R/. ${estribillo}</div>` : ''}
+    <div style="font-family:Playfair Display,Georgia,serif;font-size:15px;line-height:2;color:var(--ink);font-style:italic">${texto.replace(/\n/g,'<br>')}</div>
+    <div style="border-top:1px solid var(--border);margin-top:12px"></div>
+  </div>`;
 }
 
 // ── CALENDARIO ────────────────────────────────
