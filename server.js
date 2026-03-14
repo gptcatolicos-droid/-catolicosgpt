@@ -12,12 +12,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ══════════════════════════════
-// CARGAR DATASET CATECISMO
+// CARGAR TODOS LOS DATASETS
 // ══════════════════════════════
-let CATECISMO = {};
-try {
-  CATECISMO = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/catecismo.json'), 'utf8'));
-} catch(e) { console.log('Dataset catecismo no encontrado'); }
+function loadDataset(name) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, `data/${name}.json`), 'utf8'));
+  } catch(e) { console.log(`Dataset ${name} no encontrado`); return {}; }
+}
+const CATECISMO = loadDataset('catecismo');
+const BIBLIA = loadDataset('biblia');
+const HISTORIA = loadDataset('historia_iglesia');
+const SANTOS = loadDataset('santos');
+const DOCUMENTOS = loadDataset('documentos_vaticano');
+console.log('Datasets cargados:', ['catecismo','biblia','historia','santos','documentos'].join(', '));
 
 // ══════════════════════════════
 // SEO PAGES — almacén en memoria + archivo
@@ -201,18 +208,32 @@ function getSystemPrompt() {
   const fechaHoy = `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
   const misteriosRosario = {0:'Gloriosos',1:'Gozosos',2:'Dolorosos',3:'Gloriosos',4:'Luminosos',5:'Dolorosos',6:'Gozosos'};
 
-  // Extraer fragmentos relevantes del dataset
+  // Extraer fragmentos de todos los datasets
   const cic_muestra = [];
+  const biblia_muestra = [];
+  const santos_hoy = [];
   try {
+    // CIC
     CATECISMO.partes?.forEach(p => {
       p.secciones?.forEach(s => {
         (s.temas || s.capitulos || []).forEach(t => {
           (t.articulos || []).slice(0,2).forEach(a => {
-            cic_muestra.push(`CIC ${a.cic}: "${a.texto.slice(0,120)}..."`);
+            cic_muestra.push(`CIC ${a.cic}: "${a.texto.slice(0,100)}..."`);
           });
         });
       });
     });
+    // Biblia — pasajes clave
+    Object.values(BIBLIA.evangelios || {}).forEach(ev => {
+      (ev.pasajes_clave || []).slice(0,2).forEach(p => {
+        biblia_muestra.push(`${p.ref} (${p.nombre}): "${p.texto.slice(0,100)}..."`);
+      });
+    });
+    // Santo del día actual
+    const mesActual = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][now.getMonth()];
+    const santosDelMes = SANTOS.santos_por_mes?.[mesActual] || [];
+    const santoHoy = santosDelMes.find(s => s.dia === now.getDate());
+    if (santoHoy) santos_hoy.push(`${santoHoy.nombre}: ${santoHoy.descripcion}`);
   } catch(e) {}
 
   return `Eres CatolicosGPT, un asistente teológico católico entrenado con el Catecismo de la Iglesia Católica completo y documentos del Vaticano.
@@ -225,8 +246,18 @@ BASE DE CONOCIMIENTO — CATECISMO CIC (fragmentos cargados):
 ${cic_muestra.slice(0,15).join('\n')}
 [Dataset completo disponible — cita siempre con número CIC cuando sea posible]
 
+BIBLIA — PASAJES CARGADOS:
+${biblia_muestra.slice(0,8).join('\n')}
+
+SANTOS — SANTO DE HOY (${fechaHoy}):
+${santos_hoy.length ? santos_hoy.join('\n') : 'Consultar dataset de santos'}
+
 DOCUMENTOS VATICANO DISPONIBLES:
-${CATECISMO.documentos_vaticano?.map(d => `- ${d.nombre} (${d.año}, ${d.papa}): ${d.resumen?.slice(0,80)}`).join('\n') || ''}
+${DOCUMENTOS.encíclicas_doctrinales?.map(d => `- ${d.nombre} (${d.año}, ${d.papa}): ${d.resumen?.slice(0,80)}`).join('\n') || ''}
+${DOCUMENTOS.encíclicas_sociales?.map(d => `- ${d.nombre} (${d.año}, ${d.papa}): ${d.tema}`).join('\n') || ''}
+
+HISTORIA DE LA IGLESIA — PERÍODOS:
+${HISTORIA.periodos?.map(p => `- ${p.periodo} (${p.años})`).join('\n') || ''}
 ════════════════════════
 
 REGLA DE ORO:
@@ -244,8 +275,16 @@ TEMAS POLÉMICOS (aborto, ateísmo, dudas de fe):
 VIDAS DE SANTOS:
 → Pregunta primero: "¿Resumen breve o vida completa y detallada?"
 
-TABLAS Y LÍNEAS DE TIEMPO:
-→ Genera en HTML estructurado con botones para Google Docs/Sheets.
+TABLAS Y LÍNEAS DE TIEMPO — MUY IMPORTANTE:
+Cuando el usuario pida tabla, cronología, línea de tiempo, comparación o lista organizada:
+→ SIEMPRE genera en formato markdown de tabla con pipes |
+→ Formato EXACTO a usar:
+| Columna 1 | Columna 2 | Columna 3 |
+|-----------|-----------|-----------|
+| dato 1    | dato 2    | dato 3    |
+→ NUNCA uses texto plano para tablas. SIEMPRE usa el formato de pipes |
+→ Para líneas de tiempo usa columna Año | Evento | Significado
+→ El frontend convierte automáticamente las tablas markdown a HTML visual
 
 FUNCIONES LITÚRGICAS — SIEMPRE COMPLETO SIN RESUMIR:
 - "lecturas del día" → Primera Lectura + Salmo + Evangelio completos
@@ -270,6 +309,13 @@ NOTICIAS: Para noticias recientes sugiere vaticannews.va y es.zenit.org
 
 FUERA DE TU ÁMBITO:
 "CatolicosGPT está dedicado únicamente a temas de fe, teología y doctrina católica."
+
+EXPORTACIONES — MUY IMPORTANTE:
+Cuando el usuario pida exportar en PDF, Word o PowerPoint:
+→ NUNCA digas que no puedes hacerlo.
+→ NUNCA expliques cómo exportar manualmente.
+→ Responde SIEMPRE: "¡Listo! Haz clic en el botón 📕 PDF (o 📝 Word / 📊 PPT) que aparece debajo de esta respuesta para descargar el archivo."
+→ El frontend de CatolicosGPT genera los archivos automáticamente. Tú solo debes indicar que el botón está disponible.
 
 FORMATO: ## títulos, ### subtítulos, **negrita**, *cursiva*, listas con -`;
 }

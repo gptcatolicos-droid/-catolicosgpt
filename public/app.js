@@ -89,29 +89,43 @@ function setLang(l, btn) {
 // MARKDOWN PARSER
 // ══════════════════════════════
 function parseMarkdown(text) {
-  // Tablas HTML — pasar directo
-  if (text.includes('<table')) return text;
+  // Tablas markdown — convertir a HTML
+  function parseTable(block) {
+    const lines = block.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 2) return block;
+    let html = '<div style="overflow-x:auto;margin:10px 0"><table>';
+    lines.forEach((line, i) => {
+      if (/^\|[-:| ]+\|$/.test(line.trim())) return; // separador
+      const cells = line.split('|').map(c => c.trim()).filter(c => c !== '');
+      const tag = i === 0 ? 'th' : 'td';
+      html += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+    });
+    html += '</table></div>';
+    return html;
+  }
+
+  // Detectar bloques de tabla markdown
+  const tableRegex = /(\|.+\|\n)(\|[-:| ]+\|\n)(\|.+\|\n?)+/gm;
+  text = text.replace(tableRegex, match => parseTable(match));
+
+  // Tablas HTML ya generadas — pasar directo
+  if (text.includes('<table')) {
+    // igual aplicar el resto del formato
+  }
 
   let html = text
-    // Headings
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
-    // Bold / italic
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    // Links markdown [texto](url)
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1 ↗</a>')
-    // HR
     .replace(/^---$/gim, '<hr>')
-    // Listas
     .replace(/^- (.*$)/gim, '<li>$1</li>')
     .replace(/^(\d+)\. (.*$)/gim, '<li><strong style="color:var(--ocre)">$1.</strong> $2</li>')
-    // Párrafos
     .replace(/\n{2,}/g, '</p><p>')
     .replace(/\n/g, '<br>');
 
-  // Envolver li en ul
   html = html.replace(/(<li>.*?<\/li>(<br>)?)+/gs, m => `<ul>${m.replace(/<br>/g,'')}</ul>`);
 
   return html;
