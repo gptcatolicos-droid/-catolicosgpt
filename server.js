@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const OpenAI = require('openai');
+const Anthropic = require('@anthropic-ai/sdk');
 
 // Cron simple sin dependencias externas
 function scheduleDailyAt(hour, minute, fn) {
@@ -25,6 +26,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ══════════════════════════════
 // CARGAR TODOS LOS DATASETS
@@ -429,8 +431,7 @@ app.post('/api/chat', async (req, res) => {
     } catch(e) {
       // Fallback Anthropic streaming
       try {
-        const Anthropic = require('@anthropic-ai/sdk');
-        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const client = anthropic;
         const stream = await client.messages.stream({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 3000,
@@ -460,8 +461,7 @@ app.post('/api/chat', async (req, res) => {
       res.json({ reply: completion.choices[0].message.content });
     } catch(e) {
       try {
-        const Anthropic = require('@anthropic-ai/sdk');
-        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const client = anthropic;
         const msg = await client.messages.create({
           model: 'claude-haiku-4-5-20251001', max_tokens: 3000,
           system: systemPrompt, messages
@@ -472,7 +472,7 @@ app.post('/api/chat', async (req, res) => {
       }
     }
   }
-}););
+});
 
 // Páginas SEO dinámicas
 app.get('/:slug', (req, res, next) => {
@@ -539,8 +539,7 @@ async function generarLecturasDia() {
   console.log(`[Lecturas] Generando para ${fechaStr}...`);
 
   try {
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = anthropic;
 
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -602,7 +601,7 @@ app.get('/api/lecturas-dia', async (req, res) => {
   } catch(err) {
     res.json({ ok: false, error: err.message });
   }
-}););
+});
 
 // Health
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '4.1', seoPages: Object.keys(seoPages).length }));
