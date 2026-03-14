@@ -4,6 +4,21 @@ const path = require('path');
 const fs = require('fs');
 const OpenAI = require('openai');
 
+// Cron simple sin dependencias externas
+function scheduleDailyAt(hour, minute, fn) {
+  function msUntilNext() {
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(hour, minute, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+    return next - now;
+  }
+  function loop() {
+    setTimeout(() => { fn(); setInterval(fn, 24*60*60*1000); }, msUntilNext());
+  }
+  loop();
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -366,50 +381,98 @@ FORMATO: ## títulos, ### subtítulos, **negrita**, *cursiva*, listas con -`;
 
 // Chat principal
 app.post('/api/chat', async (req, res) => {
-  const { messages } = req.body;
+  const { messages, stream: wantStream } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Messages requeridos' });
 
   const lastUserMsg = messages.filter(m => m.role === 'user').pop()?.content || '';
+  const systemPrompt = getSystemPrompt();
 
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      temperature: 0.3,
-      max_tokens: 3000,
-      messages: [{ role: 'system', content: getSystemPrompt() }, ...messages]
-    });
-    const reply = completion.choices[0].message.content;
+  // ── STREAMING (defecto) ──
+  if (wantStream !== false) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
 
-    // Generar página SEO si aplica
-    if (shouldGenerateSeoPage(lastUserMsg)) {
-      const slug = slugify(lastUserMsg);
-      if (slug && !seoPages[slug]) {
-        seoPages[slug] = {
-          slug, question: lastUserMsg, answer: reply,
-          date: new Date().toISOString(), views: 0
-        };
-        saveSeoPages();
+    try {
+      const stream = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        temperature: 0.3,
+        max_tokens: 3000,
+        stream: true,
+        messages: [{ role: 'system', content: systemPrompt }, ...messages]
+      });
+
+      let fullReply = '';
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content || '';
+        if (delta) {
+          fullReply += delta;
+          res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+        }
+        if (chunk.choices[0]?.finish_reason === 'stop') break;
+      }
+
+      // SEO al terminar
+      try {
+        if (shouldGenerateSEO(lastUserMsg)) {
+          const slug = generateSlug(lastUserMsg);
+          if (!seoPages[slug]) {
+            seoPages[slug] = { question: lastUserMsg, answer: fullReply, date: new Date().toISOString() };
+          }
+        }
+      } catch(e) {}
+
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+
+    } catch(e) {
+      // Fallback Anthropic streaming
+      try {
+        const Anthropic = require('@anthropic-ai/sdk');
+        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const stream = await client.messages.stream({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 3000,
+          system: systemPrompt,
+          messages
+        });
+        for await (const chunk of stream) {
+          if (chunk.type === 'content_block_delta' && chunk.delta?.text) {
+            res.write(`data: ${JSON.stringify({ delta: chunk.delta.text })}\n\n`);
+          }
+        }
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        res.end();
+      } catch(e2) {
+        res.write(`data: ${JSON.stringify({ error: 'Error al conectar con la IA.' })}\n\n`);
+        res.end();
       }
     }
 
-    res.json({ reply, seoSlug: shouldGenerateSeoPage(lastUserMsg) ? slugify(lastUserMsg) : null });
-
-  } catch (err) {
-    console.error('OpenAI error:', err.message);
-    // Fallback Anthropic
+  } else {
+    // ── NO STREAMING (usado por initLecturas internamente) ──
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 3000, system: getSystemPrompt(), messages })
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini', temperature: 0.3, max_tokens: 3000,
+        messages: [{ role: 'system', content: systemPrompt }, ...messages]
       });
-      const data = await response.json();
-      res.json({ reply: data.content[0].text });
-    } catch (e2) {
-      res.status(500).json({ error: 'Error al conectar con la IA.' });
+      res.json({ reply: completion.choices[0].message.content });
+    } catch(e) {
+      try {
+        const Anthropic = require('@anthropic-ai/sdk');
+        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const msg = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001', max_tokens: 3000,
+          system: systemPrompt, messages
+        });
+        res.json({ reply: msg.content[0].text });
+      } catch(e2) {
+        res.status(500).json({ error: 'Error al conectar con la IA.' });
+      }
     }
   }
-});
+}););
 
 // Páginas SEO dinámicas
 app.get('/:slug', (req, res, next) => {
@@ -458,25 +521,88 @@ Disallow: /api/
 Sitemap: https://catolicosgpt.com/sitemap.xml`);
 });
 
-// ── LECTURAS DEL DÍA REALES ──
+// ══════════════════════════════
+// LECTURAS DEL DÍA — Cache + Cron 00:00
+// ══════════════════════════════
+let lecturasCacheDate = '';
+let lecturasCache = null;
+
+async function generarLecturasDia() {
+  const now = new Date();
+  const hoy = now.toISOString().slice(0, 10);
+  if (lecturasCacheDate === hoy && lecturasCache) return lecturasCache;
+
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+
+  console.log(`[Lecturas] Generando para ${fechaStr}...`);
+
+  try {
+    const Anthropic = require('@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+    const msg = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2500,
+      messages: [{
+        role: 'user',
+        content: `Dame las lecturas COMPLETAS de la Misa del día de HOY ${fechaStr} según el Leccionario Romano oficial para España y América Latina (calendario romano ordinario).
+
+FORMATO EXACTO — usa estas etiquetas literalmente:
+
+---PRIMERA_LECTURA---
+Referencia: [Libro Capítulo, versículos]
+[texto bíblico completo]
+
+---SALMO---
+Referencia: [Salmo N]
+Estribillo: R/. [texto del estribillo]
+[texto del salmo]
+
+---SEGUNDA_LECTURA---
+[incluir SOLO si es domingo o solemnidad]
+Referencia: [Libro Capítulo, versículos]
+[texto completo]
+
+---EVANGELIO---
+Referencia: [Evangelio según X, Capítulo, versículos]
+[texto bíblico completo del Evangelio]
+
+Reglas: textos COMPLETOS del Leccionario, no resúmenes. Si es tiempo de Cuaresma indícalo.`
+      }]
+    });
+
+    const texto = msg.content[0].text;
+    const resultado = { ok: true, texto, fecha: fechaStr, generado: new Date().toISOString() };
+    lecturasCacheDate = hoy;
+    lecturasCache = resultado;
+    console.log(`[Lecturas] ✓ Generadas para ${fechaStr} (${texto.length} caracteres)`);
+    return resultado;
+
+  } catch(err) {
+    console.error('[Lecturas] Error:', err.message);
+    return { ok: false, error: err.message };
+  }
+}
+
+// Cron: regenerar lecturas cada día a las 00:01
+scheduleDailyAt(0, 1, () => {
+  lecturasCacheDate = ''; // forzar regeneración
+  generarLecturasDia().catch(console.error);
+});
+
+// Precarga al iniciar el servidor
+setTimeout(() => generarLecturasDia().catch(console.error), 3000);
+
 app.get('/api/lecturas-dia', async (req, res) => {
   try {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const url = `https://api.aelf.org/v1/messes/${yyyy}-${mm}-${dd}/world`;
-    const response = await fetch(url, {
-      headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(8000)
-    });
-    if (!response.ok) throw new Error('AELF ' + response.status);
-    const data = await response.json();
-    res.json({ ok: true, data });
-  } catch (err) {
+    const resultado = await generarLecturasDia();
+    res.json(resultado);
+  } catch(err) {
     res.json({ ok: false, error: err.message });
   }
-});
+}););
 
 // Health
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '4.1', seoPages: Object.keys(seoPages).length }));

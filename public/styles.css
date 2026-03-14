@@ -523,3 +523,34 @@ body { height: 100dvh; font-family: 'Inter', sans-serif; background: var(--bg); 
 
 /* Input oculto en vistas */
 .main-view ~ .input-area { display: none; }
+
+/* ══ STREAMING — cursor y botón stop ══ */
+.typing-cursor {
+  display: inline-block;
+  color: var(--ocre);
+  font-weight: 700;
+  animation: blink .7s step-end infinite;
+  margin-left: 2px;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.stop-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--red);
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .12s;
+  flex-shrink: 0;
+}
+.stop-btn:hover { background: #a01f1f; transform: scale(1.05); }
+.stop-btn:active { transform: scale(0.95); }
+
+@media (max-width: 480px) {
+  .stop-btn { width: 36px; height: 36px; font-size: 12px; }
+}

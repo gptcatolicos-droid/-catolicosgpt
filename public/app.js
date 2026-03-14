@@ -5,6 +5,8 @@ let sbOpen = false;
 let isLoading = false;
 let currentLang = 'es';
 let chatHistory = [];
+let currentStream = null; // AbortController para cancelar streaming
+let isStreaming = false;
 let conversations = JSON.parse(localStorage.getItem('cgpt_convs') || '[]');
 let lastBotText = '';
 
@@ -274,68 +276,197 @@ async function send() {
   const val = cin.value.trim();
   if (!val || isLoading) return;
 
-  // ── INTERCEPTAR COMANDOS ESPECIALES ──
   const lower = val.toLowerCase();
 
-  // Lecturas del día → abrir vista directamente, NO mandar a la IA
+  // ── INTERCEPTAR vistas especiales ──
   if (/lecturas del d[ií]a|lecturas de hoy|ver lecturas|lecturas de la misa/.test(lower)) {
     cin.value = ''; cin.style.height = 'auto';
-    loadLecturasReales();
-    return;
+    loadLecturasReales(); return;
   }
-
-  // Breviario → abrir vista
-  if (/^(breviario|laudes$|v[ií]speras$|completas$|hora intermedia$)/.test(lower)) {
+  if (/^breviario/.test(lower)) {
     cin.value = ''; cin.style.height = 'auto';
-    openView('breviario');
-    return;
+    openView('breviario'); return;
   }
-
-  // Calendario → abrir vista
-  if (/^calendario lit[uú]rgico$/.test(lower)) {
+  if (/^calendario lit/.test(lower)) {
     cin.value = ''; cin.style.height = 'auto';
-    openView('calendario');
-    return;
+    openView('calendario'); return;
   }
 
   isLoading = true;
+  isStreaming = true;
   document.getElementById('send-btn').disabled = true;
+  showStopBtn(true);
 
   const userMsg = val;
   chatHistory.push({ role: 'user', content: val });
   renderBubble(val, true);
   cin.value = ''; cin.style.height = 'auto';
-  addTyping();
 
-  const needsActions = /cartilla|catequesis|novena|rosario|v[ií]a crucis|hom[ií]l[ií]a|oraci[oó]n|lecturas|laudes|v[ií]speras|completas|tabla|l[ií]nea de tiempo|cronolog[ií]a|actividad|clase/i.test(val);
+  // Crear bubble de respuesta vacía para streaming
+  const d = document.getElementById('chat-inner');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-row bot-row';
+  const av = document.createElement('div');
+  av.className = 'av av-bot';
+  av.innerHTML = '<svg viewBox="0 0 80 80" fill="none" style="width:100%;height:100%"><circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/><line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/><line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/></svg>';
+  const b = document.createElement('div');
+  b.className = 'bubble bubble-bot';
+  b.innerHTML = '<span class="typing-cursor">▋</span>';
+  wrap.appendChild(av);
+  wrap.appendChild(b);
+  d.appendChild(wrap);
+  d.scrollTop = d.scrollHeight;
+
+  // Mostrar chat
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chat-area').style.display = 'block';
+  document.querySelector('.input-area').style.display = '';
+
+  const needsActions = /cartilla|catequesis|novena|rosario|v[ií]a crucis|hom[ií]l[ií]a|oraci[oó]n|tabla|l[ií]nea de tiempo|cronolog[ií]a|actividad|clase/i.test(val);
+
+  currentStream = new AbortController();
 
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory })
+      body: JSON.stringify({ messages: chatHistory, stream: true }),
+      signal: currentStream.signal
     });
+
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    removeTyping();
 
-    const reply = data.reply || i18n[currentLang].errorAI;
-    chatHistory.push({ role: 'assistant', content: reply });
-    renderBubble(reply, false, needsActions, userMsg);
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let buffer = '';
 
-    if (chatHistory.length === 2) saveConversation(val);
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-  } catch (e) {
-    removeTyping();
-    renderBubble(i18n[currentLang].error, false);
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // guardar línea incompleta
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr) continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          if (parsed.delta) {
+            fullText += parsed.delta;
+            b.innerHTML = parseMarkdown(fullText) + '<span class="typing-cursor">▋</span>';
+            d.scrollTop = d.scrollHeight;
+          }
+          if (parsed.done) {
+            b.innerHTML = parseMarkdown(fullText);
+            chatHistory.push({ role: 'assistant', content: fullText });
+            addBubbleActions(b, fullText, userMsg, needsActions);
+            if (chatHistory.length === 2) saveConversation(userMsg);
+          }
+          if (parsed.error) throw new Error(parsed.error);
+        } catch(pe) { /* línea malformada */ }
+      }
+    }
+
+    // Por si acaso no llegó el evento done
+    if (fullText && !b.querySelector('.action-row')) {
+      b.innerHTML = parseMarkdown(fullText);
+      chatHistory.push({ role: 'assistant', content: fullText });
+      addBubbleActions(b, fullText, userMsg, needsActions);
+      if (chatHistory.length === 2) saveConversation(userMsg);
+    }
+
+  } catch(e) {
+    if (e.name === 'AbortError') {
+      if (b.querySelector('.typing-cursor')) {
+        b.innerHTML = b.innerHTML.replace('<span class="typing-cursor">▋</span>', ' <em style="color:var(--ink4);font-size:12px">[detenido]</em>');
+      }
+    } else {
+      b.innerHTML = '<em style="color:var(--red)">Error al conectar. Intenta de nuevo.</em>';
+    }
   }
 
   isLoading = false;
+  isStreaming = false;
+  currentStream = null;
   document.getElementById('send-btn').disabled = false;
+  showStopBtn(false);
+}
+
+function stopStream() {
+  if (currentStream) {
+    currentStream.abort();
+    currentStream = null;
+  }
+  isLoading = false;
+  isStreaming = false;
+  document.getElementById('send-btn').disabled = false;
+  showStopBtn(false);
+}
+
+function showStopBtn(show) {
+  let btn = document.getElementById('stop-btn');
+  const sendBtn = document.getElementById('send-btn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'stop-btn';
+    btn.className = 'stop-btn';
+    btn.setAttribute('aria-label', 'Detener respuesta');
+    btn.innerHTML = '⏹';
+    btn.onclick = stopStream;
+    sendBtn.parentNode.insertBefore(btn, sendBtn);
+  }
+  btn.style.display = show ? 'flex' : 'none';
+  sendBtn.style.display = show ? 'none' : 'flex';
+}
+
+function addBubbleActions(b, text, userMsg, needsActions) {
+  // Fuentes
+  b.innerHTML += '<div class="src-row"><span class="src">Magisterio</span><span class="src">Vatican.va</span></div>';
+
+  // Botones siempre visibles
+  const hasTable = b.innerHTML.includes('<table');
+  let actHtml = '<div class="action-row">';
+  actHtml += `<button class="act-btn pdf" onclick="exportPDF(this)" title="PDF">📕 PDF</button>`;
+  actHtml += `<button class="act-btn word" onclick="exportWord(this)" title="Word">📝 Word</button>`;
+  actHtml += `<button class="act-btn ppt" onclick="exportPPT(this)" title="PPT">📊 PPT</button>`;
+  actHtml += `<button class="act-btn copy" onclick="copyText(this)" title="Copiar">📋 Copiar</button>`;
+  if (hasTable) {
+    actHtml += `<button class="act-btn gdoc" onclick="openGoogleDocs(this)">📄 G.Docs</button>`;
+  }
+  actHtml += '</div>';
+  b.innerHTML += actHtml;
+
+  // Sugerencias
+  const sugs = extractSuggestions(text);
+  if (sugs.length > 0) {
+    let sugHtml = '<div class="suggestions">';
+    sugs.forEach(s => {
+      sugHtml += `<span class="sug-chip" onclick="sendChip('${s.replace(/'/g,"\'")}')">💭 ${esc(s)}</span>`;
+    });
+    sugHtml += '</div>';
+    b.innerHTML += sugHtml;
+  }
 }
 
 function sendChip(t) {
   closeSb();
+  const lower = t.toLowerCase();
+  if (/lecturas del d[ií]a|lecturas de hoy|ver lecturas/.test(lower)) {
+    setTimeout(() => loadLecturasReales(), 300);
+    return;
+  }
+  if (/^breviario/.test(lower)) {
+    setTimeout(() => openView('breviario'), 300);
+    return;
+  }
+  if (/^calendario lit/.test(lower)) {
+    setTimeout(() => openView('calendario'), 300);
+    return;
+  }
   setTimeout(() => {
     document.getElementById('cin').value = t;
     send();
@@ -854,90 +985,54 @@ async function initLecturas() {
   const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
-
   if (dateEl) dateEl.textContent = fechaStr.toUpperCase();
 
-  container.innerHTML = `<div style="text-align:center;padding:30px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
-    Cargando lecturas del ${fechaStr}...
+  container.innerHTML = `<div style="text-align:center;padding:40px 20px">
+    <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--brown);margin-bottom:8px">Cargando lecturas del ${fechaStr}</div>
+    <div style="font-family:'Lora',serif;font-size:13px;color:var(--ink4);font-style:italic">Conectando con el servidor litúrgico...</div>
   </div>`;
 
-  // Intentar API real primero
-  let cargado = false;
   try {
-    const mm = String(now.getMonth()+1).padStart(2,'0');
-    const dd = String(now.getDate()).padStart(2,'0');
-    const yyyy = now.getFullYear();
-    const resp = await fetch(`/api/lecturas-dia`, { signal: AbortSignal.timeout(8000) });
+    const resp = await fetch('/api/lecturas-dia');
     const json = await resp.json();
 
-    if (json.ok && json.data) {
-      const html = buildLecturasHTML(json.data, fechaStr);
-      if (html && html.length > 200) {
-        container.innerHTML = html;
-        cargado = true;
+    if (json.ok && json.texto) {
+      // Servidor devolvió texto estructurado con ---ETIQUETA---
+      container.innerHTML = buildLecturasFromText(json.texto, json.fecha || fechaStr);
+    } else if (json.ok && json.lecturas) {
+      // Formato con .lecturas
+      const l = json.lecturas;
+      if (l.texto) {
+        container.innerHTML = buildLecturasFromText(l.texto, l.fecha || fechaStr);
+      } else if (l.data) {
+        container.innerHTML = buildLecturasHTML(l.data, fechaStr);
+      } else {
+        throw new Error('Formato inesperado');
       }
+    } else {
+      throw new Error(json.error || 'Sin datos');
     }
   } catch(e) {
-    console.log('API AELF no disponible:', e.message);
-  }
-
-  // Si la API falló — pedir a la IA con prompt muy preciso
-  if (!cargado) {
-    container.innerHTML = `<div style="text-align:center;padding:20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
-      Conectando con el servidor litúrgico...
-    </div>`;
-
-    try {
-      const prompt = `Dame las lecturas completas de la Misa del día de HOY ${fechaStr} según el Leccionario Romano oficial.
-
-FORMATO EXACTO (usa exactamente estas etiquetas):
----PRIMERA_LECTURA---
-Referencia: [Libro Cap, versículos]
-[texto bíblico completo]
----SALMO---
-Referencia: [Salmo N]
-Estribillo: [R/. texto del estribillo]
-[texto del salmo]
----EVANGELIO---
-Referencia: [Libro Cap, versículos]
-[texto bíblico completo]
-*Palabra del Señor.*
-
-NO des resúmenes. Dame los textos bíblicos completos tal como aparecen en el Leccionario.`;
-
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
-      });
-      const data = await res.json();
-
-      if (data.reply && data.reply.length > 300) {
-        container.innerHTML = buildLecturasFromText(data.reply, fechaStr);
-      } else {
-        throw new Error('Respuesta insuficiente');
-      }
-    } catch(e2) {
-      container.innerHTML = `
-        <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center">
-          <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--brown);margin-bottom:10px">
-            No se pudieron cargar las lecturas automáticamente
-          </div>
-          <div style="font-family:'Lora',serif;font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:16px">
-            Puedes consultarlas en Vatican.va o pedir que la IA te las explique
-          </div>
-          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-            <button onclick="closeView();setTimeout(()=>sendChip('Dame las lecturas bíblicas completas de la misa de hoy ${fechaStr} — Primera Lectura, Salmo y Evangelio con los textos completos'),300)"
-              style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-family:'Lora',serif;font-size:13px;cursor:pointer">
-              📖 Ver en el chat
-            </button>
-            <a href="https://www.vaticannews.va/es/palabra-de-dios.html" target="_blank"
-              style="background:transparent;color:var(--brown);border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-family:'Lora',serif;font-size:13px;text-decoration:none">
-              🌐 Vatican News
-            </a>
-          </div>
-        </div>`;
-    }
+    console.error('Error lecturas:', e);
+    container.innerHTML = `
+      <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:24px;text-align:center">
+        <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--brown);margin-bottom:8px">
+          Lecturas no disponibles en este momento
+        </div>
+        <div style="font-family:'Lora',serif;font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:16px">
+          Puedes pedirlas directamente al asistente
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button onclick="closeView();setTimeout(()=>sendChip('Dame las lecturas bíblicas completas de la misa de hoy ${fechaStr} — Primera Lectura, Salmo y Evangelio con los textos completos'),350)"
+            style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-family:'Lora',serif;font-size:13px;cursor:pointer">
+            📖 Pedir al asistente
+          </button>
+          <a href="https://www.vaticannews.va/es/palabra-de-dios.html" target="_blank"
+            style="background:transparent;color:var(--brown);border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-family:'Lora',serif;font-size:13px;text-decoration:none;display:inline-flex;align-items:center">
+            🌐 Vatican News
+          </a>
+        </div>
+      </div>`;
   }
 }
 
