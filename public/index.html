@@ -128,7 +128,7 @@
       <div class="sb-divider"></div>
 
       <div class="sb-group">Accesos directos</div>
-      <div class="sb-item" onclick="sendChip('lecturas del día')">
+      <div class="sb-item" onclick="loadLecturasReales();closeSb()">
         <div class="sb-ico">📖</div><span class="sb-lbl">Lecturas del día</span>
       </div>
       <div class="sb-item" onclick="sendChip('santo del día')">
@@ -137,7 +137,7 @@
       <div class="sb-item" onclick="sendChip('guíame en el Santo Rosario de hoy')">
         <div class="sb-ico">📿</div><span class="sb-lbl">Santo Rosario</span>
       </div>
-      <div class="sb-item" onclick="openPanel('breviario');closeSb()">
+      <div class="sb-item" onclick="openView('breviario');closeSb()">
         <div class="sb-ico">🕯</div><span class="sb-lbl">Breviario digital</span>
       </div>
       <div class="sb-item" onclick="window.open('https://www.vatican.va','_blank');closeSb()">
@@ -145,15 +145,11 @@
       </div>
       <div class="sb-divider"></div>
       <div class="sb-group">Litúrgico</div>
-      <div class="sb-item" onclick="openPanel('calendario');closeSb()">
+      <div class="sb-item" onclick="openView('calendario');closeSb()">
         <div class="sb-ico">📅</div><span class="sb-lbl">Calendario litúrgico</span>
       </div>
       <div class="sb-divider"></div>
-      <div class="sb-group">Litúrgico</div>
-      <div class="sb-item" onclick="openPanel('calendario');closeSb()">
-        <div class="sb-ico">📅</div><span class="sb-lbl">Calendario litúrgico</span>
-      </div>
-      <div class="sb-divider"></div>
+      
     </div>
 
     <a class="sb-donate" href="#" onclick="openDonate(); return false;" aria-label="Donar a CatolicosGPT">
@@ -216,6 +212,58 @@
       <div class="chat-area" id="chat-area" style="display:none">
         <div class="chat-inner" id="chat-inner"></div>
       </div>
+
+      <!-- BREVIARIO VIEW -->
+      <div id="view-breviario" style="display:none" class="main-view">
+        <div class="view-header">
+          <button class="view-back" onclick="closeView()">&#8592; Volver al chat</button>
+          <div class="view-title">&#128333; Breviario digital</div>
+        </div>
+        <div class="view-body">
+          <div class="panel-date" id="brev-date-label"></div>
+          <div class="horas-row">
+            <div class="hora-pill on" onclick="selectHora('laudes',this)">&#127749; Laudes</div>
+            <div class="hora-pill" onclick="selectHora('intermedia',this)">&#9728; Intermedia</div>
+            <div class="hora-pill" onclick="selectHora('visperas',this)">&#127746; Visperas</div>
+            <div class="hora-pill" onclick="selectHora('completas',this)">&#127769; Completas</div>
+          </div>
+          <div id="brev-content" class="brev-content-area"></div>
+          <div class="view-actions">
+            <button class="bact-primary" id="brev-guided-btn">&#9654; Rezar guiado</button>
+            <button class="bact-sec" onclick="exportBrevPDF()">&#128213; PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDARIO VIEW -->
+      <div id="view-calendario" style="display:none" class="main-view">
+        <div class="view-header">
+          <button class="view-back" onclick="closeView()">&#8592; Volver al chat</button>
+          <div class="view-title">&#128197; Calendario liturgico</div>
+        </div>
+        <div class="view-body">
+          <div class="cal-nav-row">
+            <button class="cal-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+            <div style="text-align:center">
+              <div class="cal-month-title" id="cal-month-title">Marzo 2026</div>
+              <div class="tiempo-pill" id="tiempo-pill">Tiempo Ordinario</div>
+            </div>
+            <button class="cal-nav-btn" onclick="changeMonth(1)">&#8250;</button>
+          </div>
+          <div class="cal-weekdays">
+            <div>D</div><div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-legend">
+            <div class="leg"><span class="leg-dot" style="background:#8B1A1A"></span>Solemnidad</div>
+            <div class="leg"><span class="leg-dot" style="background:#C9923A"></span>Fiesta</div>
+            <div class="leg"><span class="leg-dot" style="background:#4A2080"></span>Memoria</div>
+            <div class="leg"><span class="leg-dot" style="background:#D4C098"></span>Feria</div>
+          </div>
+          <div class="cal-detail" id="cal-detail"></div>
+        </div>
+      </div>
+
     </div>
 
     <div class="input-area">
@@ -239,59 +287,6 @@
     </div>
   </div>
 </div>
-
-<!-- PANEL BREVIARIO -->
-<div id="panel-breviario" class="side-panel">
-  <div class="panel-head">
-    <div class="panel-title">🕯 Breviario digital</div>
-    <button class="panel-close" onclick="closePanel('breviario')">✕</button>
-  </div>
-  <div class="panel-body">
-    <div class="panel-date" id="brev-date-label"></div>
-    <div class="horas-row">
-      <div class="hora-pill on" onclick="selectHora('laudes',this)">🌅 Laudes</div>
-      <div class="hora-pill" onclick="selectHora('intermedia',this)">☀️ Intermedia</div>
-      <div class="hora-pill" onclick="selectHora('visperas',this)">🌆 Vísperas</div>
-      <div class="hora-pill" onclick="selectHora('completas',this)">🌙 Completas</div>
-    </div>
-    <div id="brev-content" class="brev-content-area"></div>
-    <div class="brev-actions">
-      <button class="bact-primary" id="brev-guided-btn">▶ Rezar guiado</button>
-      <button class="bact-sec" onclick="exportBrevPDF()">📕 PDF</button>
-    </div>
-  </div>
-</div>
-<div class="panel-overlay" id="po-breviario" onclick="closePanel('breviario')"></div>
-
-<!-- PANEL CALENDARIO -->
-<div id="panel-calendario" class="side-panel">
-  <div class="panel-head">
-    <div class="panel-title">📅 Calendario litúrgico</div>
-    <button class="panel-close" onclick="closePanel('calendario')">✕</button>
-  </div>
-  <div class="panel-body">
-    <div class="cal-nav-row">
-      <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
-      <div style="text-align:center">
-        <div class="cal-month-title" id="cal-month-title">Marzo 2026</div>
-        <div class="tiempo-pill" id="tiempo-pill">Tiempo Ordinario</div>
-      </div>
-      <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
-    </div>
-    <div class="cal-weekdays">
-      <div>D</div><div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div>
-    </div>
-    <div class="cal-grid" id="cal-grid"></div>
-    <div class="cal-legend">
-      <div class="leg"><span class="leg-dot" style="background:#8B1A1A"></span>Solemnidad</div>
-      <div class="leg"><span class="leg-dot" style="background:#C9923A"></span>Fiesta</div>
-      <div class="leg"><span class="leg-dot" style="background:#4A2080"></span>Memoria</div>
-      <div class="leg"><span class="leg-dot" style="background:#D4C098"></span>Feria</div>
-    </div>
-    <div class="cal-detail" id="cal-detail"></div>
-  </div>
-</div>
-<div class="panel-overlay" id="po-calendario" onclick="closePanel('calendario')"></div>
 
 <!-- MODAL DONAR -->
 <div class="modal-bg" id="donate-modal" role="dialog" aria-modal="true" aria-label="Apoya CatolicosGPT">

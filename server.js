@@ -291,7 +291,11 @@ Cuando el usuario pida tabla, cronología, línea de tiempo, comparación o list
   - Las sugerencias de preguntas relacionadas
 
 FUNCIONES LITÚRGICAS — SIEMPRE COMPLETO SIN RESUMIR:
-- "lecturas del día" → Primera Lectura + Salmo + Evangelio completos
+- "lecturas del día" → IMPORTANTE: Las lecturas vienen de la API litúrgica oficial.
+  El frontend ya las carga desde /api/lecturas-dia automáticamente cuando el usuario hace clic en "Lecturas del día".
+  Si el usuario te pide las lecturas por chat, dile que haga clic en "Lecturas del día" en el menú lateral para ver las lecturas oficiales del día.
+  Si insiste en que se las des por chat, proporciona las lecturas reales del calendario litúrgico romano para la fecha ${fechaHoy} según el Leccionario oficial. Cita correctamente: libro bíblico, capítulo y versículos exactos.
+  NUNCA inventes lecturas genéricas ni resúmenes. Si no conoces las lecturas exactas de hoy, dilo claramente.
 - "laudes/vísperas/completas" → Oficio completo del día
 - "santo del día" → Nombre, fechas, biografía, festividad
 - "rosario" → Guía completa con Misterios ${misteriosRosario[now.getDay()]}
@@ -421,6 +425,26 @@ app.get('/robots.txt', (req, res) => {
 Allow: /
 Disallow: /api/
 Sitemap: https://catolicosgpt.com/sitemap.xml`);
+});
+
+// ── LECTURAS DEL DÍA REALES ──
+app.get('/api/lecturas-dia', async (req, res) => {
+  try {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const url = `https://api.aelf.org/v1/messes/${yyyy}-${mm}-${dd}/world`;
+    const response = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!response.ok) throw new Error('AELF ' + response.status);
+    const data = await response.json();
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
 });
 
 // Health

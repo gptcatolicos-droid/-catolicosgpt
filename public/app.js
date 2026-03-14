@@ -605,20 +605,45 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ══════════════════════════════════════════════
-// PANELES — Breviario y Calendario
+// VISTAS PRINCIPALES — Breviario y Calendario
+// Se abren en el frame central, no como panel lateral
 // ══════════════════════════════════════════════
 
-function openPanel(id) {
-  document.getElementById('panel-' + id).classList.add('open');
-  document.getElementById('po-' + id).classList.add('show');
+function openPanel(id) { openView(id); } // alias para compatibilidad
+
+function openView(id) {
+  // Guardar chat en recientes antes de cambiar vista
+  if (chatHistory.length > 0 && chatHistory.length === 2) {
+    saveConversation(chatHistory[0].content);
+  }
+  // Ocultar todo
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chat-area').style.display = 'none';
+  document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
+  // Mostrar vista
+  const view = document.getElementById('view-' + id);
+  if (view) {
+    view.style.display = 'flex';
+    // Ocultar input del chat
+    document.querySelector('.input-area').style.display = 'none';
+  }
   if (id === 'breviario') initBreviario();
   if (id === 'calendario') initCalendario();
 }
 
-function closePanel(id) {
-  document.getElementById('panel-' + id).classList.remove('open');
-  document.getElementById('po-' + id).classList.remove('show');
+function closeView() {
+  // Restaurar vista normal del chat
+  document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
+  document.querySelector('.input-area').style.display = '';
+  if (chatHistory.length > 0) {
+    document.getElementById('chat-area').style.display = 'block';
+    document.getElementById('welcome').style.display = 'none';
+  } else {
+    document.getElementById('welcome').style.display = 'flex';
+  }
 }
+
+function closePanel(id) { closeView(); } // alias para compatibilidad
 
 // ── BREVIARIO ──────────────────────────────────
 
@@ -786,8 +811,120 @@ function renderHora(hora) {
 }
 
 function exportBrevPDF() {
-  closePanel('breviario');
+  closeView();
   setTimeout(() => sendChip('Exportar las ' + HORAS_DATA[horaActual].nombre + ' de hoy en PDF con formato litúrgico'), 350);
+}
+
+// ── LECTURAS REALES DESDE API ──────────────────
+async function loadLecturasReales() {
+  closeView();
+  // Mostrar typing mientras carga
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chat-area').style.display = 'block';
+  document.querySelector('.input-area').style.display = '';
+  addTyping();
+  
+  try {
+    const res = await fetch('/api/lecturas-dia');
+    const json = await res.json();
+    removeTyping();
+    
+    if (json.ok && json.data) {
+      const d = json.data;
+      let html = '';
+      const now = new Date();
+      const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+      const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      
+      html += `## Lecturas del día — ${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}
+
+`;
+      
+      // Procesar lecturas de la API AELF
+      const messes = d.messes || d.lectures_lecture || [];
+      if (messes.length > 0) {
+        messes.forEach(lectura => {
+          if (lectura.type === 'lecture_1' || lectura.key === 'lecture_1') {
+            html += `### Primera Lectura
+*${lectura.ref || ''}*
+${lectura.intro_text || ''}
+
+${lectura.text || ''}
+
+`;
+          } else if (lectura.type === 'psaume' || lectura.key === 'psaume') {
+            html += `### Salmo Responsorial
+*${lectura.ref || ''}*
+${lectura.text || ''}
+
+`;
+          } else if (lectura.type === 'lecture_2' || lectura.key === 'lecture_2') {
+            html += `### Segunda Lectura
+*${lectura.ref || ''}*
+${lectura.text || ''}
+
+`;
+          } else if (lectura.type === 'evangile' || lectura.key === 'evangile') {
+            html += `### Evangelio
+*${lectura.ref || ''}*
+${lectura.intro_text || ''}
+
+${lectura.text || ''}
+
+*Palabra del Señor.*
+
+`;
+          }
+        });
+      } else {
+        // Estructura alternativa de AELF
+        const partes = d.lectures || [];
+        partes.forEach(p => {
+          html += `### ${p.type || p.key || 'Lectura'}
+*${p.ref || ''}*
+${p.text || ''}
+
+`;
+        });
+      }
+      
+      if (!html || html.length < 100) {
+        throw new Error('Respuesta vacía de la API');
+      }
+      
+      const msg = { role: 'assistant', content: html };
+      chatHistory.push({ role: 'user', content: 'Lecturas del día' });
+      chatHistory.push(msg);
+      renderBubble('Lecturas del día', true);
+      renderBubble(html, false, false, 'lecturas');
+      saveConversation('Lecturas del día');
+      
+    } else {
+      throw new Error(json.error || 'API no disponible');
+    }
+  } catch(e) {
+    removeTyping();
+    // Fallback: pedir a la IA
+    renderBubble('Lecturas del día', true);
+    chatHistory.push({ role: 'user', content: 'Lecturas del día de hoy — muéstrame las lecturas reales del calendario litúrgico romano completas con los textos bíblicos exactos' });
+    addTyping();
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: chatHistory })
+      });
+      const data = await res.json();
+      removeTyping();
+      const reply = data.reply || 'Error al cargar las lecturas.';
+      chatHistory.push({ role: 'assistant', content: reply });
+      renderBubble(reply, false, false, 'lecturas');
+      saveConversation('Lecturas del día');
+    } catch(e2) {
+      removeTyping();
+      renderBubble('No se pudieron cargar las lecturas. Inténtalo de nuevo.', false);
+    }
+  }
 }
 
 // ── CALENDARIO ────────────────────────────────
