@@ -89,30 +89,42 @@ function setLang(l, btn) {
 // MARKDOWN PARSER
 // ══════════════════════════════
 function parseMarkdown(text) {
-  // Tablas markdown — convertir a HTML
-  function parseTable(block) {
-    const lines = block.trim().split('\n').filter(l => l.trim());
-    if (lines.length < 2) return block;
-    let html = '<div style="overflow-x:auto;margin:10px 0"><table>';
-    lines.forEach((line, i) => {
-      if (/^\|[-:| ]+\|$/.test(line.trim())) return; // separador
-      const cells = line.split('|').map(c => c.trim()).filter(c => c !== '');
-      const tag = i === 0 ? 'th' : 'td';
-      html += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
-    });
-    html += '</table></div>';
-    return html;
+  // ── PASO 1: Detectar y convertir tablas markdown ──
+  // Separar el texto en líneas para procesar tablas
+  const lines = text.split('\n');
+  const processedLines = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    // Detectar inicio de tabla: línea con pipes |
+    if (/^\|.+\|/.test(line.trim())) {
+      const tableLines = [];
+      while (i < lines.length && /^\|/.test(lines[i].trim())) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      // Convertir a HTML
+      let tableHtml = '<div style="overflow-x:auto;margin:12px 0;width:100%"><table>';
+      let isFirst = true;
+      tableLines.forEach(tl => {
+        if (/^\|[-:|\s]+\|$/.test(tl.trim())) return; // separador
+        const cells = tl.split('|').map(c => c.trim()).filter(c => c !== '');
+        if (cells.length === 0) return;
+        const tag = isFirst ? 'th' : 'td';
+        tableHtml += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+        isFirst = false;
+      });
+      tableHtml += '</table></div>';
+      processedLines.push(tableHtml);
+    } else {
+      processedLines.push(line);
+      i++;
+    }
   }
+  text = processedLines.join('\n');
 
-  // Detectar bloques de tabla markdown
-  const tableRegex = /(\|.+\|\n)(\|[-:| ]+\|\n)(\|.+\|\n?)+/gm;
-  text = text.replace(tableRegex, match => parseTable(match));
-
-  // Tablas HTML ya generadas — pasar directo
-  if (text.includes('<table')) {
-    // igual aplicar el resto del formato
-  }
-
+  // ── PASO 2: Resto del markdown ──
   let html = text
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -126,6 +138,7 @@ function parseMarkdown(text) {
     .replace(/\n{2,}/g, '</p><p>')
     .replace(/\n/g, '<br>');
 
+  // Envolver listas
   html = html.replace(/(<li>.*?<\/li>(<br>)?)+/gs, m => `<ul>${m.replace(/<br>/g,'')}</ul>`);
 
   return html;
@@ -192,35 +205,32 @@ function renderBubble(text, isUser, addActions = false, userMsg = '') {
     // Fuentes
     b.innerHTML += '<div class="src-row"><span class="src">Magisterio</span><span class="src">Vatican.va</span></div>';
 
-    if (addActions) {
-      const { hasTable, isLiturgical } = detectContentType(text, userMsg);
+    // ── BOTONES SIEMPRE VISIBLES en todas las respuestas ──
+    const hasTable = b.innerHTML.includes('<table');
+    let actHtml = '<div class="action-row">';
+    actHtml += `<button class="act-btn pdf" onclick="exportPDF(this)" title="Exportar PDF">📕 PDF</button>`;
+    actHtml += `<button class="act-btn word" onclick="exportWord(this)" title="Exportar Word">📝 Word</button>`;
+    actHtml += `<button class="act-btn ppt" onclick="exportPPT(this)" title="PowerPoint">📊 PPT</button>`;
+    actHtml += `<button class="act-btn copy" onclick="copyText(this)" title="Copiar">📋 Copiar</button>`;
+    if (hasTable) {
+      actHtml += `<button class="act-btn gdoc" onclick="openGoogleDocs(this)">📄 G.Docs</button>`;
+      actHtml += `<button class="act-btn gsheet" onclick="openGoogleSheets(this)">📊 G.Sheets</button>`;
+    }
+    actHtml += '</div>';
+    b.innerHTML += actHtml;
 
-      // Botones de acción
-      let actHtml = '<div class="action-row">';
-      actHtml += `<button class="act-btn pdf" onclick="exportPDF(this)">📕 PDF</button>`;
-      actHtml += `<button class="act-btn word" onclick="exportWord(this)">📝 Word</button>`;
-      actHtml += `<button class="act-btn ppt" onclick="exportPPT(this)">📊 PPT</button>`;
-      actHtml += `<button class="act-btn copy" onclick="copyText(this)">📋 Copiar</button>`;
-
-      if (hasTable) {
-        actHtml += `<button class="act-btn gdoc" onclick="openGoogleDocs(this)">📄 Google Docs</button>`;
-        actHtml += `<button class="act-btn gsheet" onclick="openGoogleSheets(this)">📊 Google Sheets</button>`;
-      }
-      actHtml += '</div>';
-      b.innerHTML += actHtml;
-
-      // Sugerencias
-      const sugs = extractSuggestions(text);
-      if (sugs.length > 0) {
-        let sugHtml = '<div class="suggestions">';
-        sugs.forEach(s => {
-          sugHtml += `<span class="sug-chip" onclick="sendChip('${s.replace(/'/g,"\\'")}')">💭 ${esc(s)}</span>`;
-        });
-        sugHtml += '</div>';
-        b.innerHTML += sugHtml;
-      }
+    // ── SUGERENCIAS ──
+    const sugs = extractSuggestions(text);
+    if (sugs.length > 0) {
+      let sugHtml = '<div class="suggestions">';
+      sugs.forEach(s => {
+        sugHtml += `<span class="sug-chip" onclick="sendChip('${s.replace(/'/g,"\'")}')">💭 ${esc(s)}</span>`;
+      });
+      sugHtml += '</div>';
+      b.innerHTML += sugHtml;
     }
   }
+
 
   d.appendChild(av);
   d.appendChild(b);

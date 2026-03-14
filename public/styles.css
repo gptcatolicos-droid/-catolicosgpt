@@ -135,10 +135,13 @@ body { height: 100dvh; font-family: 'Inter', sans-serif; background: var(--bg); 
 .bubble hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
 
 /* TABLES */
-.bubble table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; overflow-x: auto; display: block; }
-.bubble th { background: var(--bg3); color: var(--brown); font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding: 8px 10px; border: 1px solid var(--border); text-align: left; white-space: nowrap; }
-.bubble td { padding: 7px 10px; border: 1px solid var(--border); vertical-align: top; }
+.bubble table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; }
+.bubble th { background: var(--brown); color: #fff; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; padding: 9px 12px; border: 1px solid var(--brown2); text-align: left; white-space: nowrap; }
+.bubble td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; font-family: 'Lora', serif; font-size: 13.5px; line-height: 1.6; }
 .bubble tr:nth-child(even) td { background: var(--bg); }
+.bubble tr:hover td { background: var(--ocre-bg); }
+/* Wrapper scrollable para tablas en mobile */
+.bubble div[style*="overflow-x:auto"] { border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 1px 4px var(--shadow); }
 
 .src-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
 .src { font-family: 'Inter', sans-serif; font-size: 10px; padding: 2px 8px; background: var(--ocre-bg); color: var(--brown2); border: 1px solid var(--border2); border-radius: 5px; font-weight: 500; }
@@ -197,40 +200,73 @@ body { height: 100dvh; font-family: 'Inter', sans-serif; background: var(--bg); 
 .input-hint { text-align: center; font-family: 'Inter', sans-serif; font-size: 10px; color: var(--ink4); margin-top: 6px; }
 
 /* ══════════════════════
-   MOBILE RESPONSIVE
+   MOBILE RESPONSIVE — Como ChatGPT
 ══════════════════════ */
-@media (max-width: 480px) {
-  :root { --sb-width: 85vw; }
+@media (max-width: 768px) {
+  /* Bubbles más anchos en mobile */
+  .bubble { max-width: 92%; font-size: 15px; line-height: 1.7; padding: 12px 14px; }
+  .bubble h2 { font-size: 17px; }
+  .bubble h3 { font-size: 15px; }
+  .bubble h4 { font-size: 14px; }
 
-  .tb-name { font-size: 14px; }
-  .donate-btn .donate-txt { display: none; }
-  .donate-btn { padding: 6px 9px; }
+  /* Chat más ancho */
+  .chat-inner { padding: 0 10px; gap: 14px; }
 
-  .bubble { max-width: 90%; font-size: 13.5px; padding: 10px 13px; }
-  .bubble h2 { font-size: 15px; }
-  .bubble h3 { font-size: 14px; }
-  .chat-inner { padding: 0 8px; gap: 12px; }
+  /* Tabla scrollable en mobile */
+  .bubble table { font-size: 13px; }
+  .bubble th { padding: 7px 8px; font-size: 10px; }
+  .bubble td { padding: 6px 8px; }
 
+  /* Input más grande y accesible */
   .input-area { padding: 8px 10px 10px; }
-  .cin { font-size: 16px; padding: 11px 46px 11px 14px; }
+  .cin { font-size: 16px; padding: 13px 50px 13px 16px; border-radius: 24px; }
+  .send-btn { width: 36px; height: 36px; right: 8px; }
+
+  /* Topbar compacto */
+  .tb-name { font-size: 15px; }
+  .donate-btn .donate-txt { display: none; }
+  .donate-btn { padding: 7px 10px; border-radius: 50%; width: 34px; height: 34px; justify-content: center; }
+
+  /* Botones de acción más accesibles */
+  .action-row { gap: 6px; margin-top: 12px; }
+  .act-btn { font-size: 11px; padding: 6px 12px; border-radius: 8px; }
+
+  /* Sugerencias */
+  .sug-chip { font-size: 13px; padding: 7px 14px; }
+
+  /* Avatar un poco más pequeño */
+  .av { width: 28px; height: 28px; border-radius: 7px; }
+}
+
+@media (max-width: 480px) {
+  :root { --sb-width: 88vw; }
+
+  .bubble { max-width: 94%; font-size: 15px; padding: 11px 13px; }
+  .chat-inner { padding: 0 8px; }
   .input-hint { display: none; }
 
-  .modal { padding: 24px 18px; }
+  /* Modal */
+  .modal { padding: 24px 16px; }
   .modal-title { font-size: 18px; }
-  .modal-amounts { gap: 6px; }
-  .amount-btn { padding: 6px 13px; font-size: 12px; }
-
-  .action-row { gap: 5px; }
-  .act-btn { font-size: 9.5px; padding: 4px 9px; }
+  .amount-btn { padding: 7px 14px; font-size: 12px; }
 }
 
 @media (max-width: 360px) {
   .tb-name { font-size: 13px; }
   .tb-logo { width: 24px; height: 24px; }
-  .bubble { font-size: 13px; }
+  .bubble { font-size: 14px; }
 }
 
-/* Safe area para iPhone con notch */
+/* Safe area iPhone notch/Dynamic Island */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .input-area { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .input-area {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Prevenir zoom en iOS al tocar input */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 }
