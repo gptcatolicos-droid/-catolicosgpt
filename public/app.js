@@ -1231,7 +1231,7 @@ function lecturBlock(titulo, ref, intro, texto, color) {
     <div style="font-family:Inter,sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:${color};margin-bottom:6px">${titulo}</div>
     ${ref ? `<div style="font-family:Lora,serif;font-size:13px;font-style:italic;color:var(--ocre);font-weight:500;margin-bottom:8px">${ref}</div>` : ''}
     ${intro ? `<div style="font-family:Lora,serif;font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:8px">${intro}</div>` : ''}
-    <div style="font-family:Playfair Display,Georgia,serif;font-size:16px;line-height:2;color:var(--ink);font-style:italic">${texto.replace(/\n/g,'<br>')}</div>
+    <div style="font-family:Playfair Display,Georgia,serif;font-size:16px;line-height:2;color:var(--ink);font-style:italic">${texto.split('\n').join('<br>')}</div>
     <div style="margin-top:10px;font-family:Inter,sans-serif;font-size:10px;font-weight:600;color:${color};text-transform:uppercase;letter-spacing:.08em">Palabra de Dios</div>
     <div style="border-top:1px solid var(--border);margin-top:12px"></div>
   </div>`;
@@ -1242,7 +1242,7 @@ function salmoBlock(ref, estribillo, texto) {
     <div style="font-family:Inter,sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#4A2080;margin-bottom:6px">Salmo Responsorial</div>
     ${ref ? `<div style="font-family:Lora,serif;font-size:13px;font-style:italic;color:var(--ocre);margin-bottom:8px">${ref}</div>` : ''}
     ${estribillo ? `<div style="font-family:Playfair Display,Georgia,serif;font-size:15px;color:#8B1A1A;font-style:italic;margin-bottom:8px;padding:8px 12px;background:rgba(139,26,26,.05);border-left:3px solid #8B1A1A;border-radius:0 6px 6px 0">R/. ${estribillo}</div>` : ''}
-    <div style="font-family:Playfair Display,Georgia,serif;font-size:15px;line-height:2;color:var(--ink);font-style:italic">${texto.replace(/\n/g,'<br>')}</div>
+    <div style="font-family:Playfair Display,Georgia,serif;font-size:15px;line-height:2;color:var(--ink);font-style:italic">${texto.split('\n').join('<br>')}</div>
     <div style="border-top:1px solid var(--border);margin-top:12px"></div>
   </div>`;
 }
@@ -1437,60 +1437,89 @@ async function openCitaModal(tipo, ref) {
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  if (tipo === 'biblia') {
-    const encoded = encodeURIComponent(ref);
-    titleEl.innerHTML = `<span class="cita-ref-pill cita-ref-biblia">${ref}</span>`;
-    extEl.href = `https://www.biblegateway.com/passage/?search=${encoded}&version=LBLA`;
-    extEl.textContent = 'Ver en BibleGateway ↗';
-    bodyEl.innerHTML = `<div class="cita-loading">Buscando pasaje...</div>`;
-
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          stream: false,
-          messages: [{ role: 'user', content: `Dame el texto COMPLETO y EXACTO de ${ref} de la Biblia, traducción litúrgica en español (Biblia de Jerusalén). Solo el texto bíblico, sin comentarios ni encabezados.` }]
-        })
-      });
-      const data = await res.json();
-      bodyEl.innerHTML = `<div class="cita-text-block">${parseMarkdown(data.reply || 'No disponible')}</div>`;
-    } catch(e) {
-      bodyEl.innerHTML = `<p style="color:var(--ink4);font-style:italic;font-family:Lora,serif">No se pudo cargar. Consulta en BibleGateway.com</p>`;
-    }
-
-  } else if (tipo === 'cic') {
+  if (tipo === 'cic') {
     titleEl.innerHTML = `<span class="cita-ref-pill cita-ref-cic">CIC ${ref}</span>`;
-    const cicBase = 'https://www.vatican.va/archive/catechism_sp/';
+    // URL directa al catecismo en Vatican.va por sección
     const n = parseInt(ref);
     let page = 'index_sp.html';
-    if (n <= 141) page = 'p1s1_sp.html';
-    else if (n <= 421) page = 'p1s2_sp.html';
-    else if (n <= 682) page = 'p1s2c5_sp.html';
-    else if (n <= 975) page = 'p1s2c7_sp.html';
+    if (n <= 49)   page = 'p1s1c1_sp.html';
+    else if (n <= 141)  page = 'p1s1c2_sp.html';
+    else if (n <= 197)  page = 'p1s1c3_sp.html';
+    else if (n <= 421)  page = 'p1s2_sp.html';
+    else if (n <= 682)  page = 'p1s2c5_sp.html';
+    else if (n <= 975)  page = 'p1s2c7_sp.html';
     else if (n <= 1209) page = 'p2s1_sp.html';
     else if (n <= 1690) page = 'p2s2_sp.html';
     else if (n <= 1876) page = 'p3s1_sp.html';
     else if (n <= 2051) page = 'p3s2c1_sp.html';
     else if (n <= 2557) page = 'p3s2c2_sp.html';
     else page = 'p4_sp.html';
-    extEl.href = cicBase + page;
-    extEl.textContent = 'Ver en Vatican.va ↗';
-    bodyEl.innerHTML = `<div class="cita-loading">Consultando el Catecismo...</div>`;
+    const cicUrl = `https://www.vatican.va/archive/catechism_sp/${page}`;
+    if (extEl) { extEl.href = cicUrl; extEl.textContent = 'Ver en Vatican.va ↗'; }
+
+    bodyEl.innerHTML = `<div class="cita-loading">
+      <div style="font-size:13px;margin-bottom:8px">Buscando CIC ${ref}...</div>
+    </div>`;
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          stream: false,
-          messages: [{ role: 'user', content: `Dame el texto COMPLETO y EXACTO del artículo ${ref} del Catecismo de la Iglesia Católica. Solo el número y el texto del artículo, sin comentarios.` }]
-        })
-      });
+      // Usar el endpoint dedicado que busca en dataset primero
+      const res = await fetch(`/api/cic/${ref}`);
       const data = await res.json();
-      bodyEl.innerHTML = `<div class="cita-text-block">${parseMarkdown(data.reply || 'No disponible')}</div>`;
+      if (data.ok && data.texto) {
+        bodyEl.innerHTML = `
+          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);margin-bottom:12px">
+            Catecismo de la Iglesia Católica — Art. ${ref}
+          </div>
+          <div class="cita-text-block">${data.texto.split('\n').join('<br>')}</div>`;
+      } else {
+        throw new Error('Sin datos');
+      }
     } catch(e) {
-      bodyEl.innerHTML = `<p style="color:var(--ink4);font-style:italic;font-family:Lora,serif">No se pudo cargar. Consulta en Vatican.va</p>`;
+      bodyEl.innerHTML = `
+        <div style="text-align:center;padding:20px">
+          <div style="font-family:'Lora',serif;font-size:14px;color:var(--ink3);margin-bottom:12px">
+            Consulta el artículo ${ref} directamente en Vatican.va
+          </div>
+          <a href="${cicUrl}" target="_blank" 
+             style="background:var(--brown);color:#fff;padding:8px 18px;border-radius:8px;text-decoration:none;font-family:'Inter',sans-serif;font-size:13px">
+            Abrir Vatican.va ↗
+          </a>
+        </div>`;
+    }
+
+  } else if (tipo === 'biblia') {
+    const cleanRef = ref.trim();
+    titleEl.innerHTML = `<span class="cita-ref-pill cita-ref-biblia">${cleanRef}</span>`;
+    const bibleUrl = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(cleanRef)}&version=LBLA`;
+    if (extEl) { extEl.href = bibleUrl; extEl.textContent = 'Ver en BibleGateway ↗'; }
+
+    bodyEl.innerHTML = `<div class="cita-loading">
+      <div style="font-size:13px;margin-bottom:8px">Buscando ${cleanRef}...</div>
+    </div>`;
+
+    try {
+      const res = await fetch(`/api/biblia?ref=${encodeURIComponent(cleanRef)}`);
+      const data = await res.json();
+      if (data.ok && data.texto) {
+        bodyEl.innerHTML = `
+          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);margin-bottom:12px">
+            ${cleanRef} · Biblia de Jerusalén
+          </div>
+          <div class="cita-text-block">${data.texto.split('\n').join('<br>')}</div>`;
+      } else {
+        throw new Error('Sin datos');
+      }
+    } catch(e) {
+      bodyEl.innerHTML = `
+        <div style="text-align:center;padding:20px">
+          <div style="font-family:'Lora',serif;font-size:14px;color:var(--ink3);margin-bottom:12px">
+            Consulta ${cleanRef} en BibleGateway
+          </div>
+          <a href="${bibleUrl}" target="_blank"
+             style="background:var(--green);color:#fff;padding:8px 18px;border-radius:8px;text-decoration:none;font-family:'Inter',sans-serif;font-size:13px">
+            Abrir BibleGateway ↗
+          </a>
+        </div>`;
     }
   }
 }
@@ -1861,7 +1890,7 @@ function renderMisalParte(parte) {
       seccion.items.forEach(item => {
         html += `<div class="misal-item">
           <div class="misal-item-title">${item.titulo}</div>
-          <div class="misal-item-texto">${item.texto.replace(/\n/g,'<br>')}</div>
+          <div class="misal-item-texto">${item.texto.split('\n').join('<br>')}</div>
         </div>`;
       });
       html += '</div>';
