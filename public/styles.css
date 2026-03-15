@@ -1604,3 +1604,279 @@ body { height: 100dvh; font-family: 'Inter', sans-serif; background: var(--bg); 
   padding: 14px 8px !important;
   min-height: 90px !important;
 }
+
+/* ══════════════════════════════════════
+   V6.3 — MOBILE FIXES
+   Sidebar como drawer con overlay
+   Vista limpia sin estorbos
+══════════════════════════════════════ */
+
+/* Overlay oscuro detrás del sidebar en mobile */
+.sb-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 99;
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+}
+.sb-overlay.active { display: block; }
+
+/* Mobile: sidebar ocupa 85% y deja zona para cerrar */
+@media (max-width: 640px) {
+  .sb {
+    width: 85vw !important;
+    max-width: 320px;
+    z-index: 200 !important;
+  }
+  /* Nueva sidebar class para el nuevo nav */
+  .sidebar {
+    width: 85vw !important;
+    max-width: 320px;
+    z-index: 200 !important;
+  }
+
+  /* Ocultar botón widgets del input en mobile — solo visible en welcome */
+  .inp-widgets-btn { display: none !important; }
+  .input-actions-top { display: none !important; }
+
+  /* El campo de chat en mobile: pegado al fondo, limpio */
+  .input-area {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 50;
+    padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    background: var(--bg) !important;
+    border-top: 1px solid var(--border) !important;
+  }
+
+  /* Agregar padding al chat para que no quede tapado por el input fijo */
+  #chat-area {
+    padding-bottom: 80px !important;
+  }
+  #welcome {
+    padding-bottom: 80px !important;
+  }
+}
+
+/* Desktop: sidebar normal */
+@media (min-width: 641px) {
+  .sb-overlay { display: none !important; }
+}
+
+/* ══════════════════════════════════════
+   V6.4 — UX CONVERSACIONAL
+   Arquitectura: ChatGPT + espiritualidad
+   Mobile-first, input dominante
+══════════════════════════════════════ */
+
+/* ── Topbar minimalista ── */
+.tb-brand-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brown);
+  letter-spacing: -.01em;
+}
+.tb-brand-name em { color: var(--ocre); font-style: normal; }
+.tb-new-btn {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--brown);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .12s;
+}
+.tb-new-btn:hover { background: var(--bg3); border-color: var(--brown); }
+
+/* ── Welcome — arquitectura ChatGPT ── */
+#welcome {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  overflow-y: auto !important;
+}
+
+/* Hero section */
+.wlc-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px 28px;
+  max-width: 600px;
+  width: 100%;
+  animation: fadeSlideUp .5s ease;
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.wlc-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.wlc-logo-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--brown);
+}
+.wlc-logo-name em { color: var(--ocre); font-style: normal; }
+
+.wlc-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(22px, 5vw, 30px);
+  font-weight: 700;
+  color: var(--brown);
+  line-height: 1.35;
+  margin-bottom: 12px;
+  letter-spacing: -.02em;
+}
+.wlc-sub {
+  font-family: 'Lora', serif;
+  font-size: 15px;
+  color: var(--ink4);
+  font-style: italic;
+  line-height: 1.6;
+  max-width: 420px;
+}
+
+/* Categorías tipo apps */
+.wlc-cats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 580px;
+  padding: 0 16px 16px;
+  animation: fadeSlideUp .5s ease .1s both;
+}
+.wlc-cat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all .15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.wlc-cat:hover, .wlc-cat:active {
+  border-color: var(--ocre);
+  background: var(--ocre-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(201,146,58,.15);
+}
+.wlc-cat-ico { font-size: 22px; line-height: 1; }
+.wlc-cat-lbl {
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: .01em;
+}
+
+/* Chips de preguntas sugeridas */
+.wlc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 0 16px 24px;
+  max-width: 600px;
+  width: 100%;
+  animation: fadeSlideUp .5s ease .2s both;
+}
+.wlc-chip {
+  font-family: 'Lora', serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--brown);
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: all .13s;
+  white-space: nowrap;
+}
+.wlc-chip:hover {
+  background: var(--ocre-bg);
+  border-color: var(--ocre);
+  transform: translateY(-1px);
+}
+
+/* ── Input dominante — ocupa todo el ancho ── */
+.input-area {
+  width: 100%;
+  padding: 10px 12px max(14px, env(safe-area-inset-bottom)) !important;
+  background: var(--bg) !important;
+  border-top: 1px solid var(--border) !important;
+}
+.input-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.cin {
+  font-size: 15px !important;
+  padding: 14px 52px 14px 18px !important;
+  border-radius: 14px !important;
+  border: 1.5px solid var(--border2) !important;
+  background: #fff !important;
+  line-height: 1.5 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+  transition: border-color .15s, box-shadow .15s !important;
+}
+.cin:focus {
+  border-color: var(--ocre) !important;
+  box-shadow: 0 2px 12px rgba(201,146,58,.15) !important;
+  outline: none !important;
+}
+.cin::placeholder {
+  color: var(--ink4) !important;
+  font-style: italic !important;
+}
+#send-btn {
+  width: 38px !important; height: 38px !important;
+  border-radius: 10px !important;
+  background: var(--brown) !important;
+}
+
+/* Mobile: welcome centrado verticalmente */
+@media (max-width: 640px) {
+  .wlc-hero { padding-top: 28px; padding-bottom: 20px; }
+  .wlc-cats { grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 12px 14px; }
+  .wlc-cat { padding: 12px 6px; border-radius: 12px; }
+  .wlc-cat-ico { font-size: 20px; }
+  .wlc-cat-lbl { font-size: 10.5px; }
+  .wlc-chips { padding: 0 12px 16px; gap: 6px; }
+  .wlc-chip { font-size: 12.5px; padding: 6px 13px; }
+  .wlc-title { font-size: 22px; }
+  /* Input área fija al fondo en mobile */
+  .input-area {
+    position: fixed !important;
+    bottom: 0; left: 0; right: 0;
+    z-index: 50;
+    box-shadow: 0 -4px 20px rgba(0,0,0,.08);
+  }
+  #welcome { padding-bottom: 85px !important; }
+  #chat-area { padding-bottom: 85px !important; }
+}
+
+/* Desktop: welcome más amplio */
+@media (min-width: 641px) {
+  .wlc-hero { padding-top: 60px; }
+  .wlc-cats { grid-template-columns: repeat(4, 1fr); }
+}

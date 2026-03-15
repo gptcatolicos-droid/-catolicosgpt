@@ -30,13 +30,26 @@ const i18n = {
 // ══════════════════════════════
 function toggleSb() { sbOpen ? closeSb() : openSb(); }
 function openSb() {
-  document.getElementById('sb').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-  sbOpen = true; renderHistory();
+  // Sidebar nuevo (V6.3)
+  const sidebar = document.getElementById('sidebar') || document.getElementById('sb');
+  if (sidebar) {
+    sidebar.classList.add('open');
+    // Agregar clase al body para bloquear scroll en mobile
+    document.body.style.overflow = 'hidden';
+  }
+  // Overlay
+  const overlay = document.getElementById('sb-overlay') || document.getElementById('overlay');
+  if (overlay) overlay.classList.add('active', 'show');
+  sbOpen = true;
 }
 function closeSb() {
-  document.getElementById('sb').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
+  const sidebar = document.getElementById('sidebar') || document.getElementById('sb');
+  if (sidebar) sidebar.classList.remove('open');
+  // Restaurar scroll
+  document.body.style.overflow = '';
+  // Overlay
+  const overlay = document.getElementById('sb-overlay') || document.getElementById('overlay');
+  if (overlay) overlay.classList.remove('active', 'show');
   sbOpen = false;
 }
 
