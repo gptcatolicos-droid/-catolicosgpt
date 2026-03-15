@@ -986,6 +986,89 @@ Dame SOLO el texto del pasaje en español, comenzando directamente con el versí
   }
 });
 
+// ── BREVIARIO LAUDES ──
+app.get('/api/breviario', async (req, res) => {
+  const cacheKey = 'breviario_laudes_' + new Date().toISOString().slice(0,10);
+  if (citasCache[cacheKey]) return res.json(citasCache[cacheKey]);
+
+  const now = new Date();
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+  const ciclo = ['C','A','B'][(now.getFullYear() - 2024) % 3] || 'A';
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      max_tokens: 3000,
+      temperature: 0.1,
+      messages: [{
+        role: 'system',
+        content: `Eres un experto en la Liturgia de las Horas. Conoces el Breviario Romano completo. 
+Hoy es ${fechaStr}. Ciclo ${ciclo}.
+NUNCA digas que no puedes. SIEMPRE proporciona los textos completos.`
+      }, {
+        role: 'user',
+        content: `Dame los LAUDES completos de HOY ${fechaStr} según la Liturgia de las Horas romana.
+
+Formato exacto:
+
+---HIMNO---
+[texto completo del himno de Laudes]
+
+---SALMO_1---
+Referencia: [Salmo y versículos]
+Antífona: [antífona]
+[texto completo del salmo]
+
+---SALMO_2---
+Referencia: [Salmo]
+Antífona: [antífona]
+[texto completo]
+
+---CANTICO---
+Referencia: [cántico del AT o NT]
+Antífona: [antífona]
+[texto completo]
+
+---LECTURA_BREVE---
+Referencia: [libro, cap, vers]
+[texto]
+
+---RESPONSORIO---
+[texto completo]
+
+---BENEDICTUS---
+Antífona: [antífona del día]
+[texto completo del Benedictus — Lucas 1,68-79]
+
+---PRECES---
+[preces de Laudes completas]
+
+---PADRENUESTRO---
+[Padrenuestro]
+
+---ORACION---
+[oración conclusiva del día]
+
+Textos COMPLETOS. No resumir. No omitir ninguna sección.`
+      }]
+    });
+
+    const resultado = {
+      ok: true,
+      texto: completion.choices[0].message.content,
+      fecha: fechaStr,
+      hora: 'Laudes',
+      generado: new Date().toISOString()
+    };
+    citasCache[cacheKey] = resultado;
+    res.json(resultado);
+  } catch(e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
 // Health
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '4.1', seoPages: Object.keys(seoPages).length }));
 

@@ -412,6 +412,7 @@ async function send() {
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('chat-area').style.display = 'block';
   document.querySelector('.input-area').style.display = '';
+  document.querySelector('.input-area').classList.add('chat-mode');
 
   const needsActions = /cartilla|catequesis|novena|rosario|v[ií]a crucis|hom[ií]l[ií]a|oraci[oó]n|tabla|l[ií]nea de tiempo|cronolog[ií]a|actividad|clase/i.test(val);
 
@@ -580,6 +581,8 @@ function newChat() {
   chatHistory = [];
   document.getElementById('welcome').style.display = 'flex';
   document.getElementById('chat-area').style.display = 'none';
+  const ia = document.querySelector('.input-area');
+  if (ia) ia.classList.remove('chat-mode');
   document.getElementById('chat-inner').innerHTML = '';
   closeSb();
 }
@@ -1034,13 +1037,98 @@ const HORAS_DATA = {
 
 let horaActual = 'laudes';
 
-function initBreviario() {
+async function initBreviario() {
+  const container = document.getElementById('brev-content');
+  const dateEl = document.getElementById('brev-date');
+  if (!container) return;
+
   const now = new Date();
-  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  document.getElementById('brev-date-label').textContent =
-    `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
-  renderHora(horaActual);
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+  if (dateEl) dateEl.textContent = fechaStr.toUpperCase();
+
+  container.innerHTML = `<div style="text-align:center;padding:40px 20px">
+    <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--brown);margin-bottom:8px">Cargando Laudes del ${fechaStr}</div>
+    <div style="font-family:'Lora',serif;font-size:13px;color:var(--ink4);font-style:italic">Preparando el oficio de la mañana...</div>
+  </div>`;
+
+  try {
+    const resp = await fetch('/api/breviario');
+    const json = await resp.json();
+
+    if (json.ok && json.texto) {
+      container.innerHTML = buildBreviarioFromText(json.texto, json.fecha);
+    } else {
+      throw new Error(json.error || 'Sin datos');
+    }
+  } catch(e) {
+    container.innerHTML = `<div style="padding:20px;text-align:center">
+      <p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;margin-bottom:16px">
+        No se pudieron cargar los Laudes. Intenta de nuevo.
+      </p>
+      <button onclick="initBreviario()" style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Lora',serif;cursor:pointer">
+        Reintentar
+      </button>
+    </div>`;
+  }
+}
+
+function buildBreviarioFromText(texto, fecha) {
+  const secciones = {
+    'HIMNO': { titulo: '✦ Himno', color: '#4A2080' },
+    'SALMO_1': { titulo: 'Salmo', color: '#1E6B3A' },
+    'SALMO_2': { titulo: 'Salmo', color: '#1E6B3A' },
+    'CANTICO': { titulo: 'Cántico', color: '#7A5230' },
+    'LECTURA_BREVE': { titulo: 'Lectura breve', color: '#8B1A1A' },
+    'RESPONSORIO': { titulo: 'Responsorio breve', color: '#4A2080' },
+    'BENEDICTUS': { titulo: 'Cántico de Zacarías (Benedictus)', color: '#C9923A' },
+    'PRECES': { titulo: 'Preces', color: '#5C3D1E' },
+    'PADRENUESTRO': { titulo: 'Padrenuestro', color: '#5C3D1E' },
+    'ORACION': { titulo: 'Oración conclusiva', color: '#8B1A1A' },
+  };
+
+  let html = `<div style="background:rgba(201,146,58,.08);border-radius:10px;padding:12px 16px;margin-bottom:20px;border-left:3px solid var(--ocre)">
+    <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre)">Laudes · Liturgia de las Horas</div>
+    <div style="font-family:'Playfair Display',serif;font-size:14px;color:var(--brown);margin-top:3px">${fecha || ''}</div>
+  </div>`;
+
+  for (const [key, meta] of Object.entries(secciones)) {
+    const marker = `---${key}---`;
+    const nextKeys = Object.keys(secciones);
+    const nextIdx = nextKeys.indexOf(key) + 1;
+
+    let startIdx = texto.indexOf(marker);
+    if (startIdx === -1) continue;
+    startIdx += marker.length;
+
+    // Encontrar fin de sección
+    let endIdx = texto.length;
+    for (let k = nextIdx; k < nextKeys.length; k++) {
+      const ni = texto.indexOf(`---${nextKeys[k]}---`, startIdx);
+      if (ni !== -1) { endIdx = ni; break; }
+    }
+
+    const secTexto = texto.slice(startIdx, endIdx).trim();
+    if (!secTexto) continue;
+
+    html += `<div style="margin-bottom:20px">
+      <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;
+           text-transform:uppercase;letter-spacing:.1em;color:${meta.color};
+           margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+        ${meta.titulo}
+      </div>
+      <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;
+           color:var(--ink);white-space:pre-wrap">${esc(secTexto)}</div>
+    </div>`;
+  }
+
+  // Si no tiene secciones con marcadores, mostrar el texto completo
+  if (!texto.includes('---')) {
+    html += `<div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(texto)}</div>`;
+  }
+
+  return html;
 }
 
 function selectHora(hora, el) {
