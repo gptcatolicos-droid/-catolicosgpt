@@ -94,21 +94,24 @@ function parseMarkdown(text) {
   // Normalizar saltos de línea
   text = text.replace(/\\\\n/g, '\n').replace(/\\n/g, '\n');
 
-  // ── PASO 1: Tablas markdown ──
+  // ── TABLAS: procesar línea por línea ──
   const lines = text.split('\n');
   const out = [];
   let i = 0;
   while (i < lines.length) {
     const trimmed = lines[i].trim();
     if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.includes('|', 1)) {
+      // Recolectar todas las líneas de la tabla
       const tLines = [];
       while (i < lines.length && lines[i].trim().startsWith('|')) {
         tLines.push(lines[i].trim());
         i++;
       }
+      // Renderizar tabla
       let tHtml = '<div style="overflow-x:auto;margin:14px 0;border-radius:8px;border:1px solid var(--border);box-shadow:0 1px 4px var(--shadow)"><table style="width:100%;border-collapse:collapse">';
       let firstRow = true;
       tLines.forEach(tl => {
+        // Saltar línea separadora |---|
         if (/^\|[\s\-:]+[\|\-][\s\-:]+\|/.test(tl)) return;
         const cells = tl.split('|').map(c => c.trim()).filter(c => c !== '');
         if (!cells.length) return;
@@ -125,32 +128,14 @@ function parseMarkdown(text) {
   }
   text = out.join('\n');
 
-  // ── PASO 2: Links CIC [CIC XXXX] → modal interno ──
-  text = text.replace(/\[CIC\s+(\d+)\]/g, (match, num) => {
-    const url = `https://www.vatican.va/archive/catechism_sp/index_sp.html`;
-    return `<a href="#" onclick="openCitaModal('cic','${num}');return false;" class="cita-link cita-cic" title="Catecismo ${num}">[CIC ${num}]</a>`;
-  });
-
-  // ── PASO 3: Links bíblicos [Libro Cap,vers] → modal interno ──
-  // Abreviaturas bíblicas comunes
-  const biblBooks = 'Gn|Ex|Lv|Nm|Dt|Jos|Jue|Rut|1Sam|2Sam|1Re|2Re|1Cr|2Cr|Esd|Neh|Tob|Jdt|Est|1Mac|2Mac|Job|Sal|Prov|Ecl|Cant|Sab|Sir|Is|Jer|Lam|Bar|Ez|Dn|Os|Jl|Am|Abd|Jon|Miq|Nah|Hab|Sof|Ag|Zac|Mal|Mt|Mc|Lc|Jn|Hch|Rom|1Cor|2Cor|Gal|Ef|Flp|Col|1Tes|2Tes|1Tim|2Tim|Tit|Flm|Heb|Sant|1Pe|2Pe|1Jn|2Jn|3Jn|Jds|Ap';
-  const bibleRegex = new RegExp(`\\[((?:${biblBooks})\\s+[\\d,\\.\\-]+)\\]`, 'g');
-  text = text.replace(bibleRegex, (match, ref) => {
-    const encoded = encodeURIComponent(ref);
-    return `<a href="#" onclick="openCitaModal('biblia','${ref.replace(/'/g,"\\'")}');return false;" class="cita-link cita-biblia" title="${ref}">[${ref}]</a>`;
-  });
-
-  // ── PASO 4: Links externos markdown [texto](url) ──
-  text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener" class="ext-link">$1 ↗</a>');
-
-  // ── PASO 5: Resto del markdown ──
+  // ── RESTO DEL MARKDOWN ──
   let html = text
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1 ↗</a>')
     .replace(/^---$/gim, '<hr>')
     .replace(/^- (.*$)/gim, '<li>$1</li>')
     .replace(/^(\d+)\. (.*$)/gim, '<li><strong style="color:var(--ocre)">$1.</strong> $2</li>')
@@ -158,49 +143,6 @@ function parseMarkdown(text) {
     .replace(/\n/g, '<br>');
 
   html = html.replace(/(<li>.*?<\/li>(<br>)?)+/gs, m => `<ul>${m.replace(/<br>/g,'')}</ul>`);
-  return html;
-}
-
-function linkifyCitas(html) {
-  // CIC XXXX → link Catecismo Vatican.va
-  html = html.replace(/\bCIC\s+(\d{3,4})\b/g, (match, num) => {
-    return '<a href="https://www.vatican.va/archive/catechism_sp/index_sp.html" target="_blank" rel="noopener" ' +
-      'title="Catecismo §' + num + '" class="cite-cic">CIC ' + num + ' <span class=\"cite-ico\">↗</span></a>';
-  });
-
-  // Referencias bíblicas → Bible Gateway español
-  const LIBROS = 'Ap|Jud|3Jn|2Jn|1Jn|2Pe|1Pe|Sant|Heb|Flm|Tit|2Tim|1Tim|2Tes|1Tes|Col|Flp|Ef|Gal|2Cor|1Cor|Rom|Hch|Jn|Lc|Mc|Mt|Mal|Za|Ag|Sof|Hab|Na|Mi|Jon|Abd|Am|Jl|Os|Dn|Ez|Bar|Lam|Jr|Is|Eclo|Sab|Cant|Ecl|Prov|Sal|Job|2Mac|1Mac|Est|Jdt|Tob|Neh|Esd|2Cr|1Cr|2Re|1Re|2Sam|1Sam|Rut|Jue|Jos|Dt|Nm|Lv|Ex|Gn';
-  const bibliaRe = new RegExp('\\b(' + LIBROS + ')\\s+(\\d+)[,\\s]*(\\d+)?(?:[-–](\\d+))?\\b', 'g');
-
-  html = html.replace(bibliaRe, (match, libro, cap, ver) => {
-    const query = encodeURIComponent(libro + ' ' + cap + (ver ? ':' + ver : ''));
-    const url = 'https://www.biblegateway.com/passage/?search=' + query + '&version=BLPH';
-    return '<a href="' + url + '" target="_blank" rel="noopener" ' +
-      'title="Ver ' + match + ' en la Biblia" class="cite-biblia">' + match + ' <span class=\"cite-ico\">↗</span></a>';
-  });
-
-  // Documentos pontificios → Vatican.va
-  const DOCS = [
-    ['Humanae Vitae', 'https://www.vatican.va/content/paul-vi/es/encyclicals/documents/hf_p-vi_enc_25071968_humanae-vitae.html'],
-    ['Evangelium Vitae', 'https://www.vatican.va/content/john-paul-ii/es/encyclicals/documents/hf_jp-ii_enc_25031995_evangelium-vitae.html'],
-    ['Laudato Si', 'https://www.vatican.va/content/francesco/es/encyclicals/documents/papa-francesco_20150524_enciclica-laudato-si.html'],
-    ['Amoris Laetitia', 'https://www.vatican.va/content/francesco/es/apost_exhortations/documents/papa-francesco_esortazione-ap_20160319_amoris-laetitia.html'],
-    ['Evangelii Gaudium', 'https://www.vatican.va/content/francesco/es/apost_exhortations/documents/papa-francesco_esortazione-ap_20131124_evangelii-gaudium.html'],
-    ['Lumen Gentium', 'https://www.vatican.va/archive/hist_councils/ii_vatican_council/documents/vat-ii_const_19641121_lumen-gentium_sp.html'],
-    ['Gaudium et Spes', 'https://www.vatican.va/archive/hist_councils/ii_vatican_council/documents/vat-ii_const_19651207_gaudium-et-spes_sp.html'],
-    ['Dei Verbum', 'https://www.vatican.va/archive/hist_councils/ii_vatican_council/documents/vat-ii_const_19651118_dei-verbum_sp.html'],
-    ['Deus Caritas Est', 'https://www.vatican.va/content/benedict-xvi/es/encyclicals/documents/hf_ben-xvi_enc_20051225_deus-caritas-est.html'],
-    ['Fides et Ratio', 'https://www.vatican.va/content/john-paul-ii/es/encyclicals/documents/hf_jp-ii_enc_14091998_fides-et-ratio.html'],
-    ['Veritatis Splendor', 'https://www.vatican.va/content/john-paul-ii/es/encyclicals/documents/hf_jp-ii_enc_06081993_veritatis-splendor.html'],
-    ['Rerum Novarum', 'https://www.vatican.va/content/leo-xiii/es/encyclicals/documents/hf_l-xiii_enc_15051891_rerum-novarum.html']
-  ];
-  DOCS.forEach(function(pair) {
-    var nombre = pair[0], url = pair[1];
-    // No linkear si ya está dentro de un <a>
-    var re = new RegExp('(?<!["\'\\w])' + nombre.replace(/ /g,'\\s+') + '(?![\\w])', 'g');
-    html = html.replace(re, '<a href="' + url + '" target="_blank" rel="noopener" class="cite-doc" title="' + nombre + ' — Vatican.va">' + nombre + ' <span class=\"cite-ico\">↗</span></a>');
-  });
-
   return html;
 }
 
@@ -263,7 +205,7 @@ function renderBubble(text, isUser, addActions = false, userMsg = '') {
     b.innerHTML = parseMarkdown(text);
 
     // Fuentes
-    // src-row removido en V6
+    b.innerHTML += '<div class="src-row"><span class="src">Magisterio</span><span class="src">Vatican.va</span></div>';
 
     // ── BOTONES SIEMPRE VISIBLES en todas las respuestas ──
     const hasTable = b.innerHTML.includes('<table');
@@ -413,21 +355,13 @@ async function send() {
         if (!jsonStr) continue;
         try {
           const parsed = JSON.parse(jsonStr);
-          if (parsed.magisterium) {
-            // Fuentes de Magisterium llegan primero — mostrar badge
-            renderMagisteriumSources(parsed.magisterium, b);
-          }
           if (parsed.delta) {
             fullText += parsed.delta;
-            // Mantener el badge de Magisterium si existe
-            const magBadge = b.querySelector('.mag-sources');
-            b.innerHTML = (magBadge ? magBadge.outerHTML : '') +
-              parseMarkdown(fullText) + '<span class="typing-cursor">▋</span>';
+            b.innerHTML = parseMarkdown(fullText) + '<span class="typing-cursor">▋</span>';
             d.scrollTop = d.scrollHeight;
           }
           if (parsed.done) {
-            const magBadge = b.querySelector('.mag-sources');
-            b.innerHTML = (magBadge ? magBadge.outerHTML : '') + parseMarkdown(fullText);
+            b.innerHTML = parseMarkdown(fullText);
             chatHistory.push({ role: 'assistant', content: fullText });
             addBubbleActions(b, fullText, userMsg, needsActions);
             if (chatHistory.length === 2) saveConversation(userMsg);
@@ -490,13 +424,18 @@ function showStopBtn(show) {
 }
 
 function addBubbleActions(b, text, userMsg, needsActions) {
-  // Solo botón PDF + Copiar (sin Word, PPT, sin badges Magisterio)
+  // Fuentes
+  b.innerHTML += '<div class="src-row"><span class="src">Magisterio</span><span class="src">Vatican.va</span></div>';
+
+  // Botones siempre visibles
   const hasTable = b.innerHTML.includes('<table');
   let actHtml = '<div class="action-row">';
-  actHtml += `<button class="act-btn pdf" onclick="exportPDF(this)" title="Exportar PDF">📕 PDF</button>`;
-  actHtml += `<button class="act-btn copy" onclick="copyText(this)" title="Copiar texto">📋 Copiar</button>`;
+  actHtml += `<button class="act-btn pdf" onclick="exportPDF(this)" title="PDF">📕 PDF</button>`;
+  actHtml += `<button class="act-btn word" onclick="exportWord(this)" title="Word">📝 Word</button>`;
+  actHtml += `<button class="act-btn ppt" onclick="exportPPT(this)" title="PPT">📊 PPT</button>`;
+  actHtml += `<button class="act-btn copy" onclick="copyText(this)" title="Copiar">📋 Copiar</button>`;
   if (hasTable) {
-    actHtml += `<button class="act-btn gdoc" onclick="openGoogleDocs(this)">📄 Google Docs</button>`;
+    actHtml += `<button class="act-btn gdoc" onclick="openGoogleDocs(this)">📄 G.Docs</button>`;
   }
   actHtml += '</div>';
   b.innerHTML += actHtml;
@@ -1356,195 +1295,4 @@ function getTiempoLiturgico(year, month) {
   if (m === 4 && new Date(year, month, 12).getDay() === 0) return 'Tiempo Pascual';
   if (m >= 5 && m <= 11) return 'Tiempo Ordinario';
   return 'Tiempo Ordinario';
-}
-
-// ══════════════════════════════════════════════
-// MODAL DE CITAS — CIC y Biblia dentro de la app
-// ══════════════════════════════════════════════
-
-const CIC_URLS = {
-  // Mapa de números CIC a secciones del Catecismo en Vatican.va
-  // Primera parte
-  range_1_25: 'p1s1c1_sp.html', range_26_49: 'p1s1c2_sp.html',
-  range_50_141: 'p1s1c3_sp.html', range_142_197: 'p1s2c1_sp.html',
-  range_198_267: 'p1s2c2_sp.html', range_268_354: 'p1s2c3_sp.html',
-  range_355_421: 'p1s2c4_sp.html', range_422_682: 'p1s2c5_sp.html',
-  range_683_747: 'p1s2c6_sp.html', range_748_975: 'p1s2c7_sp.html',
-  // Segunda parte
-  range_1076_1209: 'p2s1_sp.html', range_1210_1690: 'p2s2_sp.html',
-  // Tercera parte
-  range_1691_1876: 'p3s1_sp.html', range_1877_2051: 'p3s2c1_sp.html',
-  range_2052_2557: 'p3s2c2_sp.html',
-  // Cuarta parte
-  range_2558_2865: 'p4_sp.html'
-};
-
-function getCICUrl(num) {
-  const n = parseInt(num);
-  const base = 'https://www.vatican.va/archive/catechism_sp/';
-  if (n <= 25) return base + 'p1s1c1_sp.html';
-  if (n <= 49) return base + 'p1s1c2_sp.html';
-  if (n <= 141) return base + 'p1s1c3_sp.html';
-  if (n <= 197) return base + 'p1s2c1_sp.html';
-  if (n <= 267) return base + 'p1s2c2_sp.html';
-  if (n <= 354) return base + 'p1s2c3_sp.html';
-  if (n <= 421) return base + 'p1s2c4_sp.html';
-  if (n <= 682) return base + 'p1s2c5_sp.html';
-  if (n <= 747) return base + 'p1s2c6_sp.html';
-  if (n <= 975) return base + 'p1s2c7_sp.html';
-  if (n <= 1209) return base + 'p2s1_sp.html';
-  if (n <= 1690) return base + 'p2s2_sp.html';
-  if (n <= 1876) return base + 'p3s1_sp.html';
-  if (n <= 2051) return base + 'p3s2c1_sp.html';
-  if (n <= 2557) return base + 'p3s2c2_sp.html';
-  return base + 'p4_sp.html';
-}
-
-function getBibleUrl(ref) {
-  // Bible Gateway en español (RVR1960 / NVI)
-  const encoded = encodeURIComponent(ref);
-  return `https://www.biblegateway.com/passage/?search=${encoded}&version=LBLA`;
-}
-
-async function openCitaModal(tipo, ref) {
-  // Crear modal si no existe
-  let modal = document.getElementById('cita-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'cita-modal';
-    modal.className = 'cita-modal';
-    modal.innerHTML = `
-      <div class="cita-modal-box">
-        <div class="cita-modal-head">
-          <div class="cita-modal-title" id="cita-modal-title"></div>
-          <button class="cita-modal-close" onclick="closeCitaModal()">✕</button>
-        </div>
-        <div class="cita-modal-body" id="cita-modal-body">
-          <div class="cita-loading">Cargando...</div>
-        </div>
-        <div class="cita-modal-foot">
-          <a id="cita-modal-link" href="#" target="_blank" class="cita-ext-btn">
-            Ver fuente oficial ↗
-          </a>
-          <button onclick="closeCitaModal()" class="cita-cerrar-btn">Cerrar</button>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', e => { if (e.target === modal) closeCitaModal(); });
-  }
-
-  const titleEl = document.getElementById('cita-modal-title');
-  const bodyEl = document.getElementById('cita-modal-body');
-  const linkEl = document.getElementById('cita-modal-link');
-
-  modal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-
-  if (tipo === 'cic') {
-    titleEl.textContent = `📖 Catecismo — CIC ${ref}`;
-    const url = getCICUrl(ref);
-    linkEl.href = url;
-    linkEl.textContent = 'Ver en Vatican.va ↗';
-    bodyEl.innerHTML = `
-      <div class="cita-ref-badge cic-badge">CIC ${ref}</div>
-      <div class="cita-texto" id="cita-texto-content">
-        <div class="cita-loading">Consultando el Catecismo...</div>
-      </div>`;
-
-    // Pedir a la IA el texto del CIC
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          stream: false,
-          messages: [{
-            role: 'user',
-            content: `Dame el texto COMPLETO y EXACTO del artículo ${ref} del Catecismo de la Iglesia Católica (CIC ${ref}). Solo el texto del artículo, sin introducciones ni comentarios tuyos.`
-          }]
-        })
-      });
-      const data = await res.json();
-      document.getElementById('cita-texto-content').innerHTML =
-        `<div class="cita-texto-inner">${parseMarkdown(data.reply || 'No disponible')}</div>`;
-    } catch(e) {
-      document.getElementById('cita-texto-content').innerHTML =
-        `<p style="color:var(--ink4);font-style:italic">Consulta directamente en Vatican.va</p>`;
-    }
-
-  } else if (tipo === 'biblia') {
-    titleEl.textContent = `✝ Biblia — ${ref}`;
-    const url = getBibleUrl(ref);
-    linkEl.href = url;
-    linkEl.textContent = 'Ver en BibleGateway ↗';
-    bodyEl.innerHTML = `
-      <div class="cita-ref-badge biblia-badge">${ref}</div>
-      <div class="cita-texto" id="cita-texto-content">
-        <div class="cita-loading">Buscando el pasaje...</div>
-      </div>`;
-
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          stream: false,
-          messages: [{
-            role: 'user',
-            content: `Dame el texto COMPLETO de ${ref} de la Biblia, traducción litúrgica en español (Biblia de Jerusalén o Libro del Pueblo de Dios). Solo el texto bíblico, sin comentarios.`
-          }]
-        })
-      });
-      const data = await res.json();
-      document.getElementById('cita-texto-content').innerHTML =
-        `<div class="cita-texto-inner" style="font-style:italic">${parseMarkdown(data.reply || 'No disponible')}</div>`;
-    } catch(e) {
-      document.getElementById('cita-texto-content').innerHTML =
-        `<p style="color:var(--ink4);font-style:italic">Consulta en BibleGateway.com</p>`;
-    }
-  }
-}
-
-function closeCitaModal() {
-  const modal = document.getElementById('cita-modal');
-  if (modal) modal.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-// ══════════════════════════════════════════════
-// WIDGETS SAGRADOS
-// ══════════════════════════════════════════════
-function openWidgets() {
-  const modal = document.getElementById('widgets-modal');
-  if (modal) {
-    modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-}
-
-function closeWidgets() {
-  const modal = document.getElementById('widgets-modal');
-  if (modal) {
-    modal.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-}
-
-// ══════════════════════════════════════════════
-// MAGISTERIUM — mostrar fuentes verificadas
-// ══════════════════════════════════════════════
-function renderMagisteriumSources(text, bubble) {
-  if (!text || text.length < 30) return;
-  const div = document.createElement('div');
-  div.className = 'mag-sources';
-  div.innerHTML = `
-    <div class="mag-sources-title">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/>
-        <path d="M6 4v3M6 8.5v.1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-      </svg>
-      Fuentes verificadas del Magisterio
-    </div>
-    <div class="mag-sources-text">${parseMarkdown(text)}</div>`;
-  bubble.insertBefore(div, bubble.firstChild);
 }

@@ -28,12 +28,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// Magisterium API — OpenAI compatible
-const magisterium = new OpenAI({
-  apiKey: process.env.MAGISTERIUM_API_KEY,
-  baseURL: 'https://api.magisterium.com/v1'
-});
-
 // ══════════════════════════════
 // CARGAR TODOS LOS DATASETS
 // ══════════════════════════════
@@ -301,38 +295,12 @@ HISTORIA — PERÍODOS:
 ${HISTORIA.periodos?.map(p => `${p.periodo} (${p.años})`).join(' | ')}
 ════════════════════════
 
-REGLA DE ORO — LEE CON ATENCIÓN:
-
-LONGITUD Y ARGUMENTACIÓN:
-- Da SIEMPRE respuestas LARGAS y BIEN ARGUMENTADAS. Mínimo 4-6 párrafos en consultas teológicas.
-- Cuando cites el Catecismo [CIC XXXX], desarrolla el argumento COMPLETO detrás de esa cita. No solo la menciones.
-- Cuando cites la Biblia [Libro Cap,vers], explica el contexto del pasaje y su aplicación espiritual.
-- El usuario NUNCA debe pedirte que amplíes — da TODO desde la primera respuesta.
-
-FORMATO DE CITAS — MUY IMPORTANTE:
-- Catecismo: SIEMPRE escribe [CIC XXXX] con corchetes y número exacto. Ejemplo: [CIC 2270]
-- Biblia: SIEMPRE escribe [Jn 3,16] o [Mt 5,3-12] con corchetes. Ejemplo: [Sal 22,1]
-- El frontend convierte estos formatos automáticamente en links dentro de la app.
-- NUNCA escribas CIC 2270 sin corchetes. SIEMPRE [CIC 2270].
-
-LITURGIA DE LAS HORAS — CRÍTICO:
-- Laudes, Vísperas, Completas, Hora Intermedia: usa el dataset del breviario COMPLETO.
-- NUNCA resumir ni acortar textos litúrgicos. Himno, salmo, lectura y oraciones van COMPLETOS.
-
-REFERENCIAS OBLIGATORIAS en toda respuesta teológica:
-- Incluye siempre al final una referencia a un Doctor de la Iglesia o predicador moderno relevante.
-- Formato: 📚 **Para profundizar:** "[Obra/sermón]" — Autor | [Ver texto](url)
-- Fuentes válidas: San Agustín, Santo Tomás, Santa Teresa, Robert Barron (wordonfire.org), Scott Hahn, Peter Kreeft, Raniero Cantalamessa (vatican.va), Scott Hahn (stpaulcenter.com).
-
-ESTRUCTURA IDEAL de respuesta:
-1. Introducción teológica clara (1 párrafo)
-2. Desarrollo argumentado con [CIC XXXX] (2-3 párrafos)
-3. Base bíblica con [Libro Cap,vers] contextualizada (1-2 párrafos)
-4. Aplicación espiritual práctica (1 párrafo)
-5. 📚 Referencia a santo/predicador con link
-
+REGLA DE ORO:
+- Da SIEMPRE contenido COMPLETO, sin resumir, sin pedir confirmación.
+- Cita SIEMPRE con número CIC o documento pontificio.
 - El usuario NUNCA debe pedirte dos veces lo mismo.
-TONO: Pastoral, cálido, como sacerdote sabio, docto y accesible. Nunca frío ni telegráfico.
+
+TONO: Pastoral, cálido, como sacerdote sabio y accesible.
 
 TEMAS POLÉMICOS (aborto, ateísmo, dudas de fe):
 → Nunca juzgues. Responde con calidez, respetando el punto de vista.
@@ -428,39 +396,13 @@ app.post('/api/chat', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
-    let magisteriumSources = null;
-
-    // Paso 1: Consultar Magisterium en paralelo para obtener fuentes verificadas
-    try {
-      const magRes = await magisterium.chat.completions.create({
-        model: 'magisterium-1',
-        max_tokens: 800,
-        stream: false,
-        messages: [{ role: 'user', content: lastUserMsg }]
-      });
-      const magText = magRes.choices[0]?.message?.content || '';
-      if (magText.length > 50) {
-        magisteriumSources = magText;
-        // Enviar fuentes Magisterium primero como metadato
-        res.write(`data: ${JSON.stringify({ magisterium: magisteriumSources })}\n\n`);
-      }
-    } catch(e) {
-      console.log('[Magisterium API]', e.message);
-    }
-
-    // Paso 2: Respuesta principal con OpenAI streaming
-    // Enriquecer el sistema con fuentes de Magisterium si las hay
-    const enrichedSystem = magisteriumSources
-      ? systemPrompt + `\n\nFUENTES VERIFICADAS DE MAGISTERIUM AI (úsalas en tu respuesta):\n${magisteriumSources}`
-      : systemPrompt;
-
     try {
       const stream = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         temperature: 0.3,
-        max_tokens: 6000,
+        max_tokens: 3000,
         stream: true,
-        messages: [{ role: 'system', content: enrichedSystem }, ...messages]
+        messages: [{ role: 'system', content: systemPrompt }, ...messages]
       });
 
       let fullReply = '';
@@ -473,11 +415,13 @@ app.post('/api/chat', async (req, res) => {
         if (chunk.choices[0]?.finish_reason === 'stop') break;
       }
 
-      // SEO
+      // SEO al terminar
       try {
         if (shouldGenerateSEO(lastUserMsg)) {
           const slug = generateSlug(lastUserMsg);
-          if (!seoPages[slug]) seoPages[slug] = { question: lastUserMsg, answer: fullReply, date: new Date().toISOString() };
+          if (!seoPages[slug]) {
+            seoPages[slug] = { question: lastUserMsg, answer: fullReply, date: new Date().toISOString() };
+          }
         }
       } catch(e) {}
 
@@ -485,11 +429,12 @@ app.post('/api/chat', async (req, res) => {
       res.end();
 
     } catch(e) {
-      // Fallback Anthropic
+      // Fallback Anthropic streaming
       try {
-        const stream = await anthropic.messages.stream({
+        const client = anthropic;
+        const stream = await client.messages.stream({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 6000,
+          max_tokens: 3000,
           system: systemPrompt,
           messages
         });
@@ -507,17 +452,18 @@ app.post('/api/chat', async (req, res) => {
     }
 
   } else {
-    // ── NO STREAMING ──
+    // ── NO STREAMING (usado por initLecturas internamente) ──
     try {
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini', temperature: 0.3, max_tokens: 6000,
+        model: 'gpt-4o-mini', temperature: 0.3, max_tokens: 3000,
         messages: [{ role: 'system', content: systemPrompt }, ...messages]
       });
       res.json({ reply: completion.choices[0].message.content });
     } catch(e) {
       try {
-        const msg = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001', max_tokens: 6000,
+        const client = anthropic;
+        const msg = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001', max_tokens: 3000,
           system: systemPrompt, messages
         });
         res.json({ reply: msg.content[0].text });
@@ -656,138 +602,6 @@ app.get('/api/lecturas-dia', async (req, res) => {
     res.json({ ok: false, error: err.message });
   }
 });
-
-// ══════════════════════════════════════════════
-// SEO — BLOG AUTOMÁTICO
-// Genera artículos de alto volumen de búsqueda
-// ══════════════════════════════════════════════
-const blogArticles = {};
-const BLOG_TOPICS = [
-  { slug: 'como-rezar-el-rosario-paso-a-paso', title: 'Cómo rezar el Rosario paso a paso', keywords: ['rosario', 'oración', 'virgen maria'] },
-  { slug: 'que-es-la-eucaristia-iglesia-catolica', title: '¿Qué es la Eucaristía? La enseñanza de la Iglesia', keywords: ['eucaristia', 'transustanciacion', 'misa'] },
-  { slug: 'novena-san-jose-completa', title: 'Novena a San José completa — 9 días', keywords: ['novena san jose', 'san jose'] },
-  { slug: 'lecturas-del-dia-liturgia', title: 'Lecturas del día — Liturgia de la Palabra', keywords: ['lecturas del dia', 'liturgia'] },
-  { slug: 'diferencia-catolicos-protestantes', title: 'Diferencias entre católicos y protestantes', keywords: ['catolico protestante', 'diferencias'] },
-  { slug: 'que-dice-la-iglesia-sobre-el-aborto', title: '¿Qué dice la Iglesia Católica sobre el aborto?', keywords: ['iglesia aborto', 'catecismo aborto'] },
-  { slug: 'como-hacer-confession-pasos', title: 'Cómo hacer una buena confesión — Pasos y preparación', keywords: ['confesion', 'sacramento penitencia'] },
-  { slug: 'apariciones-virgen-fatima', title: 'Las apariciones de la Virgen en Fátima', keywords: ['fatima', 'apariciones virgen'] },
-  { slug: 'papa-leon-xiv-primer-papa-americano', title: 'Papa León XIV: el primer papa americano', keywords: ['papa leon XIV', 'nuevo papa'] },
-  { slug: 'parabolas-de-jesus-significado', title: 'Las parábolas de Jesús: significado y enseñanzas', keywords: ['parabolas jesus', 'evangelio'] },
-  { slug: 'santos-del-mes-marzo', title: 'Santos del mes — Santos más importantes del año', keywords: ['santos del mes', 'santoral'] },
-  { slug: 'que-es-el-purgatorio', title: '¿Qué es el Purgatorio? La doctrina católica explicada', keywords: ['purgatorio', 'escatologia'] },
-];
-
-async function generateBlogArticle(topic) {
-  if (blogArticles[topic.slug]) return blogArticles[topic.slug];
-  try {
-    const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 3000,
-      messages: [{
-        role: 'user',
-        content: `Escribe un artículo SEO completo en español sobre: "${topic.title}"
-
-Estructura:
-# ${topic.title}
-## Introducción (150 palabras)
-## [Subtítulo 1 relevante] (200 palabras)
-## [Subtítulo 2 relevante] (200 palabras)
-## [Subtítulo 3 relevante] (200 palabras)
-## Conclusión (100 palabras)
-
-Requisitos:
-- Basado en el Magisterio de la Iglesia Católica
-- Incluir citas del Catecismo cuando sea relevante
-- Tono pastoral y accesible
-- Palabras clave naturales: ${topic.keywords.join(', ')}
-- Al final: "Profundiza más preguntándole a CatolicosGPT"`
-      }]
-    });
-    const html = msg.content[0].text;
-    blogArticles[topic.slug] = { ...topic, html, generado: new Date().toISOString() };
-    return blogArticles[topic.slug];
-  } catch(e) {
-    return null;
-  }
-}
-
-// Ruta de blog
-app.get('/blog/:slug', async (req, res) => {
-  const { slug } = req.params;
-  const topic = BLOG_TOPICS.find(t => t.slug === slug);
-  if (!topic) return res.redirect('/');
-
-  let article = blogArticles[slug];
-  if (!article) {
-    article = await generateBlogArticle(topic);
-  }
-
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${topic.title} — CatolicosGPT</title>
-  <meta name="description" content="${topic.title} — Respuesta basada en el Magisterio de la Iglesia Católica. CatolicosGPT.">
-  <meta property="og:title" content="${topic.title} — CatolicosGPT">
-  <meta property="og:site_name" content="CatolicosGPT">
-  <link rel="canonical" href="https://catolicosgpt.com/blog/${slug}">
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"Article","headline":"${topic.title}",
-   "publisher":{"@type":"Organization","name":"CatolicosGPT","url":"https://catolicosgpt.com"},
-   "keywords":"${topic.keywords.join(',')}"}
-  </script>
-  <style>
-    body { font-family: Georgia, serif; max-width: 720px; margin: 0 auto; padding: 20px; color: #18100A; background: #FAF7F0; }
-    h1 { font-size: 28px; color: #5C3D1E; border-bottom: 2px solid #C9923A; padding-bottom: 12px; }
-    h2 { color: #7A5230; margin-top: 28px; }
-    p { line-height: 1.8; margin: 12px 0; }
-    .cta { background: #5C3D1E; color: white; padding: 16px 24px; border-radius: 10px; text-align: center; margin: 30px 0; }
-    .cta a { color: #C9923A; text-decoration: none; font-weight: bold; font-size: 18px; }
-    nav { margin-bottom: 20px; }
-    nav a { color: #C9923A; text-decoration: none; }
-  </style>
-</head>
-<body>
-  <nav><a href="/">← CatolicosGPT</a></nav>
-  <article>
-    ${article ? article.html.split('\n').join('<br>') : '<p>Generando artículo...</p>'}
-  </article>
-  <div class="cta">
-    <p style="color:#FAF7F0;margin:0 0 8px">¿Tienes más preguntas sobre este tema?</p>
-    <a href="/">Pregúntale a CatolicosGPT →</a>
-  </div>
-</body>
-</html>`;
-  res.send(html);
-});
-
-// Índice del blog
-app.get('/blog', (req, res) => {
-  const links = BLOG_TOPICS.map(t =>
-    `<li><a href="/blog/${t.slug}">${t.title}</a></li>`
-  ).join('');
-  res.send(`<!DOCTYPE html><html lang="es"><head>
-    <title>Blog Católico — CatolicosGPT</title>
-    <meta name="description" content="Artículos sobre fe católica, oraciones, sacramentos y vida espiritual.">
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <style>body{font-family:Georgia,serif;max-width:720px;margin:0 auto;padding:20px;background:#FAF7F0;color:#18100A}
-    h1{color:#5C3D1E;border-bottom:2px solid #C9923A;padding-bottom:10px}
-    a{color:#C9923A}li{margin:10px 0;font-size:17px}</style>
-  </head><body>
-    <a href="/">← CatolicosGPT</a>
-    <h1>Blog Católico</h1>
-    <ul>${links}</ul>
-  </body></html>`);
-});
-
-// Pregenerar 3 artículos al iniciar
-setTimeout(async () => {
-  for (const topic of BLOG_TOPICS.slice(0, 3)) {
-    await generateBlogArticle(topic).catch(()=>{});
-  }
-  console.log('[Blog] 3 artículos pregenerados');
-}, 8000);
 
 // Health
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '4.1', seoPages: Object.keys(seoPages).length }));

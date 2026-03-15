@@ -1,0 +1,142 @@
+{
+  "titulo": "Oraciones Católicas Completas — Dataset CatolicosGPT",
+  "oraciones_principales": [
+    {
+      "nombre": "Padre Nuestro",
+      "tipo": "Oración dominical",
+      "origen": "Mt 6,9-13 / Lc 11,2-4",
+      "texto_es": "Padre nuestro, que estás en el cielo,\nsantificado sea tu Nombre;\nvenga a nosotros tu reino;\nhágase tu voluntad\nen la tierra como en el cielo.\nDanos hoy nuestro pan de cada día;\nperdona nuestras ofensas,\ncomo también nosotros perdonamos\na los que nos ofenden;\nno nos dejes caer en la tentación,\ny líbranos del mal. Amén.",
+      "texto_latin": "Pater noster, qui es in caelis,\nsanctificetur nomen tuum;\nadveniat regnum tuum;\nfiat voluntas tua,\nsicut in caelo et in terra.\nPanem nostrum quotidianum\nda nobis hodie;\net dimitte nobis debita nostra,\nsicut et nos dimittimus\ndebitoribus nostris;\net ne nos inducas in tentationem;\nsed libera nos a malo. Amen.",
+      "cuando_rezar": "En toda ocasión. Es la oración por excelencia enseñada por Jesús."
+    },
+    {
+      "nombre": "Ave María",
+      "tipo": "Oración mariana",
+      "origen": "Lc 1,28.42 + Tradición",
+      "texto_es": "Dios te salve, María,\nllena eres de gracia;\nel Señor es contigo.\nBendita tú eres entre todas las mujeres,\ny bendito es el fruto de tu vientre, Jesús.\nSanta María, Madre de Dios,\nruega por nosotros, pecadores,\nahora y en la hora de nuestra muerte. Amén.",
+      "texto_latin": "Ave Maria, gratia plena,\nDominus tecum.\nBenedicta tu in mulieribus,\net benedictus fructus ventris tui, Iesus.\nSancta Maria, Mater Dei,\nora pro nobis peccatoribus,\nnunc et in hora mortis nostrae. Amen.",
+      "cuando_rezar": "Especialmente durante el Rosario, el Ángelus y la devoción mariana."
+    },
+    {
+      "nombre": "Gloria al Padre (Doxología)",
+      "tipo": "Doxología trinitaria",
+      "texto_es": "Gloria al Padre,\ny al Hijo,\ny al Espíritu Santo.\nComo era en el principio,\nahora y siempre,\npor los siglos de los siglos. Amén.",
+      "cuando_rezar": "Al final de cada salmo en la Liturgia de las Horas y en el Rosario."
+    },
+    {
+      "nombre": "Credo Apostólico",
+      "tipo": "Profesión de fe",
+      "origen": "Tradición apostólica, s. II-IV",
+      "texto_es": "Creo en Dios, Padre todopoderoso,\nCreador del cielo y de la tierra.\nCreo en Jesucristo, su único Hijo, nuestro Señor,\nque fue concebido por obra y gracia del Espíritu Santo,\nnació de Santa María Virgen,\npadeció bajo el poder de Poncio Pilato,\nfue crucificado, muerto y sepultado,\ndescendió a los infiernos,\nal tercer día resucitó de entre los muertos,\nsubió a los cielos\ny está sentado a la derecha de Dios, Padre todopoderoso.\nDesde allí ha de venir a juzgar a vivos y muertos.\nCreo en el Espíritu Santo,\nla santa Iglesia católica,\nla comunión de los santos,\nel perdón de los pecados,\nla resurrección de la carne\ny la vida eterna. Amén.",
+      "cuando_rezar": "Al inicio del Rosario y en la profesión de fe."
+    },
+    {
+      "nombre": "Credo Niceno-Constantinopolitano",
+      "tipo": "Profesión de fe conciliar",
+      "origen": "Concilios de Nicea (325) y Constantinopla (381)",
+      "texto_es": "Creo en un solo Dios,\nPadre todopoderoso,\nCreador del cielo y de la tierra,\nde todo lo visible y lo invisible.\nCreo en un solo Señor, Jesucristo,\nHijo único de Dios,\nnacido del Padre antes de todos los siglos:\nDios de Dios, Luz de Luz,\nDios verdadero de Dios verdadero,\nengendrado, no creado,\nde la misma naturaleza del Padre,\npor quien todo fue hecho;\nque por nosotros, los hombres,\ny por nuestra salvación bajó del cielo,\ny por obra del Espíritu Santo\nse encarnó de María, la Virgen, y se hizo hombre;\ny por nuestra causa fue crucificado\nen tiempos de Poncio Pilato;\npadeció y fue sepultado,\ny resucitó al tercer día, según las Escrituras,\ny subió al cielo, y está sentado\na la derecha del Padre;\ny de nuevo vendrá con gloria\npara juzgar a vivos y muertos,\ny su reino no tendrá fin.\nCreo en el Espíritu Santo, Señor y dador de vida,\nque procede del Padre y del Hijo,\nque con el Padre y el Hijo\nrecibe una misma adoración y gloria,\ny que habló por los profetas.\nCreo en la Iglesia,\nque es una, santa, católica y apostólica.\nConfieso que hay un solo Bautismo\npara el perdón de los pecados.\nEspero la resurrección de los muertos\ny la vida del mundo futuro. Amén.",
+      "cuando_rezar": "En la Santa Misa del domingo y solemnidades."
+    },
+    {
+      "nombre": "Acto de Contrición",
+      "tipo": "Oración penitencial",
+      "texto_es": "Señor mío Jesucristo,\nDios y Hombre verdadero,\nme pesa de todo corazón haberte ofendido\nporque eres infinitamente bueno\ny el pecado te desagrada.\nProponiendo firmemente, con tu gracia,\nconfesarme, cumplir la penitencia,\napartarme de las ocasiones de pecado\ny enmendarme.\nEspero alcanzar el perdón\npor tu infinita misericordia. Amén.",
+      "version_breve": "Señor mío Jesucristo, me arrepiento de todos mis pecados porque te amo sobre todas las cosas. Propongo firmemente no volver a pecar y alejarme de las ocasiones de pecado. Amén.",
+      "cuando_rezar": "Antes de la confesión y cuando se desea pedir perdón a Dios."
+    },
+    {
+      "nombre": "Ángelus",
+      "tipo": "Oración mariana tripartita",
+      "texto_es": "El ángel del Señor anunció a María.\nR/. Y concibió por obra del Espíritu Santo.\n\nDios te salve, María...\n\nHe aquí la esclava del Señor.\nR/. Hágase en mí según tu palabra.\n\nDios te salve, María...\n\nY el Verbo de Dios se hizo carne.\nR/. Y habitó entre nosotros.\n\nDios te salve, María...\n\nRuega por nosotros, Santa Madre de Dios.\nR/. Para que seamos dignos de alcanzar las promesas de Jesucristo.\n\nOremos: Infunde, Señor, tu gracia en nuestras almas, para que, los que hemos conocido, por el anuncio del ángel, la Encarnación de tu Hijo Jesucristo, lleguemos por los méritos de su Pasión y su Cruz, a la gloria de la Resurrección. Por Jesucristo Nuestro Señor. R/. Amén.",
+      "cuando_rezar": "A las 6am, 12pm y 6pm. Tradición católica desde el s. XIV."
+    },
+    {
+      "nombre": "Salve Regina",
+      "tipo": "Antífona mariana",
+      "origen": "Atribuida a Hermann de Reichenau (s. XI)",
+      "texto_es": "Dios te salve, Reina y Madre de misericordia,\nvida, dulzura y esperanza nuestra, Dios te salve.\nA ti llamamos los desterrados hijos de Eva.\nA ti suspiramos, gimiendo y llorando\nen este valle de lágrimas.\nEa, pues, Señora, abogada nuestra,\nvuelve a nosotros esos tus ojos misericordiosos.\nY después de este destierro,\nuéstranos a Jesús, fruto bendito de tu vientre.\n¡Oh clementísima, oh piadosa,\noh dulce Virgen María!",
+      "cuando_rezar": "Al final del Rosario y de las Completas. También los sábados."
+    },
+    {
+      "nombre": "Oración antes de comer",
+      "tipo": "Bendición de la mesa",
+      "texto_es": "Bendícenos, Señor,\nbendice estos alimentos que vamos a tomar\ny a quienes los han preparado.\nDa pan a los que tienen hambre\ny hambre de ti a los que tenemos pan. Amén.",
+      "version_breve": "Bendice, Señor, estos alimentos que vamos a tomar. Amén.",
+      "cuando_rezar": "Antes de cada comida."
+    },
+    {
+      "nombre": "Oración después de comer",
+      "tipo": "Acción de gracias",
+      "texto_es": "Te damos gracias, Señor,\npor todos tus beneficios,\na ti que vives y reinas\npor los siglos de los siglos. Amén.\nY que las almas de los fieles difuntos,\npor la misericordia de Dios,\ndescansen en paz. Amén.",
+      "cuando_rezar": "Después de cada comida."
+    },
+    {
+      "nombre": "Oración de la mañana — Ofrecimiento del día",
+      "tipo": "Oración matutina",
+      "texto_es": "Dios mío, en unión con el Inmaculado Corazón de María\nte ofrezco las oraciones, obras, alegrías y sufrimientos\nde este día para reparar las ofensas que se te hacen,\npor la salvación de los pecadores,\ny por todas las intenciones del Sagrado Corazón de Jesús.\nAmén.",
+      "cuando_rezar": "Al despertar, como consagración del día a Dios."
+    },
+    {
+      "nombre": "Oración de la noche",
+      "tipo": "Oración nocturna",
+      "texto_es": "Señor, en tus manos encomiendo mi espíritu.\nGracias por este día que ha terminado.\nPerdona mis faltas,\nprotege a los que amo\ny a todos los que duermen esta noche.\nQue tu ángel me guarde mientras descanso.\nAmén.",
+      "cuando_rezar": "Antes de dormir."
+    },
+    {
+      "nombre": "Oración por los difuntos",
+      "tipo": "Sufragio",
+      "texto_es": "Señor, que la luz perpetua brille para ellos.\nDescansen en paz. Amén.\n\nOh Dios, creador y redentor de todos los fieles,\nconcede a las almas de tus siervos difuntos\nel perdón de todos sus pecados,\npara que con piadosas súplicas\nalcancen la absolución que siempre desearon.\nTú que vives y reinas por los siglos de los siglos. Amén.",
+      "cuando_rezar": "En noviembre (mes de los difuntos), en aniversarios y en el rosario por los muertos."
+    },
+    {
+      "nombre": "Oración a San Miguel Arcángel",
+      "tipo": "Exorcismo menor / Oración de protección",
+      "autor": "Papa León XIII, 1886",
+      "texto_es": "San Miguel Arcángel, defiéndenos en la batalla.\nSé nuestro amparo contra la perversidad y acechanzas del diablo.\nQue Dios le reprima, pedimos suplicantes,\ny tú, Príncipe de la Milicia Celestial,\ncon el poder divino,\nencadena en el infierno a Satanás\ny a los otros espíritus malignos\nque vagan por el mundo para la perdición de las almas. Amén.",
+      "cuando_rezar": "Después de la misa (tradición preconciliar, hoy optativa), en momentos de tentación o peligro espiritual."
+    },
+    {
+      "nombre": "Magnificat",
+      "tipo": "Cántico de María",
+      "origen": "Lc 1,46-55",
+      "texto_es": "Proclama mi alma la grandeza del Señor,\nse alegra mi espíritu en Dios mi Salvador;\nporque ha mirado la humillación de su sierva.\nDesde ahora me felicitarán todas las generaciones,\nporque el Poderoso ha hecho obras grandes por mí:\nsu nombre es santo\ny su misericordia llega a sus fieles\nde generación en generación.\nÉl hace proezas con su brazo:\ndispersa a los soberbios de corazón,\nderriba del trono a los poderosos\ny enaltece a los humildes,\na los hambrientos los colma de bienes\ny a los ricos los despide vacíos.\nAuxilia a Israel, su siervo,\nmemoriando su misericordia\n—como lo había prometido a nuestros padres—\nen favor de Abrahán y su descendencia por siempre.",
+      "cuando_rezar": "En las Vísperas diariamente. Es el cántico mariano por excelencia."
+    },
+    {
+      "nombre": "Benedictus",
+      "tipo": "Cántico de Zacarías",
+      "origen": "Lc 1,68-79",
+      "texto_es": "Bendito sea el Señor, Dios de Israel,\nporque ha visitado y redimido a su pueblo,\nsuscitándonos una fuerza de salvación\nen la casa de David su siervo,\nsegún lo que había anunciado desde antiguo\npor boca de sus santos profetas.\nSalvación que nos libra de nuestros enemigos\ny de la mano de todos los que nos odian;\nrealizando la misericordia que tuvo con nuestros padres,\nrecordando su santa alianza\ny el juramento que juró a nuestro padre Abrahán.\nPara concedernos que, libres del temor,\narrebatados de la mano de los enemigos,\nle sirvamos con santidad y justicia\nen su presencia todos nuestros días.\nY a ti, niño, te llamarán profeta del Altísimo,\nporque irás delante del Señor\na preparar sus caminos,\nanunciando a su pueblo la salvación,\nel perdón de sus pecados.\nPor la entrañable misericordia de nuestro Dios,\nnos visitará el sol que nace de lo alto,\npara iluminar a los que viven en tinieblas\ny en sombra de muerte,\npara guiar nuestros pasos\nby el camino de la paz.",
+      "cuando_rezar": "En los Laudes diariamente."
+    }
+  ],
+  "novenas_populares": [
+    {
+      "nombre": "Novena a la Divina Misericordia",
+      "origen": "Revelada a Santa Faustina Kowalska (1937)",
+      "estructura": "9 días, cada día una intención especial encomendada por Jesús",
+      "dias": [
+        "Día 1: Toda la humanidad y especialmente los pecadores",
+        "Día 2: Las almas sacerdotales y religiosas",
+        "Día 3: Las almas devotas y fieles",
+        "Día 4: Los que no creen en Dios y los que aún no conocen a Cristo",
+        "Día 5: Las almas de los herejes y apóstatas",
+        "Día 6: Las almas mansas y humildes y las de los niños pequeños",
+        "Día 7: Las almas que veneran y glorifican la misericordia de Dios",
+        "Día 8: Las almas del Purgatorio",
+        "Día 9: Las almas tibias"
+      ],
+      "oracion_diaria": "Oh Jesús eterno, te ofrezco hoy...\n[intención del día]\n...por los méritos de tu Pasión, Muerte y Resurrección."
+    },
+    {
+      "nombre": "Novena a San José",
+      "dias_inicio": "10 de marzo (para terminar el 19, solemnidad)",
+      "oracion": "Oh San José, cuya protección es tan grande, tan fuerte, tan inmediata ante el trono de Dios, yo te encomiendo todos mis intereses y deseos. Oh San José, asísteme con tu poderosa intercesión y obtén de tu Divino Hijo todas las gracias espirituales y temporales que yo necesito..."
+    },
+    {
+      "nombre": "Novena de Aguinaldos",
+      "descripcion": "Novena de Navidad hispanoamericana. Del 16 al 24 de diciembre.",
+      "caracteristica": "Mezcla de canto, oración y celebración popular. Muy practicada en Colombia, Venezuela y Ecuador."
+    }
+  ]
+}
