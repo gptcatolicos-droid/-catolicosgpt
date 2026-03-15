@@ -406,7 +406,18 @@ EXPORTACIONES — CRÍTICO:
    "¡Listo! Los botones de exportación 📕 PDF · 📝 Word · 📊 PPT aparecen automáticamente debajo de cada respuesta. Solo haz clic en el que necesites."
 → El sistema genera los archivos automáticamente en el frontend. No necesitas hacer nada más.
 
-FORMATO: ## títulos, ### subtítulos, **negrita**, *cursiva*, listas con -`;
+FORMATO: ## títulos, ### subtítulos, **negrita**, *cursiva*, listas con -
+
+PROACTIVIDAD — SIEMPRE al final de cada respuesta:
+Incluye 2-3 preguntas de seguimiento que el usuario podría querer hacer, en este formato exacto:
+→ ¿Quieres que [acción concreta relacionada con lo explicado]?
+→ ¿Te explico [tema relacionado más profundo]?
+→ ¿Prefieres ver [comparación/análisis/lista]?
+
+Estas sugerencias deben ser específicas al tema respondido, no genéricas.
+Ejemplo para parábolas: "¿Quieres que compare las parábolas del Reino en los cuatro Evangelios?", 
+"¿Te explico el contexto histórico de por qué Jesús usaba parábolas?"`;
+
 }
 
 // ══════════════════════════════

@@ -1058,3 +1058,242 @@ body { height: 100dvh; font-family: 'Inter', sans-serif; background: var(--bg); 
   color: var(--ink3);
   line-height: 1.6;
 }
+
+/* ══════════════════════════════════════
+   V6.1 — BENCHMARK MAGISTERIUM
+══════════════════════════════════════ */
+
+/* ── Sidebar secciones ── */
+.sb-nav-section {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink4);
+  padding: 12px 12px 4px;
+}
+.sb-item { position: relative; }
+.sb-item-ico {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: var(--brown2);
+  transition: all .12s;
+}
+.sb-item:hover .sb-item-ico {
+  background: var(--ocre-bg);
+  border-color: var(--ocre);
+  color: var(--brown);
+}
+.sb-item span {
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.sb-item:hover span { color: var(--brown); }
+
+/* ── Citas pill — como Magisterium ── */
+.cita-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all .12s;
+  white-space: nowrap;
+  vertical-align: baseline;
+  line-height: 1.6;
+}
+.cita-biblia {
+  background: rgba(30,107,58,.08);
+  color: #1E6B3A;
+  border: 1px solid rgba(30,107,58,.2);
+}
+.cita-biblia:hover { background: rgba(30,107,58,.15); }
+.cita-cic {
+  background: rgba(139,26,26,.07);
+  color: #8B1A1A;
+  border: 1px solid rgba(139,26,26,.18);
+}
+.cita-cic:hover { background: rgba(139,26,26,.13); }
+
+/* ── Tablas estilo Magisterium ── */
+.mag-table-wrap {
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+.mag-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+}
+.mag-table th {
+  background: var(--bg3);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.mag-table td {
+  padding: 10px 14px;
+  vertical-align: top;
+  color: var(--ink);
+  font-family: 'Lora', serif;
+  font-size: 13.5px;
+  line-height: 1.6;
+  border-bottom: 1px solid var(--border);
+}
+.mag-table tr:last-child td { border-bottom: none; }
+.mag-table tr:nth-child(even) td { background: var(--bg); }
+.mag-table-footer {
+  padding: 8px 12px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+.mag-copy-table {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink3);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all .12s;
+}
+.mag-copy-table:hover { background: var(--bg3); color: var(--brown); border-color: var(--border2); }
+
+/* ── Modal citas — bottom sheet mobile ── */
+.cita-modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s;
+}
+.cita-modal.open { opacity: 1; pointer-events: all; }
+.cita-modal-box {
+  background: var(--bg);
+  width: 100%;
+  max-height: 80vh;
+  border-radius: 20px 20px 0 0;
+  display: flex; flex-direction: column;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+.cita-modal.open .cita-modal-box { transform: translateY(0); }
+.cita-modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border2); border-radius: 2px;
+  margin: 10px auto 0; flex-shrink: 0;
+}
+.cita-modal-head {
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.cita-modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px; font-weight: 600; color: var(--brown);
+  display: flex; align-items: center; gap: 8px;
+}
+.cita-modal-close {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--border); background: transparent;
+  cursor: pointer; font-size: 13px; color: var(--ink4);
+  display: flex; align-items: center; justify-content: center;
+}
+.cita-modal-body {
+  flex: 1; overflow-y: auto; padding: 16px 18px;
+  -webkit-overflow-scrolling: touch;
+}
+.cita-ref-pill {
+  display: inline-block;
+  font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 12px; margin-bottom: 14px;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.cita-ref-biblia { background: rgba(30,107,58,.08); color: #1E6B3A; border: 1px solid rgba(30,107,58,.2); }
+.cita-ref-cic { background: rgba(139,26,26,.07); color: #8B1A1A; border: 1px solid rgba(139,26,26,.18); }
+.cita-text-block {
+  font-family: 'Playfair Display', serif;
+  font-size: 15.5px; line-height: 2; color: var(--ink);
+  font-style: italic;
+}
+.cita-loading {
+  text-align: center; padding: 30px;
+  font-family: 'Lora', serif; font-style: italic;
+  color: var(--ink4); font-size: 13px;
+}
+.cita-modal-foot {
+  padding: 10px 16px; background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; flex-shrink: 0;
+}
+.cita-btn-ext {
+  flex: 1; padding: 9px 12px;
+  background: var(--bg3); color: var(--brown);
+  border: 1px solid var(--border2); border-radius: 8px;
+  font-family: 'Lora', serif; font-size: 13px;
+  text-decoration: none; text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.cita-btn-close {
+  padding: 9px 18px;
+  background: var(--brown); color: #fff;
+  border: none; border-radius: 8px;
+  font-family: 'Lora', serif; font-size: 13px; cursor: pointer;
+}
+
+/* Desktop: modal centrado */
+@media (min-width: 640px) {
+  .cita-modal { align-items: center; justify-content: center; }
+  .cita-modal-box {
+    width: min(560px, 90vw); max-height: 72vh;
+    border-radius: 14px; transform: scale(.95);
+  }
+  .cita-modal.open .cita-modal-box { transform: scale(1); }
+}
+
+/* Sugerencias proactivas */
+.suggestions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+.sug-chip {
+  font-family: 'Lora', serif; font-size: 13px; font-style: italic;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--border2); background: var(--bg2);
+  color: var(--brown); cursor: pointer; transition: all .12s;
+}
+.sug-chip:hover { background: var(--ocre-bg); border-color: var(--ocre); }
+
+/* Overflow tablas en mobile */
+@media (max-width: 600px) {
+  .mag-table-wrap { overflow-x: auto; }
+  .mag-table { min-width: 400px; }
+}

@@ -91,32 +91,34 @@ function setLang(l, btn) {
 // MARKDOWN PARSER
 // ══════════════════════════════
 function parseMarkdown(text) {
-  // Normalizar saltos de línea
   text = text.replace(/\\\\n/g, '\n').replace(/\\n/g, '\n');
 
-  // ── PASO 1: Tablas markdown ──
+  // ── TABLAS ──
   const lines = text.split('\n');
   const out = [];
   let i = 0;
   while (i < lines.length) {
     const trimmed = lines[i].trim();
-    if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.includes('|', 1)) {
+    if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.split('|').length > 2) {
       const tLines = [];
       while (i < lines.length && lines[i].trim().startsWith('|')) {
         tLines.push(lines[i].trim());
         i++;
       }
-      let tHtml = '<div style="overflow-x:auto;margin:14px 0;border-radius:8px;border:1px solid var(--border);box-shadow:0 1px 4px var(--shadow)"><table style="width:100%;border-collapse:collapse">';
+      // Construir tabla estilo Magisterium
+      let tHtml = '<div class="mag-table-wrap"><table class="mag-table">';
       let firstRow = true;
       tLines.forEach(tl => {
-        if (/^\|[\s\-:]+[\|\-][\s\-:]+\|/.test(tl)) return;
+        if (/^\|[\s\-:]+[\|\-]/.test(tl)) return; // separador
         const cells = tl.split('|').map(c => c.trim()).filter(c => c !== '');
         if (!cells.length) return;
         const tag = firstRow ? 'th' : 'td';
         tHtml += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
         firstRow = false;
       });
-      tHtml += '</table></div>';
+      tHtml += '</table>';
+      tHtml += '<div class="mag-table-footer"><button class="mag-copy-table" onclick="copyTableAbove(this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="4" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 4V2.5A1.5 1.5 0 0 1 5.5 1h6A1.5 1.5 0 0 1 13 2.5v6A1.5 1.5 0 0 1 11.5 10H10" stroke="currentColor" stroke-width="1.2"/></svg> Copy Table</button></div>';
+      tHtml += '</div>';
       out.push(tHtml);
     } else {
       out.push(lines[i]);
@@ -125,26 +127,25 @@ function parseMarkdown(text) {
   }
   text = out.join('\n');
 
-  // ── PASO 2: Links CIC [CIC XXXX] → modal interno ──
-  text = text.replace(/\[CIC\s+(\d+)\]/g, (match, num) => {
-    const url = `https://www.vatican.va/archive/catechism_sp/index_sp.html`;
-    return `<a href="#" onclick="openCitaModal('cic','${num}');return false;" class="cita-link cita-cic" title="Catecismo ${num}">[CIC ${num}]</a>`;
-  });
-
-  // ── PASO 3: Links bíblicos [Libro Cap,vers] → modal interno ──
-  // Abreviaturas bíblicas comunes
-  const biblBooks = 'Gn|Ex|Lv|Nm|Dt|Jos|Jue|Rut|1Sam|2Sam|1Re|2Re|1Cr|2Cr|Esd|Neh|Tob|Jdt|Est|1Mac|2Mac|Job|Sal|Prov|Ecl|Cant|Sab|Sir|Is|Jer|Lam|Bar|Ez|Dn|Os|Jl|Am|Abd|Jon|Miq|Nah|Hab|Sof|Ag|Zac|Mal|Mt|Mc|Lc|Jn|Hch|Rom|1Cor|2Cor|Gal|Ef|Flp|Col|1Tes|2Tes|1Tim|2Tim|Tit|Flm|Heb|Sant|1Pe|2Pe|1Jn|2Jn|3Jn|Jds|Ap';
-  const bibleRegex = new RegExp(`\\[((?:${biblBooks})\\s+[\\d,\\.\\-]+)\\]`, 'g');
+  // ── CITAS BÍBLICAS — regex amplio con coma y punto ──
+  // Cubre: [Jn 3,16] [Mt 5,3-12] [Lc 10,25-37] [1Cor 13,4] [Sal 22,1]
+  const booksPattern = '(?:1|2|3)?\\s*(?:Gn|Ex|Lv|Nm|Dt|Jos|Jue|Rut|Sam|Re|Cr|Esd|Neh|Tob|Jdt|Est|Mac|Job|Sal|Prov|Ecl|Cant|Sab|Sir|Is|Jer|Lam|Bar|Ez|Dn|Os|Jl|Am|Abd|Jon|Miq|Nah|Hab|Sof|Ag|Zac|Mal|Mt|Mc|Lc|Jn|Hch|Rom|Cor|Gal|Ef|Flp|Col|Tes|Tim|Tit|Flm|Heb|Sant|Pe|Jds|Ap)';
+  const bibleRegex = new RegExp('\\[(' + booksPattern + '\\s+[\\d][\\d,\\.\\-–;\\s]*)\\]', 'g');
   text = text.replace(bibleRegex, (match, ref) => {
-    const encoded = encodeURIComponent(ref);
-    return `<a href="#" onclick="openCitaModal('biblia','${ref.replace(/'/g,"\\'")}');return false;" class="cita-link cita-biblia" title="${ref}">[${ref}]</a>`;
+    const cleanRef = ref.trim();
+    return `<a href="#" class="cita-pill cita-biblia" onclick="openCitaModal('biblia','${cleanRef.replace(/'/g,"\\'")}');return false;">${cleanRef}</a>`;
   });
 
-  // ── PASO 4: Links externos markdown [texto](url) ──
+  // ── CITAS CIC ──
+  text = text.replace(/\[CIC\s+(\d+)\]/g, (match, num) => {
+    return `<a href="#" class="cita-pill cita-cic" onclick="openCitaModal('cic','${num}');return false;">CIC ${num}</a>`;
+  });
+
+  // ── LINKS EXTERNOS ──
   text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
     '<a href="$2" target="_blank" rel="noopener" class="ext-link">$1 ↗</a>');
 
-  // ── PASO 5: Resto del markdown ──
+  // ── RESTO MARKDOWN ──
   let html = text
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -159,6 +160,25 @@ function parseMarkdown(text) {
 
   html = html.replace(/(<li>.*?<\/li>(<br>)?)+/gs, m => `<ul>${m.replace(/<br>/g,'')}</ul>`);
   return html;
+}
+
+function copyTableAbove(btn) {
+  const table = btn.closest('.mag-table-wrap').querySelector('.mag-table');
+  if (!table) return;
+  // Copiar como texto tabulado
+  let text = '';
+  table.querySelectorAll('tr').forEach(row => {
+    const cells = Array.from(row.querySelectorAll('th, td')).map(c => c.textContent.trim());
+    text += cells.join('\t') + '\n';
+  });
+  navigator.clipboard.writeText(text).then(() => {
+    btn.innerHTML = '✓ Copiado';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => {
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="4" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 4V2.5A1.5 1.5 0 0 1 5.5 1h6A1.5 1.5 0 0 1 13 2.5v6A1.5 1.5 0 0 1 11.5 10H10" stroke="currentColor" stroke-width="1.2"/></svg> Copy Table';
+      btn.style.color = '';
+    }, 2000);
+  });
 }
 
 function linkifyCitas(html) {
@@ -1407,102 +1427,77 @@ function getBibleUrl(ref) {
 }
 
 async function openCitaModal(tipo, ref) {
-  // Crear modal si no existe
-  let modal = document.getElementById('cita-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'cita-modal';
-    modal.className = 'cita-modal';
-    modal.innerHTML = `
-      <div class="cita-modal-box">
-        <div class="cita-modal-head">
-          <div class="cita-modal-title" id="cita-modal-title"></div>
-          <button class="cita-modal-close" onclick="closeCitaModal()">✕</button>
-        </div>
-        <div class="cita-modal-body" id="cita-modal-body">
-          <div class="cita-loading">Cargando...</div>
-        </div>
-        <div class="cita-modal-foot">
-          <a id="cita-modal-link" href="#" target="_blank" class="cita-ext-btn">
-            Ver fuente oficial ↗
-          </a>
-          <button onclick="closeCitaModal()" class="cita-cerrar-btn">Cerrar</button>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', e => { if (e.target === modal) closeCitaModal(); });
-  }
-
+  const modal = document.getElementById('cita-modal');
   const titleEl = document.getElementById('cita-modal-title');
   const bodyEl = document.getElementById('cita-modal-body');
-  const linkEl = document.getElementById('cita-modal-link');
+  const extEl = document.getElementById('cita-modal-ext');
+  if (!modal) return;
 
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  if (tipo === 'cic') {
-    titleEl.textContent = `📖 Catecismo — CIC ${ref}`;
-    const url = getCICUrl(ref);
-    linkEl.href = url;
-    linkEl.textContent = 'Ver en Vatican.va ↗';
-    bodyEl.innerHTML = `
-      <div class="cita-ref-badge cic-badge">CIC ${ref}</div>
-      <div class="cita-texto" id="cita-texto-content">
-        <div class="cita-loading">Consultando el Catecismo...</div>
-      </div>`;
+  if (tipo === 'biblia') {
+    const encoded = encodeURIComponent(ref);
+    titleEl.innerHTML = `<span class="cita-ref-pill cita-ref-biblia">${ref}</span>`;
+    extEl.href = `https://www.biblegateway.com/passage/?search=${encoded}&version=LBLA`;
+    extEl.textContent = 'Ver en BibleGateway ↗';
+    bodyEl.innerHTML = `<div class="cita-loading">Buscando pasaje...</div>`;
 
-    // Pedir a la IA el texto del CIC
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           stream: false,
-          messages: [{
-            role: 'user',
-            content: `Dame el texto COMPLETO y EXACTO del artículo ${ref} del Catecismo de la Iglesia Católica (CIC ${ref}). Solo el texto del artículo, sin introducciones ni comentarios tuyos.`
-          }]
+          messages: [{ role: 'user', content: `Dame el texto COMPLETO y EXACTO de ${ref} de la Biblia, traducción litúrgica en español (Biblia de Jerusalén). Solo el texto bíblico, sin comentarios ni encabezados.` }]
         })
       });
       const data = await res.json();
-      document.getElementById('cita-texto-content').innerHTML =
-        `<div class="cita-texto-inner">${parseMarkdown(data.reply || 'No disponible')}</div>`;
+      bodyEl.innerHTML = `<div class="cita-text-block">${parseMarkdown(data.reply || 'No disponible')}</div>`;
     } catch(e) {
-      document.getElementById('cita-texto-content').innerHTML =
-        `<p style="color:var(--ink4);font-style:italic">Consulta directamente en Vatican.va</p>`;
+      bodyEl.innerHTML = `<p style="color:var(--ink4);font-style:italic;font-family:Lora,serif">No se pudo cargar. Consulta en BibleGateway.com</p>`;
     }
 
-  } else if (tipo === 'biblia') {
-    titleEl.textContent = `✝ Biblia — ${ref}`;
-    const url = getBibleUrl(ref);
-    linkEl.href = url;
-    linkEl.textContent = 'Ver en BibleGateway ↗';
-    bodyEl.innerHTML = `
-      <div class="cita-ref-badge biblia-badge">${ref}</div>
-      <div class="cita-texto" id="cita-texto-content">
-        <div class="cita-loading">Buscando el pasaje...</div>
-      </div>`;
+  } else if (tipo === 'cic') {
+    titleEl.innerHTML = `<span class="cita-ref-pill cita-ref-cic">CIC ${ref}</span>`;
+    const cicBase = 'https://www.vatican.va/archive/catechism_sp/';
+    const n = parseInt(ref);
+    let page = 'index_sp.html';
+    if (n <= 141) page = 'p1s1_sp.html';
+    else if (n <= 421) page = 'p1s2_sp.html';
+    else if (n <= 682) page = 'p1s2c5_sp.html';
+    else if (n <= 975) page = 'p1s2c7_sp.html';
+    else if (n <= 1209) page = 'p2s1_sp.html';
+    else if (n <= 1690) page = 'p2s2_sp.html';
+    else if (n <= 1876) page = 'p3s1_sp.html';
+    else if (n <= 2051) page = 'p3s2c1_sp.html';
+    else if (n <= 2557) page = 'p3s2c2_sp.html';
+    else page = 'p4_sp.html';
+    extEl.href = cicBase + page;
+    extEl.textContent = 'Ver en Vatican.va ↗';
+    bodyEl.innerHTML = `<div class="cita-loading">Consultando el Catecismo...</div>`;
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           stream: false,
-          messages: [{
-            role: 'user',
-            content: `Dame el texto COMPLETO de ${ref} de la Biblia, traducción litúrgica en español (Biblia de Jerusalén o Libro del Pueblo de Dios). Solo el texto bíblico, sin comentarios.`
-          }]
+          messages: [{ role: 'user', content: `Dame el texto COMPLETO y EXACTO del artículo ${ref} del Catecismo de la Iglesia Católica. Solo el número y el texto del artículo, sin comentarios.` }]
         })
       });
       const data = await res.json();
-      document.getElementById('cita-texto-content').innerHTML =
-        `<div class="cita-texto-inner" style="font-style:italic">${parseMarkdown(data.reply || 'No disponible')}</div>`;
+      bodyEl.innerHTML = `<div class="cita-text-block">${parseMarkdown(data.reply || 'No disponible')}</div>`;
     } catch(e) {
-      document.getElementById('cita-texto-content').innerHTML =
-        `<p style="color:var(--ink4);font-style:italic">Consulta en BibleGateway.com</p>`;
+      bodyEl.innerHTML = `<p style="color:var(--ink4);font-style:italic;font-family:Lora,serif">No se pudo cargar. Consulta en Vatican.va</p>`;
     }
   }
+}
+
+function closeCitaModal() {
+  const modal = document.getElementById('cita-modal');
+  if (modal) modal.classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 function closeCitaModal() {
