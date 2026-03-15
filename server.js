@@ -603,49 +603,86 @@ async function generarLecturasDia() {
 
   console.log(`[Lecturas] Generando para ${fechaStr}...`);
 
+  // Intento 1: Vatican News scraping
   try {
-    const client = anthropic;
+    const vaticanRes = await fetch('https://www.vaticannews.va/es/evangelio-de-hoy.html', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CatolicosGPT/1.0)',
+        'Accept': 'text/html'
+      },
+      signal: AbortSignal.timeout(10000)
+    });
+    if (vaticanRes.ok) {
+      const html = await vaticanRes.text();
+      // Extraer contenido de las lecturas del HTML
+      const lecturaMatch = html.match(/<div[^>]*class="[^"]*article-body[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+      if (lecturaMatch && lecturaMatch[1].length > 200) {
+        // Limpiar HTML y estructurar
+        const textoLimpio = lecturaMatch[1]
+          .replace(/<script[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[\s\S]*?<\/style>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 3000);
 
-    const msg = await client.messages.create({
+        if (textoLimpio.length > 300) {
+          const resultado = { ok: true, texto: textoLimpio, fecha: fechaStr, fuente: 'vatican-news', generado: new Date().toISOString() };
+          lecturasCacheDate = hoy;
+          lecturasCache = resultado;
+          console.log(`[Lecturas] ✓ Vatican News OK (${textoLimpio.length} chars)`);
+          return resultado;
+        }
+      }
+    }
+  } catch(e) {
+    console.log('[Lecturas] Vatican News falló:', e.message);
+  }
+
+  // Intento 2: IA con Anthropic generando las lecturas reales
+  try {
+    const msg = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 2500,
       messages: [{
         role: 'user',
-        content: `Dame las lecturas COMPLETAS de la Misa del día de HOY ${fechaStr} según el Leccionario Romano oficial para España y América Latina (calendario romano ordinario).
+        content: `Eres un experto en liturgia católica. Dame las lecturas COMPLETAS y REALES de la Misa del día de HOY ${fechaStr} según el Leccionario Romano oficial para España y América Latina.
 
-FORMATO EXACTO — usa estas etiquetas literalmente:
+Esta es una información litúrgica que deben ser exactas según el calendario litúrgico.
+
+Usa EXACTAMENTE este formato:
 
 ---PRIMERA_LECTURA---
-Referencia: [Libro Capítulo, versículos]
-[texto bíblico completo]
+Referencia: [Libro Capítulo, versículos exactos]
+[texto bíblico completo — mínimo 5 versículos]
 
 ---SALMO---
 Referencia: [Salmo N]
-Estribillo: R/. [texto del estribillo]
-[texto del salmo]
+Estribillo: R/. [estribillo exacto]
+[texto del salmo responsorial]
 
 ---SEGUNDA_LECTURA---
-[incluir SOLO si es domingo o solemnidad]
+[solo si es domingo o solemnidad]
 Referencia: [Libro Capítulo, versículos]
 [texto completo]
 
 ---EVANGELIO---
-Referencia: [Evangelio según X, Capítulo, versículos]
-[texto bíblico completo del Evangelio]
+Referencia: [Evangelio según X, Capítulo, versículos exactos]
+[texto bíblico completo del Evangelio — mínimo 8 versículos]
 
-Reglas: textos COMPLETOS del Leccionario, no resúmenes. Si es tiempo de Cuaresma indícalo.`
+IMPORTANTE: Textos COMPLETOS del Leccionario. No resumir.`
       }]
     });
 
     const texto = msg.content[0].text;
-    const resultado = { ok: true, texto, fecha: fechaStr, generado: new Date().toISOString() };
+    const resultado = { ok: true, texto, fecha: fechaStr, fuente: 'ia-leccionario', generado: new Date().toISOString() };
     lecturasCacheDate = hoy;
     lecturasCache = resultado;
-    console.log(`[Lecturas] ✓ Generadas para ${fechaStr} (${texto.length} caracteres)`);
+    console.log(`[Lecturas] ✓ IA Leccionario OK (${texto.length} chars)`);
     return resultado;
 
   } catch(err) {
-    console.error('[Lecturas] Error:', err.message);
+    console.error('[Lecturas] Error total:', err.message);
     return { ok: false, error: err.message };
   }
 }

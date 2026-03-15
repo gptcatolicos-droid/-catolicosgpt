@@ -371,54 +371,143 @@
     <div class="wm-desc">Acceso rápido a herramientas espirituales</div>
     <div class="wm-grid" id="wm-grid">
       <div class="wm-item" onclick="closeWidgets();openView('lecturas')">
-        <div class="wm-ico">📖</div>
+        <div class="wm-ico-wrap" style="background:rgba(139,26,26,.08);border-color:rgba(139,26,26,.2)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="4" y="4" width="20" height="20" rx="3" stroke="#8B1A1A" stroke-width="1.5"/>
+            <line x1="8" y1="10" x2="20" y2="10" stroke="#8B1A1A" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="8" y1="14" x2="20" y2="14" stroke="#8B1A1A" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="8" y1="18" x2="16" y2="18" stroke="#8B1A1A" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
         <span>Lecturas de la Misa</span>
       </div>
-      <div class="wm-item" onclick="closeWidgets();sendChip('¿Quién es el santo del día de hoy?')">
-        <div class="wm-ico">☩</div>
+      <div class="wm-item" onclick="closeWidgets();sendChip('¿Quién es el santo del día de hoy? Dame su biografía completa')">
+        <div class="wm-ico-wrap" style="background:rgba(201,146,58,.1);border-color:rgba(201,146,58,.3)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="9" stroke="#C9923A" stroke-width="1.5"/>
+            <line x1="14" y1="5" x2="14" y2="23" stroke="#C9923A" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="9" y1="10" x2="19" y2="10" stroke="#C9923A" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
         <span>Santo del día</span>
       </div>
       <div class="wm-item" onclick="closeWidgets();openView('breviario')">
-        <div class="wm-ico">🕯</div>
+        <div class="wm-ico-wrap" style="background:rgba(74,32,128,.08);border-color:rgba(74,32,128,.2)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="12" r="7" stroke="#4A2080" stroke-width="1.5"/>
+            <line x1="14" y1="5" x2="14" y2="19" stroke="#7A5230" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="9" y1="10" x2="19" y2="10" stroke="#7A5230" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M7 22 Q14 18 21 22" stroke="#4A2080" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
         <span>Breviario digital</span>
       </div>
       <div class="wm-item" onclick="closeWidgets();openView('calendario')">
-        <div class="wm-ico">📅</div>
+        <div class="wm-ico-wrap" style="background:rgba(30,107,58,.08);border-color:rgba(30,107,58,.2)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="4" y="6" width="20" height="18" rx="3" stroke="#1E6B3A" stroke-width="1.5"/>
+            <line x1="9" y1="4" x2="9" y2="8" stroke="#1E6B3A" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="19" y1="4" x2="19" y2="8" stroke="#1E6B3A" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="4" y1="12" x2="24" y2="12" stroke="#1E6B3A" stroke-width="1.5"/>
+            <circle cx="10" cy="17" r="1.2" fill="#1E6B3A"/>
+            <circle cx="14" cy="17" r="1.2" fill="#1E6B3A"/>
+            <circle cx="18" cy="17" r="1.2" fill="#1E6B3A"/>
+          </svg>
+        </div>
         <span>Calendario litúrgico</span>
       </div>
       <div class="wm-item" onclick="closeWidgets();sendChip('Guíame en el Santo Rosario de hoy completo con los misterios y oraciones')">
-        <div class="wm-ico">📿</div>
+        <div class="wm-ico-wrap" style="background:rgba(74,32,128,.08);border-color:rgba(74,32,128,.2)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="4" stroke="#4A2080" stroke-width="1.5"/>
+            <circle cx="14" cy="4" r="2" stroke="#4A2080" stroke-width="1.2"/>
+            <circle cx="24" cy="14" r="2" stroke="#4A2080" stroke-width="1.2"/>
+            <circle cx="14" cy="24" r="2" stroke="#4A2080" stroke-width="1.2"/>
+            <circle cx="4" cy="14" r="2" stroke="#4A2080" stroke-width="1.2"/>
+            <line x1="14" y1="6" x2="14" y2="10" stroke="#4A2080" stroke-width="1.2"/>
+            <line x1="22" y1="14" x2="18" y2="14" stroke="#4A2080" stroke-width="1.2"/>
+            <line x1="14" y1="22" x2="14" y2="18" stroke="#4A2080" stroke-width="1.2"/>
+            <line x1="6" y1="14" x2="10" y2="14" stroke="#4A2080" stroke-width="1.2"/>
+          </svg>
+        </div>
         <span>Santo Rosario</span>
       </div>
       <div class="wm-item" onclick="closeWidgets();sendChip('Rezar el Ángelus completo')">
-        <div class="wm-ico">🔔</div>
+        <div class="wm-ico-wrap" style="background:rgba(201,146,58,.1);border-color:rgba(201,146,58,.3)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M14 4 L14 20" stroke="#C9923A" stroke-width="2" stroke-linecap="round"/>
+            <path d="M9 8 L19 8" stroke="#C9923A" stroke-width="2" stroke-linecap="round"/>
+            <path d="M8 22 Q14 18 20 22" stroke="#C9923A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <circle cx="14" cy="24" r="1.5" fill="#C9923A"/>
+          </svg>
+        </div>
         <span>Ángelus</span>
       </div>
-      <div class="wm-item" onclick="closeWidgets();sendChip('Novena a San José — Día 1 completo con oraciones')">
-        <div class="wm-ico">🌹</div>
+      <div class="wm-item" onclick="closeWidgets();sendChip('Novena a San José — Día 1 completo con todas las oraciones')">
+        <div class="wm-ico-wrap" style="background:rgba(92,61,30,.08);border-color:rgba(92,61,30,.2)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="10" r="5" stroke="#5C3D1E" stroke-width="1.5"/>
+            <path d="M6 24 Q14 20 22 24" stroke="#5C3D1E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <line x1="14" y1="4" x2="14" y2="6" stroke="#C9923A" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="12" y1="5" x2="16" y2="5" stroke="#C9923A" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
         <span>Novena a San José</span>
       </div>
-      <div class="wm-item" onclick="closeWidgets();sendChip('Oración a San Miguel Arcángel completa')">
-        <div class="wm-ico">⚔️</div>
+      <div class="wm-item" onclick="closeWidgets();sendChip('Oración a San Miguel Arcángel completa de León XIII')">
+        <div class="wm-ico-wrap" style="background:rgba(30,80,160,.08);border-color:rgba(30,80,160,.2)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M14 4 L14 20" stroke="#1E50A0" stroke-width="2" stroke-linecap="round"/>
+            <path d="M9 8 L19 8" stroke="#1E50A0" stroke-width="2" stroke-linecap="round"/>
+            <path d="M10 16 L18 16" stroke="#1E50A0" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M7 23 L14 20 L21 23" stroke="#1E50A0" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <span>Oración a San Miguel</span>
       </div>
       <div class="wm-item" onclick="closeWidgets();sendChip('Coronilla de la Divina Misericordia completa paso a paso')">
-        <div class="wm-ico">✝</div>
+        <div class="wm-ico-wrap" style="background:rgba(139,26,26,.08);border-color:rgba(139,26,26,.2)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="10" r="6" stroke="#8B1A1A" stroke-width="1.5"/>
+            <line x1="14" y1="4" x2="14" y2="16" stroke="#8B1A1A" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="10" y1="8" x2="18" y2="8" stroke="#8B1A1A" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M8 20 L14 17 L20 20 L14 24 Z" stroke="#C9923A" stroke-width="1.2" fill="rgba(201,146,58,.15)" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <span>Coronilla DM</span>
       </div>
       <div class="wm-item" onclick="closeWidgets();sendChip('Examen de conciencia completo para la confesión')">
-        <div class="wm-ico">🙏</div>
+        <div class="wm-ico-wrap" style="background:rgba(30,107,58,.08);border-color:rgba(30,107,58,.2)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="9" stroke="#1E6B3A" stroke-width="1.5"/>
+            <line x1="14" y1="10" x2="14" y2="15" stroke="#1E6B3A" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="14" cy="18" r="1.2" fill="#1E6B3A"/>
+          </svg>
+        </div>
         <span>Examen de conciencia</span>
       </div>
-      <div class="wm-item" onclick="closeWidgets();sendChip('Vía Crucis completo con las 14 estaciones')">
-        <div class="wm-ico">✚</div>
+      <div class="wm-item" onclick="closeWidgets();sendChip('Vía Crucis completo con las 14 estaciones y meditaciones')">
+        <div class="wm-ico-wrap" style="background:rgba(92,61,30,.08);border-color:rgba(92,61,30,.2)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <line x1="14" y1="3" x2="14" y2="25" stroke="#5C3D1E" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="7" y1="9" x2="21" y2="9" stroke="#5C3D1E" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
         <span>Vía Crucis</span>
       </div>
-      <div class="wm-item" onclick="closeWidgets();sendChip('Credo de los Apóstoles completo')">
-        <div class="wm-ico">📜</div>
-        <span>Credo Apostólico</span>
+      <div class="wm-item" onclick="closeWidgets();openView('misal')">
+        <div class="wm-ico-wrap" style="background:rgba(201,146,58,.1);border-color:rgba(201,146,58,.3)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="5" y="4" width="16" height="20" rx="2" stroke="#7A5230" stroke-width="1.5"/>
+            <line x1="9" y1="10" x2="17" y2="10" stroke="#C9923A" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="9" y1="14" x2="17" y2="14" stroke="#C9923A" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="9" y1="18" x2="14" y2="18" stroke="#C9923A" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M18 18 L18 24 L21 21 L24 24 L24 18" stroke="#8B1A1A" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span>Misal del día</span>
       </div>
-    </div>
+    </div></div>
   </div>
 </div>
 
@@ -624,13 +713,15 @@
   </div><!-- end sb-scroll -->
 
   <!-- Donar -->
-  <a class="sb-donate" href="#" onclick="openDonate();return false;">
+  <a class="sb-donate" href="#" onclick="openDonate();closeSb();return false;">
     <div class="sb-donate-ico">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 14s-6-3.5-6-7.5a4 4 0 0 1 6-3.45A4 4 0 0 1 14 6.5C14 10.5 8 14 8 14z" stroke="#C9923A" stroke-width="1.4" fill="rgba(201,146,58,.15)"/></svg>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 14s-6-3.5-6-7.5a4 4 0 0 1 6-3.45A4 4 0 0 1 14 6.5C14 10.5 8 14 8 14z" stroke="#C9923A" stroke-width="1.4" fill="rgba(201,146,58,.15)"/>
+      </svg>
     </div>
     <div>
       <div class="sb-donate-title">Apoya CatolicosGPT</div>
-      <div class="sb-donate-sub">Donación vía PayPal</div>
+      <div class="sb-donate-sub">$1 · $5 · $10 vía PayPal</div>
     </div>
   </a>
 

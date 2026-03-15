@@ -1488,3 +1488,119 @@ body { height: 100dvh; font-family: 'Inter', sans-serif; background: var(--bg); 
   color: var(--brown2);
 }
 .misal-item-texto em { color: var(--ink4); font-size: 13px; }
+
+/* ══ V6.2 FIXES ══ */
+
+/* Campo de chat posicionado al 75% — siempre visible sin scroll */
+.content {
+  display: flex;
+  flex-direction: column;
+}
+.welcome {
+  flex: none !important;
+  padding-top: 0 !important;
+  justify-content: flex-start !important;
+  padding-bottom: 0 !important;
+}
+.w-logo-wrap {
+  margin-top: max(10vh, 60px);
+}
+/* Input siempre visible en el 75% */
+.input-area {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: var(--bg) !important;
+}
+/* En welcome: el logo y título arriba, el input en el centro-bajo */
+#welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  overflow: hidden;
+}
+#welcome .w-logo {
+  margin-top: 10vh;
+}
+#welcome .w-title {
+  margin-bottom: 3vh;
+}
+/* Las sugerencias de bienvenida aparecen debajo del input */
+.welcome-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 10px 16px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.welcome-chip {
+  font-family: 'Lora', serif;
+  font-size: 13px;
+  padding: 7px 14px;
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  background: var(--bg2);
+  color: var(--brown);
+  cursor: pointer;
+  transition: all .12s;
+  font-style: italic;
+}
+.welcome-chip:hover { background: var(--ocre-bg); border-color: var(--ocre); }
+
+/* Widgets icons rediseñados con colores CatolicosGPT */
+.wm-ico { font-size: 26px; }
+
+/* Historial en sidebar — mostrar título + hora */
+.history-item {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  transition: background .1s;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.history-item:hover { background: var(--bg3); }
+.hi-time {
+  font-size: 10.5px;
+  color: var(--ink4);
+  flex-shrink: 0;
+}
+
+/* ── Widgets con iconos SVG estilo CatolicosGPT ── */
+.wm-ico-wrap {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  border: 1px solid;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 6px;
+  transition: all .12s;
+}
+.wm-item:hover .wm-ico-wrap, .wm-item:active .wm-ico-wrap {
+  transform: scale(.95);
+}
+.wm-item span {
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px; font-weight: 500;
+  color: var(--ink); line-height: 1.3;
+  text-align: center;
+}
+/* Redefinir wm-item para que el ícono esté arriba */
+.wm-item {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0 !important;
+  padding: 14px 8px !important;
+  min-height: 90px !important;
+}
