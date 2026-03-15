@@ -30,24 +30,13 @@ const i18n = {
 // ══════════════════════════════
 function toggleSb() { sbOpen ? closeSb() : openSb(); }
 function openSb() {
-  // Sidebar nuevo (V6.3)
-  const sidebar = document.getElementById('sidebar') || document.getElementById('sb');
-  if (sidebar) {
-    sidebar.classList.add('open');
-    // Agregar clase al body para bloquear scroll en mobile
-    document.body.style.overflow = 'hidden';
-  }
-  // Overlay
-  const overlay = document.getElementById('sb-overlay') || document.getElementById('overlay');
-  if (overlay) overlay.classList.add('active', 'show');
-  sbOpen = true;
+  document.getElementById('sb').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  sbOpen = true; renderHistory();
 }
 function closeSb() {
-  const sidebar = document.getElementById('sidebar') || document.getElementById('sb');
-  if (sidebar) sidebar.classList.remove('open');
-  document.body.style.overflow = '';
-  const overlay = document.getElementById('sb-overlay') || document.getElementById('overlay');
-  if (overlay) overlay.classList.remove('active', 'show');
+  document.getElementById('sb').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
   sbOpen = false;
 }
 
@@ -848,15 +837,13 @@ function openView(id) {
   document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
   // Mostrar vista solicitada
   const view = document.getElementById('view-' + id);
-  const inputArea = document.querySelector('.input-area');
   if (view) {
     view.style.display = 'flex';
-    if (inputArea) inputArea.style.display = 'none';
+    document.querySelector('.input-area').style.display = 'none';
   }
   if (id === 'breviario') initBreviario();
   if (id === 'calendario') initCalendario();
   if (id === 'lecturas') initLecturas();
-  if (id === 'misal') { if (typeof initMisal === 'function') initMisal(); }
 }
 
 function closeView() {
