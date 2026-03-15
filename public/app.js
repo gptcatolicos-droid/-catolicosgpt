@@ -45,9 +45,7 @@ function openSb() {
 function closeSb() {
   const sidebar = document.getElementById('sidebar') || document.getElementById('sb');
   if (sidebar) sidebar.classList.remove('open');
-  // Restaurar scroll
   document.body.style.overflow = '';
-  // Overlay
   const overlay = document.getElementById('sb-overlay') || document.getElementById('overlay');
   if (overlay) overlay.classList.remove('active', 'show');
   sbOpen = false;
@@ -58,15 +56,15 @@ function closeSb() {
 // ══════════════════════════════
 function renderHistory() {
   const el = document.getElementById('history-list');
-  if (!el) return;
   if (!conversations.length) {
-    el.innerHTML = '<div style="padding:4px 10px 8px;font-family:Inter,sans-serif;font-size:12px;color:var(--ink4)">Sin conversaciones aún</div>';
+    el.innerHTML = '<div style="padding:6px 14px;font-family:Lora,serif;font-size:12px;color:var(--ink4);font-style:italic">Sin conversaciones aún</div>';
     return;
   }
-  el.innerHTML = conversations.slice().reverse().map((c, i) =>
-    `<div class="history-item" onclick="loadConversation(${conversations.length-1-i})">
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.title || 'Consulta')}</span>
-      <span class="hi-time">${c.time}</span>
+  el.innerHTML = conversations.slice(-10).reverse().map((c, i) =>
+    `<div class="sb-item" onclick="loadConv(${conversations.length-1-i});closeSb()">
+      <div class="sb-ico">💬</div>
+      <span class="sb-lbl">${esc(c.title)}</span>
+      <span class="sb-time">${c.time}</span>
     </div>`
   ).join('');
 }
@@ -83,7 +81,7 @@ function loadConv(i) {
   const c = conversations[i];
   chatHistory = [...c.messages];
   document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'flex';
+  document.getElementById('chat-area').style.display = 'block';
   document.getElementById('chat-inner').innerHTML = '';
   c.messages.forEach(m => renderBubble(m.content, m.role === 'user', false));
 }
@@ -104,34 +102,32 @@ function setLang(l, btn) {
 // MARKDOWN PARSER
 // ══════════════════════════════
 function parseMarkdown(text) {
+  // Normalizar saltos de línea
   text = text.replace(/\\\\n/g, '\n').replace(/\\n/g, '\n');
 
-  // ── TABLAS ──
+  // ── PASO 1: Tablas markdown ──
   const lines = text.split('\n');
   const out = [];
   let i = 0;
   while (i < lines.length) {
     const trimmed = lines[i].trim();
-    if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.split('|').length > 2) {
+    if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.includes('|', 1)) {
       const tLines = [];
       while (i < lines.length && lines[i].trim().startsWith('|')) {
         tLines.push(lines[i].trim());
         i++;
       }
-      // Construir tabla estilo Magisterium
-      let tHtml = '<div class="mag-table-wrap"><table class="mag-table">';
+      let tHtml = '<div style="overflow-x:auto;margin:14px 0;border-radius:8px;border:1px solid var(--border);box-shadow:0 1px 4px var(--shadow)"><table style="width:100%;border-collapse:collapse">';
       let firstRow = true;
       tLines.forEach(tl => {
-        if (/^\|[\s\-:]+[\|\-]/.test(tl)) return; // separador
+        if (/^\|[\s\-:]+[\|\-][\s\-:]+\|/.test(tl)) return;
         const cells = tl.split('|').map(c => c.trim()).filter(c => c !== '');
         if (!cells.length) return;
         const tag = firstRow ? 'th' : 'td';
         tHtml += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
         firstRow = false;
       });
-      tHtml += '</table>';
-      tHtml += '<div class="mag-table-footer"><button class="mag-copy-table" onclick="copyTableAbove(this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="4" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 4V2.5A1.5 1.5 0 0 1 5.5 1h6A1.5 1.5 0 0 1 13 2.5v6A1.5 1.5 0 0 1 11.5 10H10" stroke="currentColor" stroke-width="1.2"/></svg> Copy Table</button></div>';
-      tHtml += '</div>';
+      tHtml += '</table></div>';
       out.push(tHtml);
     } else {
       out.push(lines[i]);
@@ -140,25 +136,26 @@ function parseMarkdown(text) {
   }
   text = out.join('\n');
 
-  // ── CITAS BÍBLICAS — regex amplio con coma y punto ──
-  // Cubre: [Jn 3,16] [Mt 5,3-12] [Lc 10,25-37] [1Cor 13,4] [Sal 22,1]
-  const booksPattern = '(?:1|2|3)?\\s*(?:Gn|Ex|Lv|Nm|Dt|Jos|Jue|Rut|Sam|Re|Cr|Esd|Neh|Tob|Jdt|Est|Mac|Job|Sal|Prov|Ecl|Cant|Sab|Sir|Is|Jer|Lam|Bar|Ez|Dn|Os|Jl|Am|Abd|Jon|Miq|Nah|Hab|Sof|Ag|Zac|Mal|Mt|Mc|Lc|Jn|Hch|Rom|Cor|Gal|Ef|Flp|Col|Tes|Tim|Tit|Flm|Heb|Sant|Pe|Jds|Ap)';
-  const bibleRegex = new RegExp('\\[(' + booksPattern + '\\s+[\\d][\\d,\\.\\-–;\\s]*)\\]', 'g');
-  text = text.replace(bibleRegex, (match, ref) => {
-    const cleanRef = ref.trim();
-    return `<a href="#" class="cita-pill cita-biblia" onclick="openCitaModal('biblia','${cleanRef.replace(/'/g,"\\'")}');return false;">${cleanRef}</a>`;
-  });
-
-  // ── CITAS CIC ──
+  // ── PASO 2: Links CIC [CIC XXXX] → modal interno ──
   text = text.replace(/\[CIC\s+(\d+)\]/g, (match, num) => {
-    return `<a href="#" class="cita-pill cita-cic" onclick="openCitaModal('cic','${num}');return false;">CIC ${num}</a>`;
+    const url = `https://www.vatican.va/archive/catechism_sp/index_sp.html`;
+    return `<a href="#" onclick="openCitaModal('cic','${num}');return false;" class="cita-link cita-cic" title="Catecismo ${num}">[CIC ${num}]</a>`;
   });
 
-  // ── LINKS EXTERNOS ──
+  // ── PASO 3: Links bíblicos [Libro Cap,vers] → modal interno ──
+  // Abreviaturas bíblicas comunes
+  const biblBooks = 'Gn|Ex|Lv|Nm|Dt|Jos|Jue|Rut|1Sam|2Sam|1Re|2Re|1Cr|2Cr|Esd|Neh|Tob|Jdt|Est|1Mac|2Mac|Job|Sal|Prov|Ecl|Cant|Sab|Sir|Is|Jer|Lam|Bar|Ez|Dn|Os|Jl|Am|Abd|Jon|Miq|Nah|Hab|Sof|Ag|Zac|Mal|Mt|Mc|Lc|Jn|Hch|Rom|1Cor|2Cor|Gal|Ef|Flp|Col|1Tes|2Tes|1Tim|2Tim|Tit|Flm|Heb|Sant|1Pe|2Pe|1Jn|2Jn|3Jn|Jds|Ap';
+  const bibleRegex = new RegExp(`\\[((?:${biblBooks})\\s+[\\d,\\.\\-]+)\\]`, 'g');
+  text = text.replace(bibleRegex, (match, ref) => {
+    const encoded = encodeURIComponent(ref);
+    return `<a href="#" onclick="openCitaModal('biblia','${ref.replace(/'/g,"\\'")}');return false;" class="cita-link cita-biblia" title="${ref}">[${ref}]</a>`;
+  });
+
+  // ── PASO 4: Links externos markdown [texto](url) ──
   text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
     '<a href="$2" target="_blank" rel="noopener" class="ext-link">$1 ↗</a>');
 
-  // ── RESTO MARKDOWN ──
+  // ── PASO 5: Resto del markdown ──
   let html = text
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -173,25 +170,6 @@ function parseMarkdown(text) {
 
   html = html.replace(/(<li>.*?<\/li>(<br>)?)+/gs, m => `<ul>${m.replace(/<br>/g,'')}</ul>`);
   return html;
-}
-
-function copyTableAbove(btn) {
-  const table = btn.closest('.mag-table-wrap').querySelector('.mag-table');
-  if (!table) return;
-  // Copiar como texto tabulado
-  let text = '';
-  table.querySelectorAll('tr').forEach(row => {
-    const cells = Array.from(row.querySelectorAll('th, td')).map(c => c.textContent.trim());
-    text += cells.join('\t') + '\n';
-  });
-  navigator.clipboard.writeText(text).then(() => {
-    btn.innerHTML = '✓ Copiado';
-    btn.style.color = 'var(--green)';
-    setTimeout(() => {
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="4" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 4V2.5A1.5 1.5 0 0 1 5.5 1h6A1.5 1.5 0 0 1 13 2.5v6A1.5 1.5 0 0 1 11.5 10H10" stroke="currentColor" stroke-width="1.2"/></svg> Copy Table';
-      btn.style.color = '';
-    }, 2000);
-  });
 }
 
 function linkifyCitas(html) {
@@ -270,7 +248,7 @@ function extractSuggestions(text) {
 // ══════════════════════════════
 function renderBubble(text, isUser, addActions = false, userMsg = '') {
   document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'flex';
+  document.getElementById('chat-area').style.display = 'block';
 
   const wrap = document.getElementById('chat-inner');
   const d = document.createElement('div');
@@ -409,13 +387,9 @@ async function send() {
   d.scrollTop = d.scrollHeight;
 
   // Mostrar chat
-  // Ocultar welcome completamente y mostrar chat
-  const welcomeEl = document.getElementById('welcome');
-  const chatEl = document.getElementById('chat-area');
-  const inputEl = document.querySelector('.input-area');
-  if (welcomeEl) welcomeEl.style.display = 'none';
-  if (chatEl) { chatEl.style.display = 'flex'; chatEl.style.flexDirection = 'column'; }
-  if (inputEl) { inputEl.classList.add('chat-mode'); }
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chat-area').style.display = 'block';
+  document.querySelector('.input-area').style.display = '';
 
   const needsActions = /cartilla|catequesis|novena|rosario|v[ií]a crucis|hom[ií]l[ií]a|oraci[oó]n|tabla|l[ií]nea de tiempo|cronolog[ií]a|actividad|clase/i.test(val);
 
@@ -582,12 +556,8 @@ function autoResize(el) {
 
 function newChat() {
   chatHistory = [];
-  const welcomeEl2 = document.getElementById('welcome');
-  const chatEl2 = document.getElementById('chat-area');
-  const iaEl = document.querySelector('.input-area');
-  if (welcomeEl2) welcomeEl2.style.display = 'flex';
-  if (chatEl2) chatEl2.style.display = 'none';
-  if (iaEl) iaEl.classList.remove('chat-mode');
+  document.getElementById('welcome').style.display = 'flex';
+  document.getElementById('chat-area').style.display = 'none';
   document.getElementById('chat-inner').innerHTML = '';
   closeSb();
 }
@@ -872,53 +842,32 @@ function openView(id) {
   if (chatHistory.length >= 2) {
     saveConversation(chatHistory[0].content);
   }
-
-  // Ocultar TODO — welcome, chat, input y otras vistas
-  const welcome = document.getElementById('welcome');
-  const chatArea = document.getElementById('chat-area');
-  const inputArea = document.querySelector('.input-area');
-  const content = document.getElementById('content');
-
-  if (welcome) welcome.style.display = 'none';
-  if (chatArea) chatArea.style.display = 'none';
-  if (inputArea) inputArea.style.display = 'none';
+  // Ocultar todo
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chat-area').style.display = 'none';
   document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-
-  // Mostrar SOLO la vista solicitada — ocupa todo el #content
+  // Mostrar vista solicitada
   const view = document.getElementById('view-' + id);
+  const inputArea = document.querySelector('.input-area');
   if (view) {
     view.style.display = 'flex';
-    view.style.flex = '1';
-    view.style.flexDirection = 'column';
-    view.style.overflow = 'hidden';
+    if (inputArea) inputArea.style.display = 'none';
   }
-
   if (id === 'breviario') initBreviario();
   if (id === 'calendario') initCalendario();
   if (id === 'lecturas') initLecturas();
-  if (id === 'misal') initMisal();
+  if (id === 'misal') { if (typeof initMisal === 'function') initMisal(); }
 }
 
 function closeView() {
-  // Ocultar todas las vistas
+  // Restaurar vista normal del chat
   document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-
-  // Restaurar input siempre
-  const inputArea = document.querySelector('.input-area');
-  if (inputArea) inputArea.style.display = '';
-
-  // Si hay chat activo → mostrar chat
-  // Si no → mostrar welcome
+  document.querySelector('.input-area').style.display = '';
   if (chatHistory.length > 0) {
-    const chatArea = document.getElementById('chat-area');
-    if (chatArea) chatArea.style.display = 'flex';
-    const welcome = document.getElementById('welcome');
-    if (welcome) welcome.style.display = 'none';
+    document.getElementById('chat-area').style.display = 'block';
+    document.getElementById('welcome').style.display = 'none';
   } else {
-    const welcome = document.getElementById('welcome');
-    if (welcome) welcome.style.display = 'flex';
-    const chatArea = document.getElementById('chat-area');
-    if (chatArea) chatArea.style.display = 'none';
+    document.getElementById('welcome').style.display = 'flex';
   }
 }
 
@@ -1064,98 +1013,13 @@ const HORAS_DATA = {
 
 let horaActual = 'laudes';
 
-async function initBreviario() {
-  const container = document.getElementById('brev-content');
-  const dateEl = document.getElementById('brev-date');
-  if (!container) return;
-
+function initBreviario() {
   const now = new Date();
-  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
-  if (dateEl) dateEl.textContent = fechaStr.toUpperCase();
-
-  container.innerHTML = `<div style="text-align:center;padding:40px 20px">
-    <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--brown);margin-bottom:8px">Cargando Laudes del ${fechaStr}</div>
-    <div style="font-family:'Lora',serif;font-size:13px;color:var(--ink4);font-style:italic">Preparando el oficio de la mañana...</div>
-  </div>`;
-
-  try {
-    const resp = await fetch('/api/breviario');
-    const json = await resp.json();
-
-    if (json.ok && json.texto) {
-      container.innerHTML = buildBreviarioFromText(json.texto, json.fecha);
-    } else {
-      throw new Error(json.error || 'Sin datos');
-    }
-  } catch(e) {
-    container.innerHTML = `<div style="padding:20px;text-align:center">
-      <p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;margin-bottom:16px">
-        No se pudieron cargar los Laudes. Intenta de nuevo.
-      </p>
-      <button onclick="initBreviario()" style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Lora',serif;cursor:pointer">
-        Reintentar
-      </button>
-    </div>`;
-  }
-}
-
-function buildBreviarioFromText(texto, fecha) {
-  const secciones = {
-    'HIMNO': { titulo: '✦ Himno', color: '#4A2080' },
-    'SALMO_1': { titulo: 'Salmo', color: '#1E6B3A' },
-    'SALMO_2': { titulo: 'Salmo', color: '#1E6B3A' },
-    'CANTICO': { titulo: 'Cántico', color: '#7A5230' },
-    'LECTURA_BREVE': { titulo: 'Lectura breve', color: '#8B1A1A' },
-    'RESPONSORIO': { titulo: 'Responsorio breve', color: '#4A2080' },
-    'BENEDICTUS': { titulo: 'Cántico de Zacarías (Benedictus)', color: '#C9923A' },
-    'PRECES': { titulo: 'Preces', color: '#5C3D1E' },
-    'PADRENUESTRO': { titulo: 'Padrenuestro', color: '#5C3D1E' },
-    'ORACION': { titulo: 'Oración conclusiva', color: '#8B1A1A' },
-  };
-
-  let html = `<div style="background:rgba(201,146,58,.08);border-radius:10px;padding:12px 16px;margin-bottom:20px;border-left:3px solid var(--ocre)">
-    <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre)">Laudes · Liturgia de las Horas</div>
-    <div style="font-family:'Playfair Display',serif;font-size:14px;color:var(--brown);margin-top:3px">${fecha || ''}</div>
-  </div>`;
-
-  for (const [key, meta] of Object.entries(secciones)) {
-    const marker = `---${key}---`;
-    const nextKeys = Object.keys(secciones);
-    const nextIdx = nextKeys.indexOf(key) + 1;
-
-    let startIdx = texto.indexOf(marker);
-    if (startIdx === -1) continue;
-    startIdx += marker.length;
-
-    // Encontrar fin de sección
-    let endIdx = texto.length;
-    for (let k = nextIdx; k < nextKeys.length; k++) {
-      const ni = texto.indexOf(`---${nextKeys[k]}---`, startIdx);
-      if (ni !== -1) { endIdx = ni; break; }
-    }
-
-    const secTexto = texto.slice(startIdx, endIdx).trim();
-    if (!secTexto) continue;
-
-    html += `<div style="margin-bottom:20px">
-      <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;
-           text-transform:uppercase;letter-spacing:.1em;color:${meta.color};
-           margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">
-        ${meta.titulo}
-      </div>
-      <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;
-           color:var(--ink);white-space:pre-wrap">${esc(secTexto)}</div>
-    </div>`;
-  }
-
-  // Si no tiene secciones con marcadores, mostrar el texto completo
-  if (!texto.includes('---')) {
-    html += `<div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(texto)}</div>`;
-  }
-
-  return html;
+  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('brev-date-label').textContent =
+    `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+  renderHora(horaActual);
 }
 
 function selectHora(hora, el) {
@@ -1359,7 +1223,7 @@ function lecturBlock(titulo, ref, intro, texto, color) {
     <div style="font-family:Inter,sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:${color};margin-bottom:6px">${titulo}</div>
     ${ref ? `<div style="font-family:Lora,serif;font-size:13px;font-style:italic;color:var(--ocre);font-weight:500;margin-bottom:8px">${ref}</div>` : ''}
     ${intro ? `<div style="font-family:Lora,serif;font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:8px">${intro}</div>` : ''}
-    <div style="font-family:Playfair Display,Georgia,serif;font-size:16px;line-height:2;color:var(--ink);font-style:italic">${texto.split('\n').join('<br>')}</div>
+    <div style="font-family:Playfair Display,Georgia,serif;font-size:16px;line-height:2;color:var(--ink);font-style:italic">${texto.replace(/\n/g,'<br>')}</div>
     <div style="margin-top:10px;font-family:Inter,sans-serif;font-size:10px;font-weight:600;color:${color};text-transform:uppercase;letter-spacing:.08em">Palabra de Dios</div>
     <div style="border-top:1px solid var(--border);margin-top:12px"></div>
   </div>`;
@@ -1370,7 +1234,7 @@ function salmoBlock(ref, estribillo, texto) {
     <div style="font-family:Inter,sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#4A2080;margin-bottom:6px">Salmo Responsorial</div>
     ${ref ? `<div style="font-family:Lora,serif;font-size:13px;font-style:italic;color:var(--ocre);margin-bottom:8px">${ref}</div>` : ''}
     ${estribillo ? `<div style="font-family:Playfair Display,Georgia,serif;font-size:15px;color:#8B1A1A;font-style:italic;margin-bottom:8px;padding:8px 12px;background:rgba(139,26,26,.05);border-left:3px solid #8B1A1A;border-radius:0 6px 6px 0">R/. ${estribillo}</div>` : ''}
-    <div style="font-family:Playfair Display,Georgia,serif;font-size:15px;line-height:2;color:var(--ink);font-style:italic">${texto.split('\n').join('<br>')}</div>
+    <div style="font-family:Playfair Display,Georgia,serif;font-size:15px;line-height:2;color:var(--ink);font-style:italic">${texto.replace(/\n/g,'<br>')}</div>
     <div style="border-top:1px solid var(--border);margin-top:12px"></div>
   </div>`;
 }
@@ -1556,106 +1420,102 @@ function getBibleUrl(ref) {
 }
 
 async function openCitaModal(tipo, ref) {
-  const modal = document.getElementById('cita-modal');
+  // Crear modal si no existe
+  let modal = document.getElementById('cita-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'cita-modal';
+    modal.className = 'cita-modal';
+    modal.innerHTML = `
+      <div class="cita-modal-box">
+        <div class="cita-modal-head">
+          <div class="cita-modal-title" id="cita-modal-title"></div>
+          <button class="cita-modal-close" onclick="closeCitaModal()">✕</button>
+        </div>
+        <div class="cita-modal-body" id="cita-modal-body">
+          <div class="cita-loading">Cargando...</div>
+        </div>
+        <div class="cita-modal-foot">
+          <a id="cita-modal-link" href="#" target="_blank" class="cita-ext-btn">
+            Ver fuente oficial ↗
+          </a>
+          <button onclick="closeCitaModal()" class="cita-cerrar-btn">Cerrar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) closeCitaModal(); });
+  }
+
   const titleEl = document.getElementById('cita-modal-title');
   const bodyEl = document.getElementById('cita-modal-body');
-  const extEl = document.getElementById('cita-modal-ext');
-  if (!modal) return;
+  const linkEl = document.getElementById('cita-modal-link');
 
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 
   if (tipo === 'cic') {
-    titleEl.innerHTML = `<span class="cita-ref-pill cita-ref-cic">CIC ${ref}</span>`;
-    // URL directa al catecismo en Vatican.va por sección
-    const n = parseInt(ref);
-    let page = 'index_sp.html';
-    if (n <= 49)   page = 'p1s1c1_sp.html';
-    else if (n <= 141)  page = 'p1s1c2_sp.html';
-    else if (n <= 197)  page = 'p1s1c3_sp.html';
-    else if (n <= 421)  page = 'p1s2_sp.html';
-    else if (n <= 682)  page = 'p1s2c5_sp.html';
-    else if (n <= 975)  page = 'p1s2c7_sp.html';
-    else if (n <= 1209) page = 'p2s1_sp.html';
-    else if (n <= 1690) page = 'p2s2_sp.html';
-    else if (n <= 1876) page = 'p3s1_sp.html';
-    else if (n <= 2051) page = 'p3s2c1_sp.html';
-    else if (n <= 2557) page = 'p3s2c2_sp.html';
-    else page = 'p4_sp.html';
-    const cicUrl = `https://www.vatican.va/archive/catechism_sp/${page}`;
-    if (extEl) { extEl.href = cicUrl; extEl.textContent = 'Ver en Vatican.va ↗'; }
+    titleEl.textContent = `📖 Catecismo — CIC ${ref}`;
+    const url = getCICUrl(ref);
+    linkEl.href = url;
+    linkEl.textContent = 'Ver en Vatican.va ↗';
+    bodyEl.innerHTML = `
+      <div class="cita-ref-badge cic-badge">CIC ${ref}</div>
+      <div class="cita-texto" id="cita-texto-content">
+        <div class="cita-loading">Consultando el Catecismo...</div>
+      </div>`;
 
-    bodyEl.innerHTML = `<div class="cita-loading">
-      <div style="font-size:13px;margin-bottom:8px">Buscando CIC ${ref}...</div>
-    </div>`;
-
+    // Pedir a la IA el texto del CIC
     try {
-      // Usar el endpoint dedicado que busca en dataset primero
-      const res = await fetch(`/api/cic/${ref}`);
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          stream: false,
+          messages: [{
+            role: 'user',
+            content: `Dame el texto COMPLETO y EXACTO del artículo ${ref} del Catecismo de la Iglesia Católica (CIC ${ref}). Solo el texto del artículo, sin introducciones ni comentarios tuyos.`
+          }]
+        })
+      });
       const data = await res.json();
-      if (data.ok && data.texto) {
-        bodyEl.innerHTML = `
-          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);margin-bottom:12px">
-            Catecismo de la Iglesia Católica — Art. ${ref}
-          </div>
-          <div class="cita-text-block">${data.texto.split('\n').join('<br>')}</div>`;
-      } else {
-        throw new Error('Sin datos');
-      }
+      document.getElementById('cita-texto-content').innerHTML =
+        `<div class="cita-texto-inner">${parseMarkdown(data.reply || 'No disponible')}</div>`;
     } catch(e) {
-      bodyEl.innerHTML = `
-        <div style="text-align:center;padding:20px">
-          <div style="font-family:'Lora',serif;font-size:14px;color:var(--ink3);margin-bottom:12px">
-            Consulta el artículo ${ref} directamente en Vatican.va
-          </div>
-          <a href="${cicUrl}" target="_blank" 
-             style="background:var(--brown);color:#fff;padding:8px 18px;border-radius:8px;text-decoration:none;font-family:'Inter',sans-serif;font-size:13px">
-            Abrir Vatican.va ↗
-          </a>
-        </div>`;
+      document.getElementById('cita-texto-content').innerHTML =
+        `<p style="color:var(--ink4);font-style:italic">Consulta directamente en Vatican.va</p>`;
     }
 
   } else if (tipo === 'biblia') {
-    const cleanRef = ref.trim();
-    titleEl.innerHTML = `<span class="cita-ref-pill cita-ref-biblia">${cleanRef}</span>`;
-    const bibleUrl = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(cleanRef)}&version=LBLA`;
-    if (extEl) { extEl.href = bibleUrl; extEl.textContent = 'Ver en BibleGateway ↗'; }
-
-    bodyEl.innerHTML = `<div class="cita-loading">
-      <div style="font-size:13px;margin-bottom:8px">Buscando ${cleanRef}...</div>
-    </div>`;
+    titleEl.textContent = `✝ Biblia — ${ref}`;
+    const url = getBibleUrl(ref);
+    linkEl.href = url;
+    linkEl.textContent = 'Ver en BibleGateway ↗';
+    bodyEl.innerHTML = `
+      <div class="cita-ref-badge biblia-badge">${ref}</div>
+      <div class="cita-texto" id="cita-texto-content">
+        <div class="cita-loading">Buscando el pasaje...</div>
+      </div>`;
 
     try {
-      const res = await fetch(`/api/biblia?ref=${encodeURIComponent(cleanRef)}`);
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          stream: false,
+          messages: [{
+            role: 'user',
+            content: `Dame el texto COMPLETO de ${ref} de la Biblia, traducción litúrgica en español (Biblia de Jerusalén o Libro del Pueblo de Dios). Solo el texto bíblico, sin comentarios.`
+          }]
+        })
+      });
       const data = await res.json();
-      if (data.ok && data.texto) {
-        bodyEl.innerHTML = `
-          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);margin-bottom:12px">
-            ${cleanRef} · Biblia de Jerusalén
-          </div>
-          <div class="cita-text-block">${data.texto.split('\n').join('<br>')}</div>`;
-      } else {
-        throw new Error('Sin datos');
-      }
+      document.getElementById('cita-texto-content').innerHTML =
+        `<div class="cita-texto-inner" style="font-style:italic">${parseMarkdown(data.reply || 'No disponible')}</div>`;
     } catch(e) {
-      bodyEl.innerHTML = `
-        <div style="text-align:center;padding:20px">
-          <div style="font-family:'Lora',serif;font-size:14px;color:var(--ink3);margin-bottom:12px">
-            Consulta ${cleanRef} en BibleGateway
-          </div>
-          <a href="${bibleUrl}" target="_blank"
-             style="background:var(--green);color:#fff;padding:8px 18px;border-radius:8px;text-decoration:none;font-family:'Inter',sans-serif;font-size:13px">
-            Abrir BibleGateway ↗
-          </a>
-        </div>`;
+      document.getElementById('cita-texto-content').innerHTML =
+        `<p style="color:var(--ink4);font-style:italic">Consulta en BibleGateway.com</p>`;
     }
   }
-}
-
-function closeCitaModal() {
-  const modal = document.getElementById('cita-modal');
-  if (modal) modal.classList.remove('open');
-  document.body.style.overflow = '';
 }
 
 function closeCitaModal() {
@@ -1700,369 +1560,4 @@ function renderMagisteriumSources(text, bubble) {
     </div>
     <div class="mag-sources-text">${parseMarkdown(text)}</div>`;
   bubble.insertBefore(div, bubble.firstChild);
-}
-
-// ══════════════════════════════════════════════
-// V6.2 — SIDEBAR WIDGETS + MISAL + FIXES
-// ══════════════════════════════════════════════
-
-// Toggle widgets inline en sidebar
-function toggleWidgetsInSidebar() {
-  const list = document.getElementById('sb-widgets-inline');
-  const chevron = document.querySelector('.sb-chevron');
-  if (!list) return;
-  const isOpen = list.style.display !== 'none';
-  list.style.display = isOpen ? 'none' : 'block';
-  if (chevron) chevron.classList.toggle('open', !isOpen);
-}
-
-// ── MISAL DEL DÍA ─────────────────────────────
-const MISAL_ORDINARIO = {
-  titulo: 'Ordinario de la Misa',
-  partes: [
-    {
-      nombre: 'Ritos iniciales',
-      items: [
-        { titulo: 'Entrada y Saludo', texto: `El sacerdote se acerca al altar y lo venera.
-        
-<em>Se puede cantar el canto de entrada.</em>
-
-El sacerdote, junto con toda la asamblea, hace la señal de la Cruz:
-
-<strong>Sacerdote:</strong> En el nombre del Padre, y del Hijo, y del Espíritu Santo.
-<strong>Pueblo: Amén.</strong>
-
-El sacerdote saluda al pueblo con una de estas fórmulas:
-
-<strong>Sacerdote:</strong> La gracia de nuestro Señor Jesucristo, el amor del Padre y la comunión del Espíritu Santo estén con todos vosotros.
-<strong>Pueblo: Y con tu espíritu.</strong>` },
-
-        { titulo: 'Acto Penitencial', texto: `<strong>Sacerdote:</strong> Hermanos: para celebrar dignamente estos sagrados misterios, reconozcamos nuestros pecados.
-
-<em>Breve pausa de silencio.</em>
-
-<strong>Todos:</strong> Yo confieso ante Dios todopoderoso y ante vosotros, hermanos, que he pecado mucho de pensamiento, palabra, obra y omisión.
-
-<em>[Se golpean el pecho:]</em>
-
-Por mi culpa, por mi culpa, por mi grande culpa.
-
-Por eso ruego a Santa María, siempre Virgen, a los ángeles, a los santos y a vosotros, hermanos, que intercedáis por mí ante Dios, nuestro Señor.
-
-<strong>Sacerdote:</strong> Dios todopoderoso tenga misericordia de nosotros, perdone nuestros pecados y nos lleve a la vida eterna.
-<strong>Pueblo: Amén.</strong>` },
-
-        { titulo: 'Señor, ten piedad', texto: `<strong>Sacerdote o cantor:</strong> Señor, ten piedad.
-<strong>Pueblo: Señor, ten piedad.</strong>
-<strong>Sacerdote:</strong> Cristo, ten piedad.
-<strong>Pueblo: Cristo, ten piedad.</strong>
-<strong>Sacerdote:</strong> Señor, ten piedad.
-<strong>Pueblo: Señor, ten piedad.</strong>` },
-
-        { titulo: 'Gloria', texto: `<em>(Se omite en Adviento, Cuaresma y misas de difuntos)</em>
-
-<strong>Todos:</strong>
-Gloria a Dios en el cielo,
-y en la tierra paz a los hombres que ama el Señor.
-Por tu inmensa gloria te alabamos,
-te bendecimos, te adoramos, te glorificamos,
-te damos gracias,
-Señor Dios, Rey celestial,
-Dios Padre todopoderoso.
-
-Señor, Hijo único, Jesucristo,
-Señor Dios, Cordero de Dios, Hijo del Padre;
-tú que quitas el pecado del mundo, ten piedad de nosotros;
-tú que quitas el pecado del mundo, atiende nuestra súplica;
-tú que estás sentado a la derecha del Padre, ten piedad de nosotros.
-
-Porque solo tú eres Santo,
-solo tú Señor,
-solo tú Altísimo, Jesucristo,
-con el Espíritu Santo
-en la gloria de Dios Padre.
-<strong>Amén.</strong>` },
-
-        { titulo: 'Oración colecta', texto: `<strong>Sacerdote:</strong> Oremos.
-
-<em>[Pausa de silencio]</em>
-
-La oración colecta varía según el día litúrgico. Concluye con:
-
-<strong>Pueblo: Amén.</strong>` }
-      ]
-    },
-    {
-      nombre: 'Liturgia de la Palabra',
-      items: [
-        { titulo: 'Lecturas', texto: `<em>El lector proclama la Primera Lectura del Leccionario.</em>
-
-<strong>Lector:</strong> Palabra de Dios.
-<strong>Pueblo: Te alabamos, Señor.</strong>
-
-<em>Se canta o recita el Salmo Responsorial.</em>
-
-<em>Si hay Segunda Lectura (domingos y solemnidades), el lector la proclama.</em>
-<strong>Lector:</strong> Palabra de Dios.
-<strong>Pueblo: Te alabamos, Señor.</strong>` },
-
-        { titulo: 'Aclamación antes del Evangelio', texto: `<strong>Todos:</strong> Aleluya, aleluya, aleluya.
-<em>(En Cuaresma: "Honor y gloria a ti, Señor Jesús")</em>
-
-<em>Se canta el versículo del Evangelio.</em>
-
-<strong>Todos:</strong> Aleluya, aleluya, aleluya.` },
-
-        { titulo: 'Evangelio', texto: `<strong>Diácono/Sacerdote:</strong> El Señor esté con vosotros.
-<strong>Pueblo: Y con tu espíritu.</strong>
-<strong>Diácono/Sacerdote:</strong> Lectura del santo Evangelio según san [nombre].
-<strong>Pueblo: Gloria a ti, Señor.</strong>
-
-<em>[Se proclama el Evangelio]</em>
-
-<strong>Diácono/Sacerdote:</strong> Palabra del Señor.
-<strong>Pueblo: Gloria a ti, Señor Jesucristo.</strong>` },
-
-        { titulo: 'Homilía', texto: `<em>El sacerdote explica la Palabra de Dios proclamada.</em>` },
-
-        { titulo: 'Profesión de fe (Credo)', texto: `<em>(Se recita los domingos y solemnidades)</em>
-
-<strong>Todos:</strong>
-Creo en un solo Dios, Padre todopoderoso,
-Creador del cielo y de la tierra,
-de todo lo visible y lo invisible.
-Creo en un solo Señor, Jesucristo,
-Hijo único de Dios,
-nacido del Padre antes de todos los siglos:
-Dios de Dios, Luz de Luz,
-Dios verdadero de Dios verdadero,
-engendrado, no creado,
-de la misma naturaleza del Padre,
-por quien todo fue hecho;
-que por nosotros, los hombres,
-y por nuestra salvación bajó del cielo,
-
-<em>[Todos se inclinan en estas palabras:]</em>
-
-y por obra del Espíritu Santo
-se encarnó de María, la Virgen, y se hizo hombre;
-
-y por nuestra causa fue crucificado en tiempos de Poncio Pilato,
-padeció y fue sepultado,
-y resucitó al tercer día, según las Escrituras,
-y subió al cielo, y está sentado a la derecha del Padre;
-y de nuevo vendrá con gloria para juzgar a vivos y muertos,
-y su reino no tendrá fin.
-
-Creo en el Espíritu Santo, Señor y dador de vida,
-que procede del Padre y del Hijo,
-que con el Padre y el Hijo recibe una misma adoración y gloria,
-y que habló por los profetas.
-
-Creo en la Iglesia, que es una, santa, católica y apostólica.
-Confieso que hay un solo Bautismo para el perdón de los pecados.
-Espero la resurrección de los muertos
-y la vida del mundo futuro. Amén.` },
-
-        { titulo: 'Oración universal (de los fieles)', texto: `<strong>Sacerdote:</strong> Hermanos: dirijamos con confianza nuestras súplicas al Señor.
-
-<em>El diácono o un fiel lee las intenciones. Después de cada una:</em>
-
-<strong>Pueblo: Te rogamos, óyenos.</strong> (u otra respuesta)
-
-<strong>Sacerdote:</strong> [Oración de conclusión]
-<strong>Pueblo: Amén.</strong>` }
-      ]
-    },
-    {
-      nombre: 'Liturgia Eucarística',
-      items: [
-        { titulo: 'Presentación de los dones', texto: `<em>Se llevan al altar el pan y el vino. Se puede cantar.</em>
-
-<strong>Sacerdote:</strong> Bendito seas, Señor, Dios del universo, por este pan, fruto de la tierra y del trabajo del hombre, que recibimos de tu generosidad y ahora te presentamos; él será para nosotros pan de vida.
-<strong>Pueblo: Bendito seas por siempre, Señor.</strong>
-
-<strong>Sacerdote:</strong> Bendito seas, Señor, Dios del universo, por este vino, fruto de la vid y del trabajo del hombre, que recibimos de tu generosidad y ahora te presentamos; él será para nosotros bebida de salvación.
-<strong>Pueblo: Bendito seas por siempre, Señor.</strong>
-
-<strong>Sacerdote:</strong> Orad, hermanos, para que este sacrificio, mío y vuestro, sea agradable a Dios, Padre todopoderoso.
-<strong>Pueblo: El Señor reciba de tus manos este sacrificio para alabanza y gloria de su nombre, para nuestro bien y el de toda su santa Iglesia.</strong>` },
-
-        { titulo: 'Plegaria eucarística — Prefacio', texto: `<strong>Sacerdote:</strong> El Señor esté con vosotros.
-<strong>Pueblo: Y con tu espíritu.</strong>
-
-<strong>Sacerdote:</strong> Levantemos el corazón.
-<strong>Pueblo: Lo tenemos levantado hacia el Señor.</strong>
-
-<strong>Sacerdote:</strong> Demos gracias al Señor, nuestro Dios.
-<strong>Pueblo: Es justo y necesario.</strong>
-
-<em>[El sacerdote proclama el prefacio del día]</em>
-
-<strong>Todos:</strong> Santo, Santo, Santo es el Señor, Dios del universo. Llenos están el cielo y la tierra de tu gloria. Hosanna en el cielo. Bendito el que viene en nombre del Señor. Hosanna en el cielo.` },
-
-        { titulo: 'Consagración', texto: `<em>El sacerdote toma el pan y dice:</em>
-
-"El cual, la víspera de su Pasión, tomó pan en sus santas y venerables manos, y, elevando los ojos al cielo, hacia ti, Dios, Padre suyo todopoderoso, dando gracias te bendijo, lo partió y lo dio a sus discípulos diciendo:"
-
-<strong>ESTO ES MI CUERPO, QUE SERÁ ENTREGADO POR VOSOTROS.</strong>
-
-<em>[Elevación — el pueblo se arrodilla o inclina]</em>
-
-<em>El sacerdote toma el cáliz y dice:</em>
-
-"Del mismo modo, acabada la cena, tomó este cáliz glorioso en sus santas y venerables manos, y, dándote gracias de nuevo, lo bendijo y lo pasó a sus discípulos diciendo:"
-
-<strong>ESTE ES EL CÁLIZ DE MI SANGRE, SANGRE DE LA ALIANZA NUEVA Y ETERNA, QUE SERÁ DERRAMADA POR VOSOTROS Y POR TODOS LOS HOMBRES PARA EL PERDÓN DE LOS PECADOS.</strong>
-
-<strong>HACED ESTO EN CONMEMORACIÓN MÍA.</strong>
-
-<em>[Elevación — el pueblo se arrodilla o inclina]</em>
-
-<strong>Sacerdote:</strong> Este es el Sacramento de nuestra fe.
-<strong>Pueblo: Anunciamos tu muerte, proclamamos tu resurrección. ¡Ven, Señor Jesús!</strong>` },
-
-        { titulo: 'Doxología final', texto: `<strong>Sacerdote:</strong> Por Cristo, con él y en él, a ti, Dios Padre omnipotente, en la unidad del Espíritu Santo, todo honor y toda gloria por los siglos de los siglos.
-<strong>Pueblo: Amén.</strong>` }
-      ]
-    },
-    {
-      nombre: 'Rito de la Comunión',
-      items: [
-        { titulo: 'Padrenuestro', texto: `<strong>Sacerdote:</strong> Fieles a la recomendación del Salvador y siguiendo su divina enseñanza, nos atrevemos a decir:
-
-<strong>Todos:</strong>
-Padre nuestro, que estás en el cielo,
-santificado sea tu Nombre;
-venga a nosotros tu reino;
-hágase tu voluntad en la tierra como en el cielo.
-Danos hoy nuestro pan de cada día;
-perdona nuestras ofensas,
-como también nosotros perdonamos
-a los que nos ofenden;
-no nos dejes caer en la tentación,
-y líbranos del mal.
-
-<strong>Sacerdote:</strong> Líbranos de todos los males, Señor... y aguardamos la gloriosa venida de nuestro Salvador Jesucristo.
-<strong>Pueblo: Tuyo es el reino, tuyo el poder y la gloria, por siempre, Señor.</strong>` },
-
-        { titulo: 'Cordero de Dios', texto: `<em>El sacerdote parte la hostia. El pueblo canta o recita:</em>
-
-<strong>Todos:</strong>
-Cordero de Dios, que quitas el pecado del mundo, ten piedad de nosotros.
-Cordero de Dios, que quitas el pecado del mundo, ten piedad de nosotros.
-Cordero de Dios, que quitas el pecado del mundo, danos la paz.` },
-
-        { titulo: 'Comunión', texto: `<strong>Sacerdote:</strong> Este es el Cordero de Dios que quita el pecado del mundo. Dichosos los invitados a la cena del Señor.
-<strong>Todos:</strong> Señor, no soy digno de que entres en mi casa, pero una palabra tuya bastará para sanarme.
-
-<em>El sacerdote comulga y luego distribuye la comunión al pueblo.</em>
-
-<em>Ministro:</em> El Cuerpo de Cristo.
-<em>Comulgante:</em> Amén.
-
-<em>Después de la comunión hay un tiempo de silencio y acción de gracias.</em>` },
-
-        { titulo: 'Oración después de la comunión', texto: `<strong>Sacerdote:</strong> Oremos.
-
-<em>[Pausa de silencio]</em>
-
-<em>[Oración propia del día]</em>
-
-<strong>Pueblo: Amén.</strong>` }
-      ]
-    },
-    {
-      nombre: 'Rito de conclusión',
-      items: [
-        { titulo: 'Bendición y despedida', texto: `<strong>Sacerdote:</strong> El Señor esté con vosotros.
-<strong>Pueblo: Y con tu espíritu.</strong>
-
-<strong>Sacerdote:</strong> La bendición de Dios todopoderoso, Padre, Hijo ✞ y Espíritu Santo, descienda sobre vosotros.
-<strong>Pueblo: Amén.</strong>
-
-<strong>Sacerdote/Diácono:</strong> Podéis ir en paz.
-<strong>Pueblo: Demos gracias a Dios.</strong>` }
-      ]
-    }
-  ]
-};
-
-let misalParteActual = 'ordinario';
-
-function initMisal() {
-  const now = new Date();
-  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const label = document.getElementById('misal-date-label');
-  if (label) label.textContent = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`.toUpperCase();
-  renderMisalParte('ordinario');
-}
-
-function selectMisalParte(parte, el) {
-  misalParteActual = parte;
-  document.querySelectorAll('#view-misal .hora-pill').forEach(p => p.classList.remove('on'));
-  if (el) el.classList.add('on');
-  renderMisalParte(parte);
-}
-
-function renderMisalParte(parte) {
-  const container = document.getElementById('misal-content');
-  if (!container) return;
-
-  if (parte === 'ordinario') {
-    let html = '';
-    MISAL_ORDINARIO.partes.forEach(seccion => {
-      html += `<div class="misal-seccion">
-        <div class="misal-seccion-title">${seccion.nombre}</div>`;
-      seccion.items.forEach(item => {
-        html += `<div class="misal-item">
-          <div class="misal-item-title">${item.titulo}</div>
-          <div class="misal-item-texto">${item.texto.split('\n').join('<br>')}</div>
-        </div>`;
-      });
-      html += '</div>';
-    });
-    container.innerHTML = html;
-
-  } else if (parte === 'propio') {
-    container.innerHTML = `<div style="text-align:center;padding:30px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">Cargando el propio del día...</div>`;
-    // Pedir a la IA el propio del día
-    const now = new Date();
-    const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-    const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-    const fecha = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
-    fetch('/api/chat', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        stream: false,
-        messages: [{role:'user', content:`Dame el Propio del día para la Misa de HOY ${fecha} según el calendario litúrgico romano: oración colecta, oración sobre las ofrendas, oración después de la comunión y la antífona de entrada. Indica también el tiempo litúrgico y la celebración del día.`}]
-      })
-    }).then(r=>r.json()).then(data => {
-      container.innerHTML = `<div class="brev-content-area">${parseMarkdown(data.reply || 'No disponible')}</div>`;
-    }).catch(() => {
-      container.innerHTML = `<div style="padding:16px;color:var(--ink4);font-family:'Lora',serif;font-style:italic">No se pudo cargar el propio del día.</div>`;
-    });
-
-  } else if (parte === 'lecturas') {
-    container.innerHTML = `<div style="text-align:center;padding:20px;font-family:'Lora',serif;color:var(--ink4)">Cargando lecturas...</div>`;
-    fetch('/api/lecturas-dia')
-      .then(r=>r.json())
-      .then(json => {
-        if (json.ok && (json.texto || (json.lecturas && json.lecturas.texto))) {
-          const texto = json.texto || json.lecturas.texto;
-          container.innerHTML = buildLecturasFromText(texto, json.fecha || '');
-        } else {
-          throw new Error('Sin datos');
-        }
-      }).catch(() => {
-        container.innerHTML = `<div style="padding:16px;color:var(--ink4);font-family:'Lora',serif;font-style:italic">Las lecturas se están cargando. Intenta en un momento.</div>`;
-      });
-  }
-}
-
-function exportMisalPDF() {
-  closeView();
-  setTimeout(() => sendChip('Exportar el Misal del día en PDF'), 350);
 }
