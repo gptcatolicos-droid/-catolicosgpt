@@ -319,60 +319,7 @@
   <div class="overlay" id="overlay" onclick="closeSb()"></div>
 
   <!-- SIDEBAR -->
-  <nav class="sb" id="sb" aria-label="Menú principal">
-    <div class="sb-head">
-      <div class="sb-logo-wrap">
-        <svg width="28" height="28" viewBox="0 0 80 80" fill="none"><circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/><line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/><line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/><path d="M46 24 Q57 28 53 39 Q49 33 43 35" stroke="#C9923A" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="53" cy="24" r="2.2" fill="#C9923A"/><circle cx="43" cy="35" r="2.2" fill="#C9923A"/><path d="M16 56 Q28 49 40 53 Q52 49 64 56" stroke="#7A5230" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
-        <div class="sb-logo-name">Católicos<span>GPT</span></div>
-      </div>
-      <button class="sb-close" onclick="closeSb()" aria-label="Cerrar menú">✕</button>
-    </div>
-
-    <button class="sb-new" onclick="newChat()">
-      <svg width="13" height="13" viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2.5">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      <span>Nueva consulta</span>
-    </button>
-
-    <div class="sb-body">
-      <div class="sb-group">Recientes</div>
-      <div id="history-list"></div>
-      <div class="sb-divider"></div>
-
-      <div class="sb-group">Accesos directos</div>
-      <div class="sb-item" onclick="loadLecturasReales();closeSb()">
-        <div class="sb-ico">📖</div><span class="sb-lbl">Lecturas del día</span>
-      </div>
-      <div class="sb-item" onclick="sendChip('santo del día')">
-        <div class="sb-ico">☩</div><span class="sb-lbl">Santo del día</span>
-      </div>
-      <div class="sb-item" onclick="sendChip('guíame en el Santo Rosario de hoy')">
-        <div class="sb-ico">📿</div><span class="sb-lbl">Santo Rosario</span>
-      </div>
-      <div class="sb-item" onclick="openView('breviario');closeSb()">
-        <div class="sb-ico">🕯</div><span class="sb-lbl">Breviario digital</span>
-      </div>
-      <div class="sb-item" onclick="window.open('https://www.vatican.va','_blank');closeSb()">
-        <div class="sb-ico">🌐</div><span class="sb-lbl">Vatican.va oficial</span>
-      </div>
-      <div class="sb-divider"></div>
-      <div class="sb-group">Litúrgico</div>
-      <div class="sb-item" onclick="openView('calendario');closeSb()">
-        <div class="sb-ico">📅</div><span class="sb-lbl">Calendario litúrgico</span>
-      </div>
-      <div class="sb-divider"></div>
-      
-    </div>
-
-    <a class="sb-donate" href="#" onclick="openDonate(); return false;" aria-label="Donar a CatolicosGPT">
-      <span style="font-size:16px">🤲</span>
-      <div class="sb-donate-text">
-        <span class="sb-donate-title">Apoya CatolicosGPT</span>
-        <span class="sb-donate-sub">Donación vía PayPal</span>
-      </div>
-    </a>
-  </nav>
+  
 
   <!-- MAIN -->
   <div class="main">
@@ -724,7 +671,7 @@
 <script src="app.js"></script>
 </body>
 </html><div class="sb-overlay" id="sb-overlay" onclick="closeSb()"></div>
-  <nav class="sidebar" id="sidebar">
+  <nav class="sb sidebar" id="sb">
 
   <!-- Header -->
   <div class="sb-header">
@@ -988,60 +935,7 @@
   <div class="overlay" id="overlay" onclick="closeSb()"></div>
 
   <!-- SIDEBAR -->
-  <nav class="sb" id="sb" aria-label="Menú principal">
-    <div class="sb-head">
-      <div class="sb-logo-wrap">
-        <svg width="28" height="28" viewBox="0 0 80 80" fill="none"><circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/><line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/><line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/><path d="M46 24 Q57 28 53 39 Q49 33 43 35" stroke="#C9923A" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="53" cy="24" r="2.2" fill="#C9923A"/><circle cx="43" cy="35" r="2.2" fill="#C9923A"/><path d="M16 56 Q28 49 40 53 Q52 49 64 56" stroke="#7A5230" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
-        <div class="sb-logo-name">Católicos<span>GPT</span></div>
-      </div>
-      <button class="sb-close" onclick="closeSb()" aria-label="Cerrar menú">✕</button>
-    </div>
-
-    <button class="sb-new" onclick="newChat()">
-      <svg width="13" height="13" viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2.5">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      <span>Nueva consulta</span>
-    </button>
-
-    <div class="sb-body">
-      <div class="sb-group">Recientes</div>
-      <div id="history-list"></div>
-      <div class="sb-divider"></div>
-
-      <div class="sb-group">Accesos directos</div>
-      <div class="sb-item" onclick="loadLecturasReales();closeSb()">
-        <div class="sb-ico">📖</div><span class="sb-lbl">Lecturas del día</span>
-      </div>
-      <div class="sb-item" onclick="sendChip('santo del día')">
-        <div class="sb-ico">☩</div><span class="sb-lbl">Santo del día</span>
-      </div>
-      <div class="sb-item" onclick="sendChip('guíame en el Santo Rosario de hoy')">
-        <div class="sb-ico">📿</div><span class="sb-lbl">Santo Rosario</span>
-      </div>
-      <div class="sb-item" onclick="openView('breviario');closeSb()">
-        <div class="sb-ico">🕯</div><span class="sb-lbl">Breviario digital</span>
-      </div>
-      <div class="sb-item" onclick="window.open('https://www.vatican.va','_blank');closeSb()">
-        <div class="sb-ico">🌐</div><span class="sb-lbl">Vatican.va oficial</span>
-      </div>
-      <div class="sb-divider"></div>
-      <div class="sb-group">Litúrgico</div>
-      <div class="sb-item" onclick="openView('calendario');closeSb()">
-        <div class="sb-ico">📅</div><span class="sb-lbl">Calendario litúrgico</span>
-      </div>
-      <div class="sb-divider"></div>
-      
-    </div>
-
-    <a class="sb-donate" href="#" onclick="openDonate(); return false;" aria-label="Donar a CatolicosGPT">
-      <span style="font-size:16px">🤲</span>
-      <div class="sb-donate-text">
-        <span class="sb-donate-title">Apoya CatolicosGPT</span>
-        <span class="sb-donate-sub">Donación vía PayPal</span>
-      </div>
-    </a>
-  </nav>
+  
 
   <!-- MAIN -->
   <div class="main">
