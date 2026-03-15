@@ -91,59 +91,59 @@ function setLang(l, btn) {
 // MARKDOWN PARSER
 // ══════════════════════════════
 function parseMarkdown(text) {
-  // Normalizar saltos de línea
   text = text.replace(/\\\\n/g, '\n').replace(/\\n/g, '\n');
 
-  // ── TABLAS: procesar línea por línea ──
+  // ── TABLAS ──
   const lines = text.split('\n');
   const out = [];
   let i = 0;
   while (i < lines.length) {
-    const trimmed = lines[i].trim();
-    if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.includes('|', 1)) {
-      // Recolectar todas las líneas de la tabla
+    const t = lines[i].trim();
+    if (t.startsWith('|') && t.endsWith('|') && t.split('|').length > 2) {
       const tLines = [];
-      while (i < lines.length && lines[i].trim().startsWith('|')) {
-        tLines.push(lines[i].trim());
-        i++;
-      }
-      // Renderizar tabla
-      let tHtml = '<div style="overflow-x:auto;margin:14px 0;border-radius:8px;border:1px solid var(--border);box-shadow:0 1px 4px var(--shadow)"><table style="width:100%;border-collapse:collapse">';
-      let firstRow = true;
+      while (i < lines.length && lines[i].trim().startsWith('|')) { tLines.push(lines[i].trim()); i++; }
+      let html = '<div style="overflow-x:auto;margin:14px 0"><table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">';
+      let first = true;
       tLines.forEach(tl => {
-        // Saltar línea separadora |---|
-        if (/^\|[\s\-:]+[\|\-][\s\-:]+\|/.test(tl)) return;
+        if (/^\|[\s\-:]+[\|\-]/.test(tl)) return;
         const cells = tl.split('|').map(c => c.trim()).filter(c => c !== '');
         if (!cells.length) return;
-        const tag = firstRow ? 'th' : 'td';
-        tHtml += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
-        firstRow = false;
+        const tag = first ? 'th' : 'td';
+        html += '<tr>' + cells.map(c => `<${tag} style="padding:8px 12px;border:1px solid var(--border);${first?'background:var(--bg3);font-weight:600;font-size:12px':''}">${c}</${tag}>`).join('') + '</tr>';
+        first = false;
       });
-      tHtml += '</table></div>';
-      out.push(tHtml);
-    } else {
-      out.push(lines[i]);
-      i++;
-    }
+      html += '</table></div>';
+      out.push(html);
+    } else { out.push(lines[i]); i++; }
   }
   text = out.join('\n');
 
-  // ── RESTO DEL MARKDOWN ──
-  let html = text
+  // ── LINKS CIC [CIC XXXX] → modal dentro de la app ──
+  text = text.replace(/\[CIC\s*(\d+)\]/g, (_, num) =>
+    `<a href="#" class="cita-cic" onclick="openCitaModal('cic','${num}');return false;">CIC ${num}</a>`
+  );
+
+  // ── LINKS BÍBLICOS [Jn 3,16] → modal dentro de la app ──
+  const books = '(?:1|2|3)?\\s*(?:Gn|Ex|Lv|Nm|Dt|Jos|Jue|Rut|Sam|Re|Cr|Esd|Neh|Tob|Jdt|Est|Mac|Job|Sal|Prov|Ecl|Cant|Sab|Sir|Is|Jer|Lam|Bar|Ez|Dn|Os|Jl|Am|Abd|Jon|Miq|Nah|Hab|Sof|Ag|Zac|Mal|Mt|Mc|Lc|Jn|Hch|Rom|Cor|Gal|Ef|Flp|Col|Tes|Tim|Tit|Flm|Heb|Sant|Pe|Jds|Ap)';
+  const bibleRx = new RegExp('\\\\[(' + books + '\\\\s+[\\\\d][\\\\d,\\\\.\\\\-–;\\\\s]*)\\\\]', 'g');
+  text = text.replace(bibleRx, (_, ref) =>
+    `<a href="#" class="cita-biblia" onclick="openCitaModal('biblia','${ref.trim().replace(/'/g,"\\'")}');return false;">${ref.trim()}</a>`
+  );
+
+  // ── LINKS EXTERNOS ──
+  text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener" style="color:var(--ocre)">$1 ↗</a>');
+
+  // ── MARKDOWN ──
+  return text
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1 ↗</a>')
-    .replace(/^---$/gim, '<hr>')
     .replace(/^- (.*$)/gim, '<li>$1</li>')
     .replace(/^(\d+)\. (.*$)/gim, '<li><strong style="color:var(--ocre)">$1.</strong> $2</li>')
     .replace(/\n{2,}/g, '</p><p>')
     .replace(/\n/g, '<br>');
-
-  html = html.replace(/(<li>.*?<\/li>(<br>)?)+/gs, m => `<ul>${m.replace(/<br>/g,'')}</ul>`);
-  return html;
 }
 
 function esc(text) {
@@ -939,13 +939,94 @@ const HORAS_DATA = {
 
 let horaActual = 'laudes';
 
-function initBreviario() {
+async function initBreviario() {
   const now = new Date();
-  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  document.getElementById('brev-date-label').textContent =
-    `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
-  renderHora(horaActual);
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+
+  const dateEl = document.getElementById('brev-date-label');
+  if (dateEl) dateEl.textContent = fechaStr;
+
+  const contentEl = document.getElementById('brev-content');
+  if (!contentEl) return;
+
+  contentEl.innerHTML = `<div style="text-align:center;padding:40px 20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
+    Cargando Laudes del ${fechaStr}...
+  </div>`;
+
+  try {
+    const resp = await fetch('/api/breviario');
+    const json = await resp.json();
+
+    if (json.ok && json.texto) {
+      // Renderizar secciones
+      const secciones = {
+        'HIMNO': 'Himno',
+        'SALMO_1': 'Salmo',
+        'SALMO_2': 'Salmo',
+        'CANTICO': 'Cántico',
+        'LECTURA_BREVE': 'Lectura breve',
+        'RESPONSORIO': 'Responsorio',
+        'BENEDICTUS': 'Cántico de Zacarías (Benedictus)',
+        'PRECES': 'Preces',
+        'ORACION': 'Oración conclusiva'
+      };
+
+      let html = `<div style="background:rgba(201,146,58,.08);border-radius:10px;padding:12px 16px;margin-bottom:20px;border-left:3px solid var(--ocre)">
+        <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre)">Laudes · Liturgia de las Horas</div>
+        <div style="font-family:'Playfair Display',serif;font-size:14px;color:var(--brown);margin-top:3px">${json.fecha}</div>
+      </div>`;
+
+      const keys = Object.keys(secciones);
+      const texto = json.texto;
+
+      for (let k = 0; k < keys.length; k++) {
+        const key = keys[k];
+        const marker = '---' + key + '---';
+        const nextMarker = k < keys.length - 1 ? '---' + keys[k+1] + '---' : null;
+
+        let startIdx = texto.indexOf(marker);
+        if (startIdx === -1) continue;
+        startIdx += marker.length;
+
+        let endIdx = texto.length;
+        if (nextMarker) {
+          const ni = texto.indexOf(nextMarker, startIdx);
+          if (ni !== -1) endIdx = ni;
+        }
+
+        const secTexto = texto.slice(startIdx, endIdx).trim();
+        if (!secTexto) continue;
+
+        html += `<div style="margin-bottom:20px">
+          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;
+               letter-spacing:.1em;color:var(--brown);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+            ${secciones[key]}
+          </div>
+          <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(secTexto)}</div>
+        </div>`;
+      }
+
+      // Si no hay marcadores, mostrar texto completo
+      if (!json.texto.includes('---')) {
+        html += `<div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(json.texto)}</div>`;
+      }
+
+      contentEl.innerHTML = html;
+    } else {
+      throw new Error(json.error || 'Sin datos');
+    }
+  } catch(e) {
+    contentEl.innerHTML = `<div style="padding:20px;text-align:center">
+      <p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;margin-bottom:16px">
+        No se pudieron cargar los Laudes. Intenta de nuevo.
+      </p>
+      <button onclick="initBreviario()" style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Lora',serif;cursor:pointer">
+        Reintentar
+      </button>
+    </div>`;
+  }
 }
 
 function selectHora(hora, el) {
@@ -1295,4 +1376,107 @@ function getTiempoLiturgico(year, month) {
   if (m === 4 && new Date(year, month, 12).getDay() === 0) return 'Tiempo Pascual';
   if (m >= 5 && m <= 11) return 'Tiempo Ordinario';
   return 'Tiempo Ordinario';
+}
+
+// ══════════════════════════════════════════
+// MODAL DE CITAS — CIC y Biblia dentro de la app
+// ══════════════════════════════════════════
+async function openCitaModal(tipo, ref) {
+  // Crear modal si no existe
+  let modal = document.getElementById('cita-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'cita-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:flex-end;justify-content:center';
+    modal.innerHTML = `
+      <div id="cita-box" style="background:var(--bg);width:100%;max-width:600px;max-height:80vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 30px rgba(0,0,0,.15)">
+        <div style="width:36px;height:4px;background:var(--border2);border-radius:2px;margin:10px auto 0;flex-shrink:0"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;border-bottom:1px solid var(--border);flex-shrink:0">
+          <div id="cita-title" style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--brown)"></div>
+          <button onclick="closeCitaModal()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:13px;color:var(--ink4)">✕</button>
+        </div>
+        <div id="cita-body" style="flex:1;overflow-y:auto;padding:16px 18px;-webkit-overflow-scrolling:touch">
+          <div style="text-align:center;padding:20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">Cargando...</div>
+        </div>
+        <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+          <a id="cita-ext" href="#" target="_blank" style="flex:1;padding:9px;background:var(--bg3);color:var(--brown);border:1px solid var(--border2);border-radius:8px;font-family:'Lora',serif;font-size:13px;text-decoration:none;text-align:center">Ver fuente ↗</a>
+          <button onclick="closeCitaModal()" style="padding:9px 18px;background:var(--brown);color:#fff;border:none;border-radius:8px;font-family:'Lora',serif;font-size:13px;cursor:pointer">Cerrar</button>
+        </div>
+      </div>`;
+    modal.addEventListener('click', e => { if (e.target === modal) closeCitaModal(); });
+    document.body.appendChild(modal);
+  }
+
+  const titleEl = document.getElementById('cita-title');
+  const bodyEl = document.getElementById('cita-body');
+  const extEl = document.getElementById('cita-ext');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  // Desktop: centrado
+  const box = document.getElementById('cita-box');
+  if (window.innerWidth >= 640) {
+    box.style.borderRadius = '14px';
+    modal.style.alignItems = 'center';
+  }
+
+  if (tipo === 'cic') {
+    titleEl.textContent = `Catecismo — CIC ${ref}`;
+    const n = parseInt(ref);
+    let page = 'index_sp.html';
+    if (n <= 141) page = 'p1s1c2_sp.html';
+    else if (n <= 421) page = 'p1s2_sp.html';
+    else if (n <= 682) page = 'p1s2c5_sp.html';
+    else if (n <= 975) page = 'p1s2c7_sp.html';
+    else if (n <= 1209) page = 'p2s1_sp.html';
+    else if (n <= 1690) page = 'p2s2_sp.html';
+    else if (n <= 1876) page = 'p3s1_sp.html';
+    else if (n <= 2557) page = 'p3s2c1_sp.html';
+    else page = 'p4_sp.html';
+    extEl.href = `https://www.vatican.va/archive/catechism_sp/${page}`;
+    extEl.textContent = 'Ver en Vatican.va ↗';
+    bodyEl.innerHTML = '<div style="text-align:center;padding:20px;font-family:\'Lora\',serif;color:var(--ink4);font-style:italic">Buscando artículo...</div>';
+
+    try {
+      const r = await fetch(`/api/cic/${ref}`);
+      const d = await r.json();
+      if (d.ok && d.texto) {
+        bodyEl.innerHTML = `
+          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);margin-bottom:10px">
+            Catecismo de la Iglesia Católica · Art. ${ref}${d.fuente === 'dataset' ? ' · <span style="color:var(--green)">Dataset local</span>' : ''}
+          </div>
+          <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">${d.texto.split('\n').join('<br>')}</div>`;
+      } else throw new Error();
+    } catch(e) {
+      bodyEl.innerHTML = `<p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;text-align:center">
+        Consulta el artículo ${ref} directamente en Vatican.va</p>`;
+    }
+
+  } else if (tipo === 'biblia') {
+    titleEl.textContent = ref;
+    extEl.href = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(ref)}&version=LBLA`;
+    extEl.textContent = 'Ver en BibleGateway ↗';
+    bodyEl.innerHTML = '<div style="text-align:center;padding:20px;font-family:\'Lora\',serif;color:var(--ink4);font-style:italic">Buscando pasaje...</div>';
+
+    try {
+      const r = await fetch(`/api/biblia?ref=${encodeURIComponent(ref)}`);
+      const d = await r.json();
+      if (d.ok && d.texto) {
+        bodyEl.innerHTML = `
+          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);margin-bottom:10px">
+            ${ref} · Biblia de Jerusalén${d.fuente === 'dataset' ? ' · <span style="color:var(--green)">Dataset local</span>' : ''}
+          </div>
+          <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);font-style:italic">${d.texto.split('\n').join('<br>')}</div>`;
+      } else throw new Error();
+    } catch(e) {
+      bodyEl.innerHTML = `<p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;text-align:center">
+        Consulta ${ref} en BibleGateway.com</p>`;
+    }
+  }
+}
+
+function closeCitaModal() {
+  const modal = document.getElementById('cita-modal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
 }

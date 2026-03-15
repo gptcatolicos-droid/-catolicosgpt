@@ -554,3 +554,24 @@ body { height: 100dvh; font-family: 'Inter', sans-serif; background: var(--bg); 
 @media (max-width: 480px) {
   .stop-btn { width: 36px; height: 36px; font-size: 12px; }
 }
+
+/* ── Links de citas ── */
+.cita-cic {
+  display: inline-flex; align-items: center;
+  font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+  padding: 1px 8px; border-radius: 5px; text-decoration: none; cursor: pointer;
+  background: rgba(139,26,26,.07); color: #8B1A1A;
+  border: 1px solid rgba(139,26,26,.18); transition: background .12s;
+  vertical-align: baseline; margin: 0 2px;
+}
+.cita-cic:hover { background: rgba(139,26,26,.14); }
+
+.cita-biblia {
+  display: inline-flex; align-items: center;
+  font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+  padding: 1px 8px; border-radius: 5px; text-decoration: none; cursor: pointer;
+  background: rgba(30,107,58,.07); color: #1E6B3A;
+  border: 1px solid rgba(30,107,58,.18); transition: background .12s;
+  vertical-align: baseline; margin: 0 2px;
+}
+.cita-biblia:hover { background: rgba(30,107,58,.14); }

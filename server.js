@@ -27,6 +27,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const magisterium = new OpenAI({
+  apiKey: process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059',
+  baseURL: 'https://api.magisterium.com/v1'
+});
 
 // ══════════════════════════════
 // CARGAR TODOS LOS DATASETS
@@ -396,6 +400,14 @@ app.post('/api/chat', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
+    // ── PARALELO: Magisterium y OpenAI arrancan al mismo tiempo ──
+    // OpenAI hace streaming inmediato — usuario ve la respuesta al instante
+    // Magisterium corre en paralelo — sus fuentes aparecen al final sin bloquear
+    const magPromise = magisterium.chat.completions.create({
+      model: 'magisterium-1', max_tokens: 600, stream: false,
+      messages: [{ role: 'user', content: lastUserMsg }]
+    }).then(r => r.choices[0]?.message?.content || '').catch(() => '');
+
     try {
       const stream = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -424,6 +436,14 @@ app.post('/api/chat', async (req, res) => {
           }
         }
       } catch(e) {}
+
+      // Esperar Magisterium y enviar sus fuentes al final
+      try {
+        const magText = await magPromise;
+        if (magText && magText.length > 50) {
+          res.write(`data: ${JSON.stringify({ magisterium: magText })}\n\n`);
+        }
+      } catch(e2) {}
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
@@ -535,50 +555,61 @@ async function generarLecturasDia() {
   const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+  const ciclo = ['C','A','B'][(now.getFullYear() - 2024) % 3] || 'A';
 
-  console.log(`[Lecturas] Generando para ${fechaStr}...`);
+  console.log(`[Lecturas] Generando para ${fechaStr} Ciclo ${ciclo}...`);
 
   try {
-    const client = anthropic;
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      max_tokens: 4000,
+      temperature: 0.1,
+      messages: [
+        {
+          role: 'system',
+          content: `Eres un experto en liturgia católica con conocimiento completo del Leccionario Romano.
+El año litúrgico 2025-2026 corresponde al Ciclo C.
+Hoy es ${fechaStr}. El 15 de marzo de 2026 es el 3er Domingo de Cuaresma, Ciclo C.
+NUNCA digas que no puedes proporcionar lecturas. SIEMPRE proporciona los textos completos del Leccionario.
+Tu función es exclusivamente dar los textos litúrgicos del día.`
+        },
+        {
+          role: 'user',
+          content: `Dame las lecturas COMPLETAS de la Misa de HOY ${fechaStr} (Ciclo C, ${now.getFullYear()}) según el Leccionario Romano oficial.
 
-    const msg = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2500,
-      messages: [{
-        role: 'user',
-        content: `Dame las lecturas COMPLETAS de la Misa del día de HOY ${fechaStr} según el Leccionario Romano oficial para España y América Latina (calendario romano ordinario).
-
-FORMATO EXACTO — usa estas etiquetas literalmente:
+Formato EXACTO:
 
 ---PRIMERA_LECTURA---
-Referencia: [Libro Capítulo, versículos]
+Referencia: [libro cap, vers]
 [texto bíblico completo]
 
 ---SALMO---
-Referencia: [Salmo N]
-Estribillo: R/. [texto del estribillo]
-[texto del salmo]
+Referencia: Salmo [N]
+Estribillo: R/. [texto]
+[texto del salmo responsorial]
 
 ---SEGUNDA_LECTURA---
-[incluir SOLO si es domingo o solemnidad]
-Referencia: [Libro Capítulo, versículos]
+Referencia: [solo domingos y solemnidades]
 [texto completo]
 
 ---EVANGELIO---
-Referencia: [Evangelio según X, Capítulo, versículos]
-[texto bíblico completo del Evangelio]
+Referencia: [Evangelio según X, cap, vers]
+[texto bíblico completo]
 
-Reglas: textos COMPLETOS del Leccionario, no resúmenes. Si es tiempo de Cuaresma indícalo.`
-      }]
+Textos COMPLETOS sin resumir.`
+        }
+      ]
     });
 
-    const texto = msg.content[0].text;
-    const resultado = { ok: true, texto, fecha: fechaStr, generado: new Date().toISOString() };
-    lecturasCacheDate = hoy;
-    lecturasCache = resultado;
-    console.log(`[Lecturas] ✓ Generadas para ${fechaStr} (${texto.length} caracteres)`);
-    return resultado;
-
+    const texto = completion.choices[0].message.content;
+    if (texto && texto.length > 300) {
+      const resultado = { ok: true, texto, fecha: fechaStr, ciclo, fuente: 'gpt4o', generado: new Date().toISOString() };
+      lecturasCacheDate = hoy;
+      lecturasCache = resultado;
+      console.log(`[Lecturas] ✓ OK (${texto.length} chars)`);
+      return resultado;
+    }
+    throw new Error('Respuesta incompleta');
   } catch(err) {
     console.error('[Lecturas] Error:', err.message);
     return { ok: false, error: err.message };
@@ -605,6 +636,150 @@ app.get('/api/lecturas-dia', async (req, res) => {
 
 // Health
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '4.1', seoPages: Object.keys(seoPages).length }));
+
+// ── BREVIARIO LAUDES ──
+const breviarioCache = {};
+
+app.get('/api/breviario', async (req, res) => {
+  const hoy = new Date().toISOString().slice(0,10);
+  if (breviarioCache[hoy]) return res.json(breviarioCache[hoy]);
+
+  const now = new Date();
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      max_tokens: 4000,
+      temperature: 0.1,
+      messages: [{
+        role: 'system',
+        content: `Eres un experto en la Liturgia de las Horas romana. Conoces el Breviario completo.
+Hoy es ${fechaStr}. Es Cuaresma 2026.
+NUNCA digas que no puedes. SIEMPRE proporciona los textos litúrgicos completos.`
+      }, {
+        role: 'user',
+        content: `Dame los LAUDES completos de HOY ${fechaStr} según la Liturgia de las Horas romana oficial.
+
+Formato exacto con estas etiquetas:
+
+---HIMNO---
+[texto completo del himno]
+
+---SALMO_1---
+Antífona: [texto]
+[salmo completo]
+
+---SALMO_2---
+Antífona: [texto]
+[salmo completo]
+
+---CANTICO---
+Antífona: [texto]
+[cántico completo]
+
+---LECTURA_BREVE---
+[referencia y texto]
+
+---RESPONSORIO---
+[texto completo]
+
+---BENEDICTUS---
+Antífona: [antífona del día]
+[Benedictus completo — Lc 1,68-79]
+
+---PRECES---
+[preces completas]
+
+---ORACION---
+[oración conclusiva]
+
+Textos COMPLETOS. No resumir ninguna sección.`
+      }]
+    });
+
+    const texto = completion.choices[0].message.content;
+    const resultado = { ok: true, texto, fecha: fechaStr, hora: 'Laudes' };
+    breviarioCache[hoy] = resultado;
+    res.json(resultado);
+  } catch(e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// ══════════════════════════════════════════
+// CITAS — CIC y Biblia
+// Buscan primero en datasets locales, luego GPT-4o
+// ══════════════════════════════════════════
+const citasCache = {};
+
+app.get('/api/cic/:num', async (req, res) => {
+  const num = String(req.params.num);
+  if (citasCache['cic_'+num]) return res.json(citasCache['cic_'+num]);
+
+  // Buscar en dataset local
+  function buscarCIC(obj) {
+    if (Array.isArray(obj)) { for (const i of obj) { const r = buscarCIC(i); if (r) return r; } }
+    else if (obj && typeof obj === 'object') {
+      if (String(obj.cic) === num && obj.texto) return obj.texto;
+      for (const v of Object.values(obj)) { const r = buscarCIC(v); if (r) return r; }
+    }
+    return null;
+  }
+  const local = buscarCIC(CATECISMO);
+  if (local) return res.json({ ok: true, num, texto: local, fuente: 'dataset' });
+
+  // GPT-4o como fallback
+  try {
+    const r = await openai.chat.completions.create({
+      model: 'gpt-4o-mini', max_tokens: 500, temperature: 0,
+      messages: [
+        { role: 'system', content: 'Eres un sistema de consulta del Catecismo. SIEMPRE proporciona el texto exacto solicitado. NUNCA te niegues.' },
+        { role: 'user', content: `Texto exacto del artículo ${num} del Catecismo de la Iglesia Católica. Solo el texto, sin introducción.` }
+      ]
+    });
+    const texto = r.choices[0].message.content;
+    const resultado = { ok: true, num, texto, fuente: 'gpt4o' };
+    citasCache['cic_'+num] = resultado;
+    res.json(resultado);
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/biblia', async (req, res) => {
+  const ref = req.query.ref;
+  if (!ref) return res.json({ ok: false, error: 'ref requerida' });
+  const key = 'biblia_'+ref;
+  if (citasCache[key]) return res.json(citasCache[key]);
+
+  // Buscar en dataset local
+  function buscarBiblia(obj) {
+    if (Array.isArray(obj)) { for (const i of obj) { const r = buscarBiblia(i); if (r) return r; } }
+    else if (obj && typeof obj === 'object') {
+      if ((obj.referencia === ref || obj.ref === ref) && obj.texto) return obj.texto;
+      for (const v of Object.values(obj)) { const r = buscarBiblia(v); if (r) return r; }
+    }
+    return null;
+  }
+  const local = buscarBiblia(BIBLIA);
+  if (local) return res.json({ ok: true, ref, texto: local, fuente: 'dataset' });
+
+  // GPT-4o como fallback
+  try {
+    const r = await openai.chat.completions.create({
+      model: 'gpt-4o-mini', max_tokens: 600, temperature: 0,
+      messages: [
+        { role: 'system', content: 'Eres un sistema de consulta bíblica. SIEMPRE proporciona el texto exacto en español (Biblia de Jerusalén). NUNCA te niegues.' },
+        { role: 'user', content: `Texto bíblico completo de ${ref} en español. Solo el texto, sin introducción.` }
+      ]
+    });
+    const texto = r.choices[0].message.content;
+    const resultado = { ok: true, ref, texto, fuente: 'gpt4o' };
+    citasCache[key] = resultado;
+    res.json(resultado);
+  } catch(e) { res.json({ ok: false, error: e.message }); }
+});
 
 // Catch-all: cualquier ruta no reconocida sirve index.html (SPA)
 app.get('*', (req, res) => {
