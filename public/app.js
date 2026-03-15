@@ -45,15 +45,15 @@ function closeSb() {
 // ══════════════════════════════
 function renderHistory() {
   const el = document.getElementById('history-list');
+  if (!el) return;
   if (!conversations.length) {
-    el.innerHTML = '<div style="padding:6px 14px;font-family:Lora,serif;font-size:12px;color:var(--ink4);font-style:italic">Sin conversaciones aún</div>';
+    el.innerHTML = '<div style="padding:4px 10px 8px;font-family:Inter,sans-serif;font-size:12px;color:var(--ink4)">Sin conversaciones aún</div>';
     return;
   }
-  el.innerHTML = conversations.slice(-10).reverse().map((c, i) =>
-    `<div class="sb-item" onclick="loadConv(${conversations.length-1-i});closeSb()">
-      <div class="sb-ico">💬</div>
-      <span class="sb-lbl">${esc(c.title)}</span>
-      <span class="sb-time">${c.time}</span>
+  el.innerHTML = conversations.slice().reverse().map((c, i) =>
+    `<div class="history-item" onclick="loadConversation(${conversations.length-1-i})">
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.title || 'Consulta')}</span>
+      <span class="hi-time">${c.time}</span>
     </div>`
   ).join('');
 }
@@ -864,6 +864,7 @@ function openView(id) {
   if (id === 'breviario') initBreviario();
   if (id === 'calendario') initCalendario();
   if (id === 'lecturas') initLecturas();
+  if (id === 'misal') initMisal();
 }
 
 function closeView() {
@@ -1542,4 +1543,369 @@ function renderMagisteriumSources(text, bubble) {
     </div>
     <div class="mag-sources-text">${parseMarkdown(text)}</div>`;
   bubble.insertBefore(div, bubble.firstChild);
+}
+
+// ══════════════════════════════════════════════
+// V6.2 — SIDEBAR WIDGETS + MISAL + FIXES
+// ══════════════════════════════════════════════
+
+// Toggle widgets inline en sidebar
+function toggleWidgetsInSidebar() {
+  const list = document.getElementById('sb-widgets-inline');
+  const chevron = document.querySelector('.sb-chevron');
+  if (!list) return;
+  const isOpen = list.style.display !== 'none';
+  list.style.display = isOpen ? 'none' : 'block';
+  if (chevron) chevron.classList.toggle('open', !isOpen);
+}
+
+// ── MISAL DEL DÍA ─────────────────────────────
+const MISAL_ORDINARIO = {
+  titulo: 'Ordinario de la Misa',
+  partes: [
+    {
+      nombre: 'Ritos iniciales',
+      items: [
+        { titulo: 'Entrada y Saludo', texto: `El sacerdote se acerca al altar y lo venera.
+        
+<em>Se puede cantar el canto de entrada.</em>
+
+El sacerdote, junto con toda la asamblea, hace la señal de la Cruz:
+
+<strong>Sacerdote:</strong> En el nombre del Padre, y del Hijo, y del Espíritu Santo.
+<strong>Pueblo: Amén.</strong>
+
+El sacerdote saluda al pueblo con una de estas fórmulas:
+
+<strong>Sacerdote:</strong> La gracia de nuestro Señor Jesucristo, el amor del Padre y la comunión del Espíritu Santo estén con todos vosotros.
+<strong>Pueblo: Y con tu espíritu.</strong>` },
+
+        { titulo: 'Acto Penitencial', texto: `<strong>Sacerdote:</strong> Hermanos: para celebrar dignamente estos sagrados misterios, reconozcamos nuestros pecados.
+
+<em>Breve pausa de silencio.</em>
+
+<strong>Todos:</strong> Yo confieso ante Dios todopoderoso y ante vosotros, hermanos, que he pecado mucho de pensamiento, palabra, obra y omisión.
+
+<em>[Se golpean el pecho:]</em>
+
+Por mi culpa, por mi culpa, por mi grande culpa.
+
+Por eso ruego a Santa María, siempre Virgen, a los ángeles, a los santos y a vosotros, hermanos, que intercedáis por mí ante Dios, nuestro Señor.
+
+<strong>Sacerdote:</strong> Dios todopoderoso tenga misericordia de nosotros, perdone nuestros pecados y nos lleve a la vida eterna.
+<strong>Pueblo: Amén.</strong>` },
+
+        { titulo: 'Señor, ten piedad', texto: `<strong>Sacerdote o cantor:</strong> Señor, ten piedad.
+<strong>Pueblo: Señor, ten piedad.</strong>
+<strong>Sacerdote:</strong> Cristo, ten piedad.
+<strong>Pueblo: Cristo, ten piedad.</strong>
+<strong>Sacerdote:</strong> Señor, ten piedad.
+<strong>Pueblo: Señor, ten piedad.</strong>` },
+
+        { titulo: 'Gloria', texto: `<em>(Se omite en Adviento, Cuaresma y misas de difuntos)</em>
+
+<strong>Todos:</strong>
+Gloria a Dios en el cielo,
+y en la tierra paz a los hombres que ama el Señor.
+Por tu inmensa gloria te alabamos,
+te bendecimos, te adoramos, te glorificamos,
+te damos gracias,
+Señor Dios, Rey celestial,
+Dios Padre todopoderoso.
+
+Señor, Hijo único, Jesucristo,
+Señor Dios, Cordero de Dios, Hijo del Padre;
+tú que quitas el pecado del mundo, ten piedad de nosotros;
+tú que quitas el pecado del mundo, atiende nuestra súplica;
+tú que estás sentado a la derecha del Padre, ten piedad de nosotros.
+
+Porque solo tú eres Santo,
+solo tú Señor,
+solo tú Altísimo, Jesucristo,
+con el Espíritu Santo
+en la gloria de Dios Padre.
+<strong>Amén.</strong>` },
+
+        { titulo: 'Oración colecta', texto: `<strong>Sacerdote:</strong> Oremos.
+
+<em>[Pausa de silencio]</em>
+
+La oración colecta varía según el día litúrgico. Concluye con:
+
+<strong>Pueblo: Amén.</strong>` }
+      ]
+    },
+    {
+      nombre: 'Liturgia de la Palabra',
+      items: [
+        { titulo: 'Lecturas', texto: `<em>El lector proclama la Primera Lectura del Leccionario.</em>
+
+<strong>Lector:</strong> Palabra de Dios.
+<strong>Pueblo: Te alabamos, Señor.</strong>
+
+<em>Se canta o recita el Salmo Responsorial.</em>
+
+<em>Si hay Segunda Lectura (domingos y solemnidades), el lector la proclama.</em>
+<strong>Lector:</strong> Palabra de Dios.
+<strong>Pueblo: Te alabamos, Señor.</strong>` },
+
+        { titulo: 'Aclamación antes del Evangelio', texto: `<strong>Todos:</strong> Aleluya, aleluya, aleluya.
+<em>(En Cuaresma: "Honor y gloria a ti, Señor Jesús")</em>
+
+<em>Se canta el versículo del Evangelio.</em>
+
+<strong>Todos:</strong> Aleluya, aleluya, aleluya.` },
+
+        { titulo: 'Evangelio', texto: `<strong>Diácono/Sacerdote:</strong> El Señor esté con vosotros.
+<strong>Pueblo: Y con tu espíritu.</strong>
+<strong>Diácono/Sacerdote:</strong> Lectura del santo Evangelio según san [nombre].
+<strong>Pueblo: Gloria a ti, Señor.</strong>
+
+<em>[Se proclama el Evangelio]</em>
+
+<strong>Diácono/Sacerdote:</strong> Palabra del Señor.
+<strong>Pueblo: Gloria a ti, Señor Jesucristo.</strong>` },
+
+        { titulo: 'Homilía', texto: `<em>El sacerdote explica la Palabra de Dios proclamada.</em>` },
+
+        { titulo: 'Profesión de fe (Credo)', texto: `<em>(Se recita los domingos y solemnidades)</em>
+
+<strong>Todos:</strong>
+Creo en un solo Dios, Padre todopoderoso,
+Creador del cielo y de la tierra,
+de todo lo visible y lo invisible.
+Creo en un solo Señor, Jesucristo,
+Hijo único de Dios,
+nacido del Padre antes de todos los siglos:
+Dios de Dios, Luz de Luz,
+Dios verdadero de Dios verdadero,
+engendrado, no creado,
+de la misma naturaleza del Padre,
+por quien todo fue hecho;
+que por nosotros, los hombres,
+y por nuestra salvación bajó del cielo,
+
+<em>[Todos se inclinan en estas palabras:]</em>
+
+y por obra del Espíritu Santo
+se encarnó de María, la Virgen, y se hizo hombre;
+
+y por nuestra causa fue crucificado en tiempos de Poncio Pilato,
+padeció y fue sepultado,
+y resucitó al tercer día, según las Escrituras,
+y subió al cielo, y está sentado a la derecha del Padre;
+y de nuevo vendrá con gloria para juzgar a vivos y muertos,
+y su reino no tendrá fin.
+
+Creo en el Espíritu Santo, Señor y dador de vida,
+que procede del Padre y del Hijo,
+que con el Padre y el Hijo recibe una misma adoración y gloria,
+y que habló por los profetas.
+
+Creo en la Iglesia, que es una, santa, católica y apostólica.
+Confieso que hay un solo Bautismo para el perdón de los pecados.
+Espero la resurrección de los muertos
+y la vida del mundo futuro. Amén.` },
+
+        { titulo: 'Oración universal (de los fieles)', texto: `<strong>Sacerdote:</strong> Hermanos: dirijamos con confianza nuestras súplicas al Señor.
+
+<em>El diácono o un fiel lee las intenciones. Después de cada una:</em>
+
+<strong>Pueblo: Te rogamos, óyenos.</strong> (u otra respuesta)
+
+<strong>Sacerdote:</strong> [Oración de conclusión]
+<strong>Pueblo: Amén.</strong>` }
+      ]
+    },
+    {
+      nombre: 'Liturgia Eucarística',
+      items: [
+        { titulo: 'Presentación de los dones', texto: `<em>Se llevan al altar el pan y el vino. Se puede cantar.</em>
+
+<strong>Sacerdote:</strong> Bendito seas, Señor, Dios del universo, por este pan, fruto de la tierra y del trabajo del hombre, que recibimos de tu generosidad y ahora te presentamos; él será para nosotros pan de vida.
+<strong>Pueblo: Bendito seas por siempre, Señor.</strong>
+
+<strong>Sacerdote:</strong> Bendito seas, Señor, Dios del universo, por este vino, fruto de la vid y del trabajo del hombre, que recibimos de tu generosidad y ahora te presentamos; él será para nosotros bebida de salvación.
+<strong>Pueblo: Bendito seas por siempre, Señor.</strong>
+
+<strong>Sacerdote:</strong> Orad, hermanos, para que este sacrificio, mío y vuestro, sea agradable a Dios, Padre todopoderoso.
+<strong>Pueblo: El Señor reciba de tus manos este sacrificio para alabanza y gloria de su nombre, para nuestro bien y el de toda su santa Iglesia.</strong>` },
+
+        { titulo: 'Plegaria eucarística — Prefacio', texto: `<strong>Sacerdote:</strong> El Señor esté con vosotros.
+<strong>Pueblo: Y con tu espíritu.</strong>
+
+<strong>Sacerdote:</strong> Levantemos el corazón.
+<strong>Pueblo: Lo tenemos levantado hacia el Señor.</strong>
+
+<strong>Sacerdote:</strong> Demos gracias al Señor, nuestro Dios.
+<strong>Pueblo: Es justo y necesario.</strong>
+
+<em>[El sacerdote proclama el prefacio del día]</em>
+
+<strong>Todos:</strong> Santo, Santo, Santo es el Señor, Dios del universo. Llenos están el cielo y la tierra de tu gloria. Hosanna en el cielo. Bendito el que viene en nombre del Señor. Hosanna en el cielo.` },
+
+        { titulo: 'Consagración', texto: `<em>El sacerdote toma el pan y dice:</em>
+
+"El cual, la víspera de su Pasión, tomó pan en sus santas y venerables manos, y, elevando los ojos al cielo, hacia ti, Dios, Padre suyo todopoderoso, dando gracias te bendijo, lo partió y lo dio a sus discípulos diciendo:"
+
+<strong>ESTO ES MI CUERPO, QUE SERÁ ENTREGADO POR VOSOTROS.</strong>
+
+<em>[Elevación — el pueblo se arrodilla o inclina]</em>
+
+<em>El sacerdote toma el cáliz y dice:</em>
+
+"Del mismo modo, acabada la cena, tomó este cáliz glorioso en sus santas y venerables manos, y, dándote gracias de nuevo, lo bendijo y lo pasó a sus discípulos diciendo:"
+
+<strong>ESTE ES EL CÁLIZ DE MI SANGRE, SANGRE DE LA ALIANZA NUEVA Y ETERNA, QUE SERÁ DERRAMADA POR VOSOTROS Y POR TODOS LOS HOMBRES PARA EL PERDÓN DE LOS PECADOS.</strong>
+
+<strong>HACED ESTO EN CONMEMORACIÓN MÍA.</strong>
+
+<em>[Elevación — el pueblo se arrodilla o inclina]</em>
+
+<strong>Sacerdote:</strong> Este es el Sacramento de nuestra fe.
+<strong>Pueblo: Anunciamos tu muerte, proclamamos tu resurrección. ¡Ven, Señor Jesús!</strong>` },
+
+        { titulo: 'Doxología final', texto: `<strong>Sacerdote:</strong> Por Cristo, con él y en él, a ti, Dios Padre omnipotente, en la unidad del Espíritu Santo, todo honor y toda gloria por los siglos de los siglos.
+<strong>Pueblo: Amén.</strong>` }
+      ]
+    },
+    {
+      nombre: 'Rito de la Comunión',
+      items: [
+        { titulo: 'Padrenuestro', texto: `<strong>Sacerdote:</strong> Fieles a la recomendación del Salvador y siguiendo su divina enseñanza, nos atrevemos a decir:
+
+<strong>Todos:</strong>
+Padre nuestro, que estás en el cielo,
+santificado sea tu Nombre;
+venga a nosotros tu reino;
+hágase tu voluntad en la tierra como en el cielo.
+Danos hoy nuestro pan de cada día;
+perdona nuestras ofensas,
+como también nosotros perdonamos
+a los que nos ofenden;
+no nos dejes caer en la tentación,
+y líbranos del mal.
+
+<strong>Sacerdote:</strong> Líbranos de todos los males, Señor... y aguardamos la gloriosa venida de nuestro Salvador Jesucristo.
+<strong>Pueblo: Tuyo es el reino, tuyo el poder y la gloria, por siempre, Señor.</strong>` },
+
+        { titulo: 'Cordero de Dios', texto: `<em>El sacerdote parte la hostia. El pueblo canta o recita:</em>
+
+<strong>Todos:</strong>
+Cordero de Dios, que quitas el pecado del mundo, ten piedad de nosotros.
+Cordero de Dios, que quitas el pecado del mundo, ten piedad de nosotros.
+Cordero de Dios, que quitas el pecado del mundo, danos la paz.` },
+
+        { titulo: 'Comunión', texto: `<strong>Sacerdote:</strong> Este es el Cordero de Dios que quita el pecado del mundo. Dichosos los invitados a la cena del Señor.
+<strong>Todos:</strong> Señor, no soy digno de que entres en mi casa, pero una palabra tuya bastará para sanarme.
+
+<em>El sacerdote comulga y luego distribuye la comunión al pueblo.</em>
+
+<em>Ministro:</em> El Cuerpo de Cristo.
+<em>Comulgante:</em> Amén.
+
+<em>Después de la comunión hay un tiempo de silencio y acción de gracias.</em>` },
+
+        { titulo: 'Oración después de la comunión', texto: `<strong>Sacerdote:</strong> Oremos.
+
+<em>[Pausa de silencio]</em>
+
+<em>[Oración propia del día]</em>
+
+<strong>Pueblo: Amén.</strong>` }
+      ]
+    },
+    {
+      nombre: 'Rito de conclusión',
+      items: [
+        { titulo: 'Bendición y despedida', texto: `<strong>Sacerdote:</strong> El Señor esté con vosotros.
+<strong>Pueblo: Y con tu espíritu.</strong>
+
+<strong>Sacerdote:</strong> La bendición de Dios todopoderoso, Padre, Hijo ✞ y Espíritu Santo, descienda sobre vosotros.
+<strong>Pueblo: Amén.</strong>
+
+<strong>Sacerdote/Diácono:</strong> Podéis ir en paz.
+<strong>Pueblo: Demos gracias a Dios.</strong>` }
+      ]
+    }
+  ]
+};
+
+let misalParteActual = 'ordinario';
+
+function initMisal() {
+  const now = new Date();
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const label = document.getElementById('misal-date-label');
+  if (label) label.textContent = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`.toUpperCase();
+  renderMisalParte('ordinario');
+}
+
+function selectMisalParte(parte, el) {
+  misalParteActual = parte;
+  document.querySelectorAll('#view-misal .hora-pill').forEach(p => p.classList.remove('on'));
+  if (el) el.classList.add('on');
+  renderMisalParte(parte);
+}
+
+function renderMisalParte(parte) {
+  const container = document.getElementById('misal-content');
+  if (!container) return;
+
+  if (parte === 'ordinario') {
+    let html = '';
+    MISAL_ORDINARIO.partes.forEach(seccion => {
+      html += `<div class="misal-seccion">
+        <div class="misal-seccion-title">${seccion.nombre}</div>`;
+      seccion.items.forEach(item => {
+        html += `<div class="misal-item">
+          <div class="misal-item-title">${item.titulo}</div>
+          <div class="misal-item-texto">${item.texto.replace(/\n/g,'<br>')}</div>
+        </div>`;
+      });
+      html += '</div>';
+    });
+    container.innerHTML = html;
+
+  } else if (parte === 'propio') {
+    container.innerHTML = `<div style="text-align:center;padding:30px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">Cargando el propio del día...</div>`;
+    // Pedir a la IA el propio del día
+    const now = new Date();
+    const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const fecha = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        stream: false,
+        messages: [{role:'user', content:`Dame el Propio del día para la Misa de HOY ${fecha} según el calendario litúrgico romano: oración colecta, oración sobre las ofrendas, oración después de la comunión y la antífona de entrada. Indica también el tiempo litúrgico y la celebración del día.`}]
+      })
+    }).then(r=>r.json()).then(data => {
+      container.innerHTML = `<div class="brev-content-area">${parseMarkdown(data.reply || 'No disponible')}</div>`;
+    }).catch(() => {
+      container.innerHTML = `<div style="padding:16px;color:var(--ink4);font-family:'Lora',serif;font-style:italic">No se pudo cargar el propio del día.</div>`;
+    });
+
+  } else if (parte === 'lecturas') {
+    container.innerHTML = `<div style="text-align:center;padding:20px;font-family:'Lora',serif;color:var(--ink4)">Cargando lecturas...</div>`;
+    fetch('/api/lecturas-dia')
+      .then(r=>r.json())
+      .then(json => {
+        if (json.ok && (json.texto || (json.lecturas && json.lecturas.texto))) {
+          const texto = json.texto || json.lecturas.texto;
+          container.innerHTML = buildLecturasFromText(texto, json.fecha || '');
+        } else {
+          throw new Error('Sin datos');
+        }
+      }).catch(() => {
+        container.innerHTML = `<div style="padding:16px;color:var(--ink4);font-family:'Lora',serif;font-style:italic">Las lecturas se están cargando. Intenta en un momento.</div>`;
+      });
+  }
+}
+
+function exportMisalPDF() {
+  closeView();
+  setTimeout(() => sendChip('Exportar el Misal del día en PDF'), 350);
 }

@@ -1297,3 +1297,194 @@ body { height: 100dvh; font-family: 'Inter', sans-serif; background: var(--bg); 
   .mag-table-wrap { overflow-x: auto; }
   .mag-table { min-width: 400px; }
 }
+
+/* ══════════════════════════════════════
+   V6.2 — SIDEBAR REDISEÑO COMPLETO
+   Estilo Claude/ChatGPT/Magisterium
+══════════════════════════════════════ */
+
+/* Reset sidebar anterior */
+.sb-top, .sb-new-btn, .sb-nav, .sb-nav-section,
+.sb-item, .sb-item-ico, .sb-section-label { all: unset; }
+
+/* Header del sidebar */
+.sb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sb-brand {
+  display: flex; align-items: center; gap: 9px;
+}
+.sb-brand-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px; font-weight: 700; color: var(--brown);
+}
+.sb-brand-name em { color: var(--ocre); font-style: normal; }
+.sb-close-btn {
+  width: 28px; height: 28px; border-radius: 7px;
+  border: 1px solid var(--border); background: transparent;
+  cursor: pointer; color: var(--ink4);
+  display: flex; align-items: center; justify-content: center;
+  transition: all .12s;
+}
+.sb-close-btn:hover { background: var(--bg3); color: var(--brown); }
+
+/* Botón nueva consulta */
+.sb-new {
+  display: flex; align-items: center; gap: 8px;
+  width: calc(100% - 20px);
+  margin: 10px;
+  padding: 10px 14px;
+  background: var(--brown);
+  color: #fff;
+  border: none; border-radius: 9px;
+  font-family: 'Inter', sans-serif; font-size: 13.5px;
+  cursor: pointer; transition: background .12s;
+  flex-shrink: 0;
+}
+.sb-new:hover { background: var(--brown2); }
+
+/* Zona scrollable */
+.sb-scroll {
+  flex: 1; overflow-y: auto;
+  padding: 6px 6px 10px;
+  -webkit-overflow-scrolling: touch;
+}
+.sb-scroll::-webkit-scrollbar { width: 3px; }
+.sb-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Historial */
+.sb-history-list { margin-bottom: 4px; }
+.history-item {
+  display: block; padding: 7px 10px;
+  border-radius: 7px; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-size: 13px; color: var(--ink);
+  transition: background .1s; text-overflow: ellipsis;
+  overflow: hidden; white-space: nowrap; max-width: 100%;
+}
+.history-item:hover { background: var(--bg3); }
+.history-item .hi-time { font-size: 10.5px; color: var(--ink4); margin-left: 4px; }
+
+/* Etiqueta de sección */
+.sb-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--ink4);
+  padding: 10px 10px 4px;
+}
+
+/* Links de navegación */
+.sb-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: 8px;
+  cursor: pointer; transition: background .1s;
+}
+.sb-link:hover { background: var(--bg3); }
+.sb-link span {
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px; color: var(--ink);
+}
+.sb-link:hover span { color: var(--brown); }
+.sb-link-ico {
+  width: 28px; height: 28px; border-radius: 7px;
+  border: 1px solid; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .12s;
+}
+
+/* Widgets inline en sidebar */
+.sb-section-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: 8px;
+  cursor: pointer; transition: background .1s;
+}
+.sb-section-header:hover { background: var(--bg3); }
+.sb-section-header span {
+  flex: 1; font-family: 'Inter', sans-serif;
+  font-size: 13.5px; color: var(--ink);
+}
+.sb-section-ico {
+  width: 28px; height: 28px; border-radius: 7px;
+  border: 1px solid; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.sb-chevron { color: var(--ink4); transition: transform .2s; flex-shrink: 0; }
+.sb-chevron.open { transform: rotate(180deg); }
+
+.sb-widgets-inline { padding: 4px 6px 6px 12px; }
+.sb-widget-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 6px 8px; border-radius: 7px;
+  cursor: pointer; transition: background .1s;
+}
+.sb-widget-item:hover { background: var(--bg3); }
+.sb-widget-item span {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px; color: var(--ink3);
+}
+.sb-w-ico {
+  width: 24px; height: 24px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Botón donar */
+.sb-donate {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background .12s;
+}
+.sb-donate:hover { background: var(--bg3); }
+.sb-donate-ico {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--ocre-bg); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sb-donate-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px; font-weight: 600; color: var(--brown);
+}
+.sb-donate-sub {
+  font-family: 'Lora', serif;
+  font-size: 11px; color: var(--ink4); font-style: italic;
+}
+
+/* ── Misal ── */
+.misal-seccion { margin-bottom: 22px; }
+.misal-seccion-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--ocre); margin-bottom: 10px;
+  padding: 6px 0; border-bottom: 1px solid var(--border);
+}
+.misal-item {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 15px; margin-bottom: 10px;
+}
+.misal-item-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 14px; font-weight: 600; color: var(--brown);
+  margin-bottom: 10px;
+}
+.misal-item-texto {
+  font-family: 'Lora', serif;
+  font-size: 14.5px; line-height: 2; color: var(--ink);
+}
+.misal-item-texto strong {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: var(--brown2);
+}
+.misal-item-texto em { color: var(--ink4); font-size: 13px; }
