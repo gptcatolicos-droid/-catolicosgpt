@@ -30,13 +30,19 @@ const i18n = {
 // ══════════════════════════════
 function toggleSb() { sbOpen ? closeSb() : openSb(); }
 function openSb() {
-  document.getElementById('sb').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-  sbOpen = true; renderHistory();
+  const sb = document.getElementById('sb');
+  const ov = document.getElementById('sb-overlay');
+  if (sb) sb.classList.add('open');
+  if (ov) ov.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  sbOpen = true;
 }
 function closeSb() {
-  document.getElementById('sb').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
+  const sb = document.getElementById('sb');
+  const ov = document.getElementById('sb-overlay');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('active');
+  document.body.style.overflow = '';
   sbOpen = false;
 }
 
@@ -70,7 +76,7 @@ function loadConv(i) {
   const c = conversations[i];
   chatHistory = [...c.messages];
   document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'block';
+  document.getElementById('chat-area').style.display = 'flex';
   document.getElementById('chat-inner').innerHTML = '';
   c.messages.forEach(m => renderBubble(m.content, m.role === 'user', false));
 }
@@ -237,7 +243,7 @@ function extractSuggestions(text) {
 // ══════════════════════════════
 function renderBubble(text, isUser, addActions = false, userMsg = '') {
   document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'block';
+  document.getElementById('chat-area').style.display = 'flex';
 
   const wrap = document.getElementById('chat-inner');
   const d = document.createElement('div');
@@ -377,7 +383,7 @@ async function send() {
 
   // Mostrar chat
   document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'block';
+  document.getElementById('chat-area').style.display = 'flex';
   document.querySelector('.input-area').style.display = '';
 
   const needsActions = /cartilla|catequesis|novena|rosario|v[ií]a crucis|hom[ií]l[ií]a|oraci[oó]n|tabla|l[ií]nea de tiempo|cronolog[ií]a|actividad|clase/i.test(val);
@@ -547,6 +553,8 @@ function newChat() {
   chatHistory = [];
   document.getElementById('welcome').style.display = 'flex';
   document.getElementById('chat-area').style.display = 'none';
+  document.querySelectorAll('.main-view').forEach(v=>v.style.display='none');
+  const _ia = document.querySelector('.input-area'); if(_ia) _ia.style.display = '';
   document.getElementById('chat-inner').innerHTML = '';
   closeSb();
 }
@@ -827,34 +835,32 @@ document.addEventListener('DOMContentLoaded', () => {
 function openPanel(id) { openView(id); } // alias para compatibilidad
 
 function openView(id) {
-  // Guardar chat en recientes si hay conversación activa
-  if (chatHistory.length >= 2) {
-    saveConversation(chatHistory[0].content);
-  }
+  if (chatHistory.length >= 2) saveConversation(chatHistory[0].content);
   // Ocultar todo
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('chat-area').style.display = 'none';
-  document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-  // Mostrar vista solicitada
+  document.querySelectorAll('.main-view').forEach(v => { v.style.display = 'none'; });
+  const inp = document.querySelector('.input-area');
+  if (inp) inp.style.display = 'none';
+  // Mostrar vista
   const view = document.getElementById('view-' + id);
-  if (view) {
-    view.style.display = 'flex';
-    document.querySelector('.input-area').style.display = 'none';
-  }
+  if (view) { view.style.display = 'flex'; }
   if (id === 'breviario') initBreviario();
   if (id === 'calendario') initCalendario();
   if (id === 'lecturas') initLecturas();
+  if (id === 'misal') { if (typeof initMisal === 'function') initMisal(); }
 }
 
 function closeView() {
-  // Restaurar vista normal del chat
-  document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-  document.querySelector('.input-area').style.display = '';
+  document.querySelectorAll('.main-view').forEach(v => { v.style.display = 'none'; });
+  const inp = document.querySelector('.input-area');
+  if (inp) inp.style.display = '';
   if (chatHistory.length > 0) {
-    document.getElementById('chat-area').style.display = 'block';
+    document.getElementById('chat-area').style.display = 'flex';
     document.getElementById('welcome').style.display = 'none';
   } else {
     document.getElementById('welcome').style.display = 'flex';
+    document.getElementById('chat-area').style.display = 'none';
   }
 }
 
