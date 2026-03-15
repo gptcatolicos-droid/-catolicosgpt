@@ -83,7 +83,7 @@ function loadConv(i) {
   const c = conversations[i];
   chatHistory = [...c.messages];
   document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'block';
+  document.getElementById('chat-area').style.display = 'flex';
   document.getElementById('chat-inner').innerHTML = '';
   c.messages.forEach(m => renderBubble(m.content, m.role === 'user', false));
 }
@@ -270,7 +270,7 @@ function extractSuggestions(text) {
 // ══════════════════════════════
 function renderBubble(text, isUser, addActions = false, userMsg = '') {
   document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'block';
+  document.getElementById('chat-area').style.display = 'flex';
 
   const wrap = document.getElementById('chat-inner');
   const d = document.createElement('div');
@@ -409,10 +409,13 @@ async function send() {
   d.scrollTop = d.scrollHeight;
 
   // Mostrar chat
-  document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'block';
-  document.querySelector('.input-area').style.display = '';
-  document.querySelector('.input-area').classList.add('chat-mode');
+  // Ocultar welcome completamente y mostrar chat
+  const welcomeEl = document.getElementById('welcome');
+  const chatEl = document.getElementById('chat-area');
+  const inputEl = document.querySelector('.input-area');
+  if (welcomeEl) welcomeEl.style.display = 'none';
+  if (chatEl) { chatEl.style.display = 'flex'; chatEl.style.flexDirection = 'column'; }
+  if (inputEl) { inputEl.classList.add('chat-mode'); }
 
   const needsActions = /cartilla|catequesis|novena|rosario|v[ií]a crucis|hom[ií]l[ií]a|oraci[oó]n|tabla|l[ií]nea de tiempo|cronolog[ií]a|actividad|clase/i.test(val);
 
@@ -579,10 +582,12 @@ function autoResize(el) {
 
 function newChat() {
   chatHistory = [];
-  document.getElementById('welcome').style.display = 'flex';
-  document.getElementById('chat-area').style.display = 'none';
-  const ia = document.querySelector('.input-area');
-  if (ia) ia.classList.remove('chat-mode');
+  const welcomeEl2 = document.getElementById('welcome');
+  const chatEl2 = document.getElementById('chat-area');
+  const iaEl = document.querySelector('.input-area');
+  if (welcomeEl2) welcomeEl2.style.display = 'flex';
+  if (chatEl2) chatEl2.style.display = 'none';
+  if (iaEl) iaEl.classList.remove('chat-mode');
   document.getElementById('chat-inner').innerHTML = '';
   closeSb();
 }
@@ -867,16 +872,27 @@ function openView(id) {
   if (chatHistory.length >= 2) {
     saveConversation(chatHistory[0].content);
   }
-  // Ocultar todo
-  document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'none';
+
+  // Ocultar TODO — welcome, chat, input y otras vistas
+  const welcome = document.getElementById('welcome');
+  const chatArea = document.getElementById('chat-area');
+  const inputArea = document.querySelector('.input-area');
+  const content = document.getElementById('content');
+
+  if (welcome) welcome.style.display = 'none';
+  if (chatArea) chatArea.style.display = 'none';
+  if (inputArea) inputArea.style.display = 'none';
   document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-  // Mostrar vista solicitada
+
+  // Mostrar SOLO la vista solicitada — ocupa todo el #content
   const view = document.getElementById('view-' + id);
   if (view) {
     view.style.display = 'flex';
-    document.querySelector('.input-area').style.display = 'none';
+    view.style.flex = '1';
+    view.style.flexDirection = 'column';
+    view.style.overflow = 'hidden';
   }
+
   if (id === 'breviario') initBreviario();
   if (id === 'calendario') initCalendario();
   if (id === 'lecturas') initLecturas();
@@ -884,14 +900,25 @@ function openView(id) {
 }
 
 function closeView() {
-  // Restaurar vista normal del chat
+  // Ocultar todas las vistas
   document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-  document.querySelector('.input-area').style.display = '';
+
+  // Restaurar input siempre
+  const inputArea = document.querySelector('.input-area');
+  if (inputArea) inputArea.style.display = '';
+
+  // Si hay chat activo → mostrar chat
+  // Si no → mostrar welcome
   if (chatHistory.length > 0) {
-    document.getElementById('chat-area').style.display = 'block';
-    document.getElementById('welcome').style.display = 'none';
+    const chatArea = document.getElementById('chat-area');
+    if (chatArea) chatArea.style.display = 'flex';
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.style.display = 'none';
   } else {
-    document.getElementById('welcome').style.display = 'flex';
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.style.display = 'flex';
+    const chatArea = document.getElementById('chat-area');
+    if (chatArea) chatArea.style.display = 'none';
   }
 }
 

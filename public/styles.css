@@ -1969,3 +1969,109 @@ body { height: 100dvh; font-family: 'Inter', sans-serif; background: var(--bg); 
 @media (max-width: 640px) {
   .sidebar, .sb { width: 85vw !important; max-width: 320px; }
 }
+
+
+/* ══════════════════════════════════════
+   FIX DEFINITIVO — Input al 50% + Welcome limpio
+   La clave: #content es flex column, welcome ocupa
+   todo el espacio disponible con justify-content:center
+   El input está DENTRO del welcome pero sticky al fondo
+══════════════════════════════════════ */
+
+/* Content: flex column que ocupa toda la altura disponible */
+#content {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+}
+
+/* Welcome: ocupa TODO el espacio, centra su contenido verticalmente */
+#welcome {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  inset: auto !important;
+  overflow: hidden !important;
+  padding: 20px 16px 0 !important;
+  min-height: 0 !important;
+  pointer-events: all !important;
+}
+
+/* El centro del welcome (logo + saludo) se queda en el medio */
+.wlc-center {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  padding: 0 20px 0 !important;
+  max-width: 560px !important;
+  width: 100% !important;
+}
+
+/* Input area: sticky al fondo del content */
+.input-area {
+  flex-shrink: 0 !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  left: auto !important; right: auto !important; top: auto !important;
+  transform: none !important;
+  background: var(--bg) !important;
+  border-top: 1px solid var(--border) !important;
+  padding: 10px 12px max(12px, env(safe-area-inset-bottom)) !important;
+  z-index: 20 !important;
+  width: 100% !important;
+}
+
+/* Chat-area: también ocupa todo el espacio cuando está activo */
+#chat-area {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+  padding: 16px 0 !important;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .input-area {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important; right: 0 !important; top: auto !important;
+    transform: none !important;
+    z-index: 50 !important;
+    box-shadow: 0 -2px 16px rgba(0,0,0,.07) !important;
+  }
+  #welcome { padding-bottom: 80px !important; }
+  #chat-area { padding-bottom: 80px !important; }
+}
+
+/* ══ FIX VIEWS — openView reemplaza todo el content ══ */
+
+/* Cuando una main-view está activa, ocupa TODO el #content */
+#content:has(.main-view[style*="flex"]) #welcome,
+#content:has(.main-view[style*="flex"]) #chat-area,
+#content:has(.main-view[style*="flex"]) .input-area {
+  display: none !important;
+}
+
+/* La main-view activa ocupa todo el espacio */
+.main-view[style*="flex"] {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Fallback: cuando JS hace display:flex en una view, el content la muestra completa */
+#content {
+  position: relative !important;
+}
+
+.main-view {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 0 !important;
+}
