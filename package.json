@@ -1,7 +1,7 @@
 {
   "name": "catolicosgpt",
-  "version": "7.0.0",
-  "description": "Asistente teol\u00f3gico cat\u00f3lico con IA \u2014 Catecismo, oraciones, santos y m\u00e1s",
+  "version": "5.5.0",
+  "description": "Asistente teológico católico con IA — Catecismo, oraciones, santos y más",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

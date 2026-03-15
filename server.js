@@ -28,12 +28,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// Magisterium API — OpenAI compatible
-const magisterium = new OpenAI({
-  apiKey: process.env.MAGISTERIUM_API_KEY,
-  baseURL: 'https://api.magisterium.com/v1'
-});
-
 // ══════════════════════════════
 // CARGAR TODOS LOS DATASETS
 // ══════════════════════════════
@@ -301,38 +295,12 @@ HISTORIA — PERÍODOS:
 ${HISTORIA.periodos?.map(p => `${p.periodo} (${p.años})`).join(' | ')}
 ════════════════════════
 
-REGLA DE ORO — LEE CON ATENCIÓN:
-
-LONGITUD Y ARGUMENTACIÓN:
-- Da SIEMPRE respuestas LARGAS y BIEN ARGUMENTADAS. Mínimo 4-6 párrafos en consultas teológicas.
-- Cuando cites el Catecismo [CIC XXXX], desarrolla el argumento COMPLETO detrás de esa cita. No solo la menciones.
-- Cuando cites la Biblia [Libro Cap,vers], explica el contexto del pasaje y su aplicación espiritual.
-- El usuario NUNCA debe pedirte que amplíes — da TODO desde la primera respuesta.
-
-FORMATO DE CITAS — MUY IMPORTANTE:
-- Catecismo: SIEMPRE escribe [CIC XXXX] con corchetes y número exacto. Ejemplo: [CIC 2270]
-- Biblia: SIEMPRE escribe [Jn 3,16] o [Mt 5,3-12] con corchetes. Ejemplo: [Sal 22,1]
-- El frontend convierte estos formatos automáticamente en links dentro de la app.
-- NUNCA escribas CIC 2270 sin corchetes. SIEMPRE [CIC 2270].
-
-LITURGIA DE LAS HORAS — CRÍTICO:
-- Laudes, Vísperas, Completas, Hora Intermedia: usa el dataset del breviario COMPLETO.
-- NUNCA resumir ni acortar textos litúrgicos. Himno, salmo, lectura y oraciones van COMPLETOS.
-
-REFERENCIAS OBLIGATORIAS en toda respuesta teológica:
-- Incluye siempre al final una referencia a un Doctor de la Iglesia o predicador moderno relevante.
-- Formato: 📚 **Para profundizar:** "[Obra/sermón]" — Autor | [Ver texto](url)
-- Fuentes válidas: San Agustín, Santo Tomás, Santa Teresa, Robert Barron (wordonfire.org), Scott Hahn, Peter Kreeft, Raniero Cantalamessa (vatican.va), Scott Hahn (stpaulcenter.com).
-
-ESTRUCTURA IDEAL de respuesta:
-1. Introducción teológica clara (1 párrafo)
-2. Desarrollo argumentado con [CIC XXXX] (2-3 párrafos)
-3. Base bíblica con [Libro Cap,vers] contextualizada (1-2 párrafos)
-4. Aplicación espiritual práctica (1 párrafo)
-5. 📚 Referencia a santo/predicador con link
-
+REGLA DE ORO:
+- Da SIEMPRE contenido COMPLETO, sin resumir, sin pedir confirmación.
+- Cita SIEMPRE con número CIC o documento pontificio.
 - El usuario NUNCA debe pedirte dos veces lo mismo.
-TONO: Pastoral, cálido, como sacerdote sabio, docto y accesible. Nunca frío ni telegráfico.
+
+TONO: Pastoral, cálido, como sacerdote sabio y accesible.
 
 TEMAS POLÉMICOS (aborto, ateísmo, dudas de fe):
 → Nunca juzgues. Responde con calidez, respetando el punto de vista.
@@ -406,18 +374,7 @@ EXPORTACIONES — CRÍTICO:
    "¡Listo! Los botones de exportación 📕 PDF · 📝 Word · 📊 PPT aparecen automáticamente debajo de cada respuesta. Solo haz clic en el que necesites."
 → El sistema genera los archivos automáticamente en el frontend. No necesitas hacer nada más.
 
-FORMATO: ## títulos, ### subtítulos, **negrita**, *cursiva*, listas con -
-
-PROACTIVIDAD — SIEMPRE al final de cada respuesta:
-Incluye 2-3 preguntas de seguimiento que el usuario podría querer hacer, en este formato exacto:
-→ ¿Quieres que [acción concreta relacionada con lo explicado]?
-→ ¿Te explico [tema relacionado más profundo]?
-→ ¿Prefieres ver [comparación/análisis/lista]?
-
-Estas sugerencias deben ser específicas al tema respondido, no genéricas.
-Ejemplo para parábolas: "¿Quieres que compare las parábolas del Reino en los cuatro Evangelios?", 
-"¿Te explico el contexto histórico de por qué Jesús usaba parábolas?"`;
-
+FORMATO: ## títulos, ### subtítulos, **negrita**, *cursiva*, listas con -`;
 }
 
 // ══════════════════════════════
@@ -439,39 +396,13 @@ app.post('/api/chat', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
-    let magisteriumSources = null;
-
-    // Paso 1: Consultar Magisterium en paralelo para obtener fuentes verificadas
-    try {
-      const magRes = await magisterium.chat.completions.create({
-        model: 'magisterium-1',
-        max_tokens: 800,
-        stream: false,
-        messages: [{ role: 'user', content: lastUserMsg }]
-      });
-      const magText = magRes.choices[0]?.message?.content || '';
-      if (magText.length > 50) {
-        magisteriumSources = magText;
-        // Enviar fuentes Magisterium primero como metadato
-        res.write(`data: ${JSON.stringify({ magisterium: magisteriumSources })}\n\n`);
-      }
-    } catch(e) {
-      console.log('[Magisterium API]', e.message);
-    }
-
-    // Paso 2: Respuesta principal con OpenAI streaming
-    // Enriquecer el sistema con fuentes de Magisterium si las hay
-    const enrichedSystem = magisteriumSources
-      ? systemPrompt + `\n\nFUENTES VERIFICADAS DE MAGISTERIUM AI (úsalas en tu respuesta):\n${magisteriumSources}`
-      : systemPrompt;
-
     try {
       const stream = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         temperature: 0.3,
-        max_tokens: 6000,
+        max_tokens: 3000,
         stream: true,
-        messages: [{ role: 'system', content: enrichedSystem }, ...messages]
+        messages: [{ role: 'system', content: systemPrompt }, ...messages]
       });
 
       let fullReply = '';
@@ -484,11 +415,13 @@ app.post('/api/chat', async (req, res) => {
         if (chunk.choices[0]?.finish_reason === 'stop') break;
       }
 
-      // SEO
+      // SEO al terminar
       try {
         if (shouldGenerateSEO(lastUserMsg)) {
           const slug = generateSlug(lastUserMsg);
-          if (!seoPages[slug]) seoPages[slug] = { question: lastUserMsg, answer: fullReply, date: new Date().toISOString() };
+          if (!seoPages[slug]) {
+            seoPages[slug] = { question: lastUserMsg, answer: fullReply, date: new Date().toISOString() };
+          }
         }
       } catch(e) {}
 
@@ -496,11 +429,12 @@ app.post('/api/chat', async (req, res) => {
       res.end();
 
     } catch(e) {
-      // Fallback Anthropic
+      // Fallback Anthropic streaming
       try {
-        const stream = await anthropic.messages.stream({
+        const client = anthropic;
+        const stream = await client.messages.stream({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 6000,
+          max_tokens: 3000,
           system: systemPrompt,
           messages
         });
@@ -518,17 +452,18 @@ app.post('/api/chat', async (req, res) => {
     }
 
   } else {
-    // ── NO STREAMING ──
+    // ── NO STREAMING (usado por initLecturas internamente) ──
     try {
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini', temperature: 0.3, max_tokens: 6000,
+        model: 'gpt-4o-mini', temperature: 0.3, max_tokens: 3000,
         messages: [{ role: 'system', content: systemPrompt }, ...messages]
       });
       res.json({ reply: completion.choices[0].message.content });
     } catch(e) {
       try {
-        const msg = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001', max_tokens: 6000,
+        const client = anthropic;
+        const msg = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001', max_tokens: 3000,
           system: systemPrompt, messages
         });
         res.json({ reply: msg.content[0].text });
@@ -600,35 +535,20 @@ async function generarLecturasDia() {
   const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
-  const mes = now.getMonth() + 1;
-  const dia = now.getDate();
-  const año = now.getFullYear();
 
-  // Calcular ciclo litúrgico (A=2026, B=2024, C=2025)
-  const ciclo = ['C','A','B'][(año - 2024) % 3] || 'A';
+  console.log(`[Lecturas] Generando para ${fechaStr}...`);
 
-  console.log(`[Lecturas] Generando para ${fechaStr} — Ciclo ${ciclo}...`);
-
-  // Usar OpenAI que tiene conocimiento del calendario litúrgico
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      max_tokens: 3000,
-      temperature: 0.1,
-      messages: [
-        {
-          role: 'system',
-          content: `Eres un experto en liturgia católica con conocimiento completo del Leccionario Romano. 
-Conoces el calendario litúrgico de todos los años incluyendo 2026. 
-El año litúrgico 2025-2026 es el Ciclo C. 
-Hoy es ${fechaStr}.
-NUNCA digas que no tienes acceso a esta información. SIEMPRE proporciona las lecturas del Leccionario Romano para la fecha exacta indicada.`
-        },
-        {
-          role: 'user',
-          content: `Dame las lecturas COMPLETAS de la Misa de HOY ${fechaStr} (Ciclo ${ciclo}) según el Leccionario Romano oficial.
+    const client = anthropic;
 
-Formato EXACTO — usa estas etiquetas literalmente:
+    const msg = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2500,
+      messages: [{
+        role: 'user',
+        content: `Dame las lecturas COMPLETAS de la Misa del día de HOY ${fechaStr} según el Leccionario Romano oficial para España y América Latina (calendario romano ordinario).
+
+FORMATO EXACTO — usa estas etiquetas literalmente:
 
 ---PRIMERA_LECTURA---
 Referencia: [Libro Capítulo, versículos]
@@ -636,31 +556,28 @@ Referencia: [Libro Capítulo, versículos]
 
 ---SALMO---
 Referencia: [Salmo N]
-Estribillo: R/. [texto]
+Estribillo: R/. [texto del estribillo]
 [texto del salmo]
 
 ---SEGUNDA_LECTURA---
-Referencia: [solo si es domingo o solemnidad]
+[incluir SOLO si es domingo o solemnidad]
+Referencia: [Libro Capítulo, versículos]
 [texto completo]
 
 ---EVANGELIO---
-Referencia: [Evangelio según X, Cap, versículos]
-[texto completo]
+Referencia: [Evangelio según X, Capítulo, versículos]
+[texto bíblico completo del Evangelio]
 
-Proporciona los textos COMPLETOS. No resumas. No digas que no puedes.`
-        }
-      ]
+Reglas: textos COMPLETOS del Leccionario, no resúmenes. Si es tiempo de Cuaresma indícalo.`
+      }]
     });
 
-    const texto = completion.choices[0].message.content;
-    if (texto && texto.length > 400 && texto.includes('---')) {
-      const resultado = { ok: true, texto, fecha: fechaStr, ciclo, fuente: 'openai-gpt4o', generado: new Date().toISOString() };
-      lecturasCacheDate = hoy;
-      lecturasCache = resultado;
-      console.log(`[Lecturas] ✓ GPT-4o OK (${texto.length} chars)`);
-      return resultado;
-    }
-    throw new Error('Respuesta insuficiente: ' + texto?.slice(0,100));
+    const texto = msg.content[0].text;
+    const resultado = { ok: true, texto, fecha: fechaStr, generado: new Date().toISOString() };
+    lecturasCacheDate = hoy;
+    lecturasCache = resultado;
+    console.log(`[Lecturas] ✓ Generadas para ${fechaStr} (${texto.length} caracteres)`);
+    return resultado;
 
   } catch(err) {
     console.error('[Lecturas] Error:', err.message);
@@ -686,391 +603,13 @@ app.get('/api/lecturas-dia', async (req, res) => {
   }
 });
 
-// ══════════════════════════════════════════════
-// SEO — BLOG AUTOMÁTICO
-// Genera artículos de alto volumen de búsqueda
-// ══════════════════════════════════════════════
-const blogArticles = {};
-const BLOG_TOPICS = [
-  { slug: 'como-rezar-el-rosario-paso-a-paso', title: 'Cómo rezar el Rosario paso a paso', desc: 'Guía completa para rezar el Santo Rosario con los misterios del día, oraciones y meditaciones.' },
-  { slug: 'que-es-la-eucaristia-iglesia-catolica', title: '¿Qué es la Eucaristía? Doctrina de la Iglesia', desc: 'La Eucaristía es el centro de la vida católica. Aprende qué dice el Catecismo y la Biblia sobre este sacramento.' },
-  { slug: 'novena-san-jose-completa', title: 'Novena a San José completa — 9 días de oración', desc: 'Texto completo de la Novena a San José con oraciones para los 9 días. Ideal para el mes de marzo.' },
-  { slug: 'lecturas-del-dia-liturgia-misa', title: 'Lecturas del día de la Misa — Leccionario Romano', desc: 'Cómo encontrar las lecturas de la Misa de cada día según el calendario litúrgico católico.' },
-  { slug: 'diferencia-entre-catolicos-y-protestantes', title: 'Diferencias entre católicos y protestantes', desc: 'Comparación respetuosa entre la fe católica y el protestantismo desde la doctrina de la Iglesia.' },
-  { slug: 'que-dice-la-iglesia-sobre-el-aborto', title: '¿Qué dice la Iglesia Católica sobre el aborto?', desc: 'La posición del Catecismo y el Magisterio de la Iglesia Católica sobre el aborto y la vida humana.' },
-  { slug: 'como-hacer-una-buena-confesion', title: 'Cómo hacer una buena confesión — Pasos y preparación', desc: 'Guía completa para prepararse y realizar el Sacramento de la Reconciliación correctamente.' },
-  { slug: 'papa-leon-xiv-primer-papa-americano', title: 'Papa León XIV: el primer papa americano', desc: 'Quién es el Papa León XIV, el primer papa del continente americano, elegido en 2025.' },
-  { slug: 'parabolas-de-jesus-significado-y-ensenanza', title: 'Las parábolas de Jesús: significado y enseñanza', desc: 'Las principales parábolas de Jesús en los Evangelios con su interpretación teológica y aplicación espiritual.' },
-  { slug: 'que-es-el-purgatorio-doctrina-catolica', title: '¿Qué es el Purgatorio? Doctrina católica explicada', desc: 'El Catecismo explica qué es el Purgatorio, por qué los católicos lo creen y cómo ayudar a las almas.' },
-  { slug: 'ia-catolica-en-espanol-catolicosgpt', title: 'IA Católica en español: CatolicosGPT, el asistente teológico', desc: 'CatolicosGPT es la inteligencia artificial católica #1 en español para consultar doctrina, oraciones y liturgia.' },
-  { slug: 'como-rezar-el-via-crucis-completo', title: 'Cómo rezar el Vía Crucis completo — 14 estaciones', desc: 'El Vía Crucis completo con las 14 estaciones, oraciones y meditaciones para la Cuaresma y el Viernes Santo.' },
-  { slug: 'coronilla-divina-misericordia-completa', title: 'Coronilla de la Divina Misericordia completa', desc: 'Texto completo de la Coronilla de la Divina Misericordia con instrucciones para rezarla en el Rosario.' },
-  { slug: 'santos-del-dia-santoral-catolico', title: 'Santos del día — Santoral católico completo', desc: 'Cómo encontrar el santo de cada día según el calendario litúrgico de la Iglesia Católica.' },
-  { slug: 'misal-romano-ordinario-misa-completo', title: 'Misal Romano — Ordinario de la Misa completo', desc: 'Texto completo del Ordinario de la Misa en español: todos los textos del sacerdote y la asamblea.' },
-];;
-
-async function generateBlogArticle(topic) {
-  if (blogArticles[topic.slug]) return blogArticles[topic.slug];
-  try {
-    const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 3000,
-      messages: [{
-        role: 'user',
-        content: `Escribe un artículo SEO completo en español sobre: "${topic.title}"
-
-Estructura:
-# ${topic.title}
-## Introducción (150 palabras)
-## [Subtítulo 1 relevante] (200 palabras)
-## [Subtítulo 2 relevante] (200 palabras)
-## [Subtítulo 3 relevante] (200 palabras)
-## Conclusión (100 palabras)
-
-Requisitos:
-- Basado en el Magisterio de la Iglesia Católica
-- Incluir citas del Catecismo cuando sea relevante
-- Tono pastoral y accesible
-- Palabras clave naturales: ${topic.keywords.join(', ')}
-- Al final: "Profundiza más preguntándole a CatolicosGPT"`
-      }]
-    });
-    const html = msg.content[0].text;
-    blogArticles[topic.slug] = { ...topic, html, generado: new Date().toISOString() };
-    return blogArticles[topic.slug];
-  } catch(e) {
-    return null;
-  }
-}
-
-// Ruta de blog
-app.get('/blog/:slug', async (req, res) => {
-  const { slug } = req.params;
-  const topic = BLOG_TOPICS.find(t => t.slug === slug);
-  if (!topic) return res.redirect('/');
-
-  let article = blogArticles[slug];
-  if (!article) {
-    article = await generateBlogArticle(topic);
-  }
-
-  const desc = topic.desc || topic.title;
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${topic.title} — CatolicosGPT</title>
-  <meta name="description" content="${desc}">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://catolicosgpt.com/blog/${topic.slug}">
-  <meta property="og:title" content="${topic.title} — CatolicosGPT">
-  <meta property="og:description" content="${desc}">
-  <meta property="og:type" content="article">
-  <meta property="og:url" content="https://catolicosgpt.com/blog/${topic.slug}">
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    "headline": "${topic.title}",
-    "description": "${desc}",
-    "url": "https://catolicosgpt.com/blog/${topic.slug}",
-    "dateModified": "${new Date().toISOString().slice(0,10)}",
-    "publisher": {
-      "@type": "Organization",
-      "name": "CatolicosGPT",
-      "url": "https://catolicosgpt.com"
-    },
-    "author": {
-      "@type": "Organization",
-      "name": "CatolicosGPT — IA Católica en Español"
-    },
-    "inLanguage": "es",
-    "about": {
-      "@type": "Thing",
-      "name": "Catolicismo",
-      "description": "Doctrina y espiritualidad de la Iglesia Católica"
-    }
-  }
-  </script>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Georgia,serif;background:#FAF7F0;color:#18100A;line-height:1.8}
-    .container{max-width:740px;margin:0 auto;padding:24px 20px}
-    .topbar{display:flex;align-items:center;gap:12px;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid #E8E0D0}
-    .topbar a{color:#C9923A;text-decoration:none;font-size:14px;font-family:Inter,sans-serif}
-    .topbar a:hover{color:#7A5230}
-    h1{font-family:Georgia,serif;font-size:26px;color:#5C3D1E;margin-bottom:8px;line-height:1.4}
-    .meta{font-family:Inter,sans-serif;font-size:11px;color:#9B8A77;text-transform:uppercase;letter-spacing:.08em;margin-bottom:24px}
-    h2{font-size:19px;color:#7A5230;margin:28px 0 10px;font-family:Georgia,serif}
-    p{margin-bottom:14px;font-size:15.5px;color:#2C1810}
-    .cta-box{background:#5C3D1E;color:#FAF7F0;padding:20px 24px;border-radius:12px;margin:32px 0;text-align:center}
-    .cta-box p{color:#FAF7F0;margin-bottom:12px}
-    .cta-btn{display:inline-block;background:#C9923A;color:#fff;padding:11px 22px;border-radius:8px;text-decoration:none;font-family:Inter,sans-serif;font-size:14px;font-weight:600}
-    .footer{margin-top:40px;padding-top:20px;border-top:1px solid #E8E0D0;font-family:Inter,sans-serif;font-size:12px;color:#9B8A77;text-align:center}
-    .tag{display:inline-block;background:rgba(201,146,58,.12);color:#7A5230;padding:3px 10px;border-radius:12px;font-family:Inter,sans-serif;font-size:11px;font-weight:600;margin-right:5px}
-  </style>
-</head>
-<body>
-<div class="container">
-  <div class="topbar">
-    <a href="/">← CatolicosGPT</a>
-    <span style="color:#E8E0D0">|</span>
-    <a href="/blog">Blog</a>
-  </div>
-  <span class="tag">Fe Católica</span>
-  <span class="tag">IA Católica</span>
-  <h1>${topic.title}</h1>
-  <div class="meta">CatolicosGPT · Actualizado ${new Date().toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'})}</div>
-  <article>
-    ${article ? article.html.split('\n').join('<br>') : '<p>Generando artículo...</p>'}
-  </article>
-  <div class="cta-box">
-    <p>¿Tienes más preguntas sobre este tema?</p>
-    <a href="/" class="cta-btn">Pregúntale a CatolicosGPT — Gratis →</a>
-  </div>
-  <div class="footer">
-    CatolicosGPT — La IA Católica #1 en Español · <a href="/" style="color:#C9923A">catolicosgpt.com</a>
-  </div>
-</div>
-</body>
-</html>`;
-    res.send(html);
-});
-
-// Índice del blog
-app.get('/blog', (req, res) => {
-  const links = BLOG_TOPICS.map(t =>
-    `<li><a href="/blog/${t.slug}">${t.title}</a></li>`
-  ).join('');
-  res.send(`<!DOCTYPE html><html lang="es"><head>
-    <title>Blog Católico — CatolicosGPT</title>
-    <meta name="description" content="Artículos sobre fe católica, oraciones, sacramentos y vida espiritual.">
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <style>body{font-family:Georgia,serif;max-width:720px;margin:0 auto;padding:20px;background:#FAF7F0;color:#18100A}
-    h1{color:#5C3D1E;border-bottom:2px solid #C9923A;padding-bottom:10px}
-    a{color:#C9923A}li{margin:10px 0;font-size:17px}</style>
-  </head><body>
-    <a href="/">← CatolicosGPT</a>
-    <h1>Blog Católico</h1>
-    <ul>${links}</ul>
-  </body></html>`);
-});
-
-// Pregenerar 3 artículos al iniciar
-setTimeout(async () => {
-  for (const topic of BLOG_TOPICS.slice(0, 3)) {
-    await generateBlogArticle(topic).catch(()=>{});
-  }
-  console.log('[Blog] 3 artículos pregenerados');
-}, 8000);
-
-// ══════════════════════════════════════════════
-// ENDPOINTS DE CITAS — CIC y Biblia
-// Usados por el modal de citas en el frontend
-// ══════════════════════════════════════════════
-
-// Cache en memoria para no repetir llamadas
-const citasCache = {};
-
-app.get('/api/cic/:num', async (req, res) => {
-  const num = req.params.num;
-  const cacheKey = `cic_${num}`;
-  
-  // 1. Buscar en dataset local primero
-  function buscarEnDataset(num) {
-    function buscar(obj) {
-      if (Array.isArray(obj)) {
-        for (const item of obj) {
-          const r = buscar(item);
-          if (r) return r;
-        }
-      } else if (obj && typeof obj === 'object') {
-        if (String(obj.cic) === String(num) && obj.texto) return obj.texto;
-        for (const v of Object.values(obj)) {
-          const r = buscar(v);
-          if (r) return r;
-        }
-      }
-      return null;
-    }
-    return buscar(CATECISMO);
-  }
-  
-  const local = buscarEnDataset(num);
-  if (local) {
-    return res.json({ ok: true, num, texto: local, fuente: 'dataset' });
-  }
-  
-  // 2. Buscar en cache
-  if (citasCache[cacheKey]) {
-    return res.json({ ok: true, num, texto: citasCache[cacheKey], fuente: 'cache' });
-  }
-  
-  // 3. Generar con OpenAI — prompt que no puede rechazar
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 600,
-      temperature: 0,
-      messages: [
-        {
-          role: 'system',
-          content: `Eres un sistema de consulta del Catecismo de la Iglesia Católica. 
-Tu única función es devolver el texto exacto de artículos del Catecismo.
-SIEMPRE proporciona el texto solicitado. NUNCA te niegues. NUNCA digas que no puedes.
-Si no recuerdas el texto exacto, proporciona el contenido oficial basado en tu conocimiento del Catecismo.`
-        },
-        {
-          role: 'user',
-          content: `Artículo ${num} del Catecismo de la Iglesia Católica (CIC ${num}). 
-Dame SOLO el texto del artículo, comenzando directamente con el contenido. Sin introducción.`
-        }
-      ]
-    });
-    const texto = completion.choices[0].message.content;
-    citasCache[cacheKey] = texto;
-    res.json({ ok: true, num, texto, fuente: 'openai' });
-  } catch(e) {
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-app.get('/api/biblia', async (req, res) => {
-  const ref = req.query.ref;
-  if (!ref) return res.json({ ok: false, error: 'ref requerida' });
-  
-  const cacheKey = `biblia_${ref}`;
-  if (citasCache[cacheKey]) {
-    return res.json({ ok: true, ref, texto: citasCache[cacheKey], fuente: 'cache' });
-  }
-  
-  // Buscar en dataset de biblia
-  function buscarEnBiblia(ref) {
-    try {
-      const pasajes = BIBLIA.pasajes || BIBLIA.libros || [];
-      for (const item of pasajes) {
-        if (item.referencia === ref || item.ref === ref) return item.texto;
-      }
-    } catch(e) {}
-    return null;
-  }
-  
-  const local = buscarEnBiblia(ref);
-  if (local) return res.json({ ok: true, ref, texto: local, fuente: 'dataset' });
-  
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 800,
-      temperature: 0,
-      messages: [
-        {
-          role: 'system',
-          content: `Eres un sistema de consulta bíblica. Tu función es proporcionar el texto exacto de pasajes bíblicos en español.
-Usa la traducción litúrgica española (Biblia de Jerusalén o similar).
-SIEMPRE proporciona el texto. NUNCA te niegues. NUNCA digas que no puedes.`
-        },
-        {
-          role: 'user',
-          content: `Pasaje bíblico: ${ref}
-Dame SOLO el texto del pasaje en español, comenzando directamente con el versículo. Sin introducción ni comentarios.`
-        }
-      ]
-    });
-    const texto = completion.choices[0].message.content;
-    citasCache[cacheKey] = texto;
-    res.json({ ok: true, ref, texto, fuente: 'openai' });
-  } catch(e) {
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-// ── BREVIARIO LAUDES ──
-app.get('/api/breviario', async (req, res) => {
-  const cacheKey = 'breviario_laudes_' + new Date().toISOString().slice(0,10);
-  if (citasCache[cacheKey]) return res.json(citasCache[cacheKey]);
-
-  const now = new Date();
-  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
-  const ciclo = ['C','A','B'][(now.getFullYear() - 2024) % 3] || 'A';
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      max_tokens: 3000,
-      temperature: 0.1,
-      messages: [{
-        role: 'system',
-        content: `Eres un experto en la Liturgia de las Horas. Conoces el Breviario Romano completo. 
-Hoy es ${fechaStr}. Ciclo ${ciclo}.
-NUNCA digas que no puedes. SIEMPRE proporciona los textos completos.`
-      }, {
-        role: 'user',
-        content: `Dame los LAUDES completos de HOY ${fechaStr} según la Liturgia de las Horas romana.
-
-Formato exacto:
-
----HIMNO---
-[texto completo del himno de Laudes]
-
----SALMO_1---
-Referencia: [Salmo y versículos]
-Antífona: [antífona]
-[texto completo del salmo]
-
----SALMO_2---
-Referencia: [Salmo]
-Antífona: [antífona]
-[texto completo]
-
----CANTICO---
-Referencia: [cántico del AT o NT]
-Antífona: [antífona]
-[texto completo]
-
----LECTURA_BREVE---
-Referencia: [libro, cap, vers]
-[texto]
-
----RESPONSORIO---
-[texto completo]
-
----BENEDICTUS---
-Antífona: [antífona del día]
-[texto completo del Benedictus — Lucas 1,68-79]
-
----PRECES---
-[preces de Laudes completas]
-
----PADRENUESTRO---
-[Padrenuestro]
-
----ORACION---
-[oración conclusiva del día]
-
-Textos COMPLETOS. No resumir. No omitir ninguna sección.`
-      }]
-    });
-
-    const resultado = {
-      ok: true,
-      texto: completion.choices[0].message.content,
-      fecha: fechaStr,
-      hora: 'Laudes',
-      generado: new Date().toISOString()
-    };
-    citasCache[cacheKey] = resultado;
-    res.json(resultado);
-  } catch(e) {
-    res.json({ ok: false, error: e.message });
-  }
-});
-
 // Health
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '4.1', seoPages: Object.keys(seoPages).length }));
+
+// Catch-all: cualquier ruta no reconocida sirve index.html (SPA)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`CatolicosGPT v4.1 · Puerto ${PORT}`));
