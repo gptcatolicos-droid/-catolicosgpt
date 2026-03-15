@@ -1,99 +1,25 @@
-// ══════════════════════════════
-// STATE
-// ══════════════════════════════
-let sbOpen = false;
-let isLoading = false;
-let currentLang = 'es';
+// ══════════════════════════════════════════
+// CatolicosGPT V10 — app.js
+// ══════════════════════════════════════════
+
 let chatHistory = [];
-let currentStream = null; // AbortController para cancelar streaming
-let isStreaming = false;
-let conversations = JSON.parse(localStorage.getItem('cgpt_convs') || '[]');
-let lastBotText = '';
+let conversations = [];
+let isLoading = false;
+let sbOpen = false;
+let currentStream = null;
 
-const i18n = {
-  es: {
-    placeholder: 'Pregunta sobre fe, oración, santos, moral…',
-    hint: 'CatolicosGPT · Basado en el Magisterio y Vatican.va',
-    welcome: '¿En qué puedo ayudarte, <em>hermano</em>?',
-    you: 'TÚ', error: 'Error de conexión. Intenta de nuevo.', errorAI: 'Hubo un error. Intenta de nuevo.'
-  },
-  en: {
-    placeholder: 'Ask about faith, prayer, saints, morality…',
-    hint: 'CatolicosGPT · Based on the Magisterium and Vatican.va',
-    welcome: 'How can I help you, <em>brother</em>?',
-    you: 'YOU', error: 'Connection error. Try again.', errorAI: 'An error occurred. Try again.'
-  }
-};
-
-// ══════════════════════════════
-// SIDEBAR
-// ══════════════════════════════
-function toggleSb() { sbOpen ? closeSb() : openSb(); }
-function openSb() {
-  document.getElementById('sb').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-  sbOpen = true; renderHistory();
-}
-function closeSb() {
-  document.getElementById('sb').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-  sbOpen = false;
+// ── Utilidades ──
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// ══════════════════════════════
-// HISTORY
-// ══════════════════════════════
-function renderHistory() {
-  const el = document.getElementById('history-list');
-  if (!conversations.length) {
-    el.innerHTML = '<div style="padding:6px 14px;font-family:Lora,serif;font-size:12px;color:var(--ink4);font-style:italic">Sin conversaciones aún</div>';
-    return;
-  }
-  el.innerHTML = conversations.slice(-10).reverse().map((c, i) =>
-    `<div class="sb-item" onclick="loadConv(${conversations.length-1-i});closeSb()">
-      <div class="sb-ico">💬</div>
-      <span class="sb-lbl">${esc(c.title)}</span>
-      <span class="sb-time">${c.time}</span>
-    </div>`
-  ).join('');
-}
-
-function saveConversation(title) {
-  const now = new Date();
-  const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
-  conversations.push({ title: title.slice(0,42), time, messages: [...chatHistory] });
-  if (conversations.length > 20) conversations.shift();
-  localStorage.setItem('cgpt_convs', JSON.stringify(conversations));
-}
-
-function loadConv(i) {
-  const c = conversations[i];
-  chatHistory = [...c.messages];
-  document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'block';
-  document.getElementById('chat-inner').innerHTML = '';
-  c.messages.forEach(m => renderBubble(m.content, m.role === 'user', false));
-}
-
-// ══════════════════════════════
-// LANG
-// ══════════════════════════════
-function setLang(l, btn) {
-  currentLang = l;
-  document.querySelectorAll('.lang-sw button').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('cin').placeholder = i18n[l].placeholder;
-  document.getElementById('input-hint').textContent = i18n[l].hint;
-  document.getElementById('w-title').innerHTML = i18n[l].welcome;
-}
-
-// ══════════════════════════════
-// MARKDOWN PARSER
-// ══════════════════════════════
 function parseMarkdown(text) {
-  text = text.replace(/\\\\n/g, '\n').replace(/\\n/g, '\n');
+  if (!text) return '';
+  text = String(text);
 
-  // ── TABLAS ──
+  // Tablas
   const lines = text.split('\n');
   const out = [];
   let i = 0;
@@ -109,7 +35,8 @@ function parseMarkdown(text) {
         const cells = tl.split('|').map(c => c.trim()).filter(c => c !== '');
         if (!cells.length) return;
         const tag = first ? 'th' : 'td';
-        html += '<tr>' + cells.map(c => `<${tag} style="padding:8px 12px;border:1px solid var(--border);${first?'background:var(--bg3);font-weight:600;font-size:12px':''}">${c}</${tag}>`).join('') + '</tr>';
+        const style = first ? 'background:var(--bg3);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;' : '';
+        html += '<tr>' + cells.map(c => `<${tag} style="padding:9px 12px;border:1px solid var(--border);${style}">${c}</${tag}>`).join('') + '</tr>';
         first = false;
       });
       html += '</table></div>';
@@ -118,23 +45,24 @@ function parseMarkdown(text) {
   }
   text = out.join('\n');
 
-  // ── LINKS CIC [CIC XXXX] → modal dentro de la app ──
+  // Links CIC [CIC XXXX]
   text = text.replace(/\[CIC\s*(\d+)\]/g, (_, num) =>
     `<a href="#" class="cita-cic" onclick="openCitaModal('cic','${num}');return false;">CIC ${num}</a>`
   );
 
-  // ── LINKS BÍBLICOS [Jn 3,16] → modal dentro de la app ──
+  // Links bíblicos [Jn 3,16]
   const books = '(?:1|2|3)?\\s*(?:Gn|Ex|Lv|Nm|Dt|Jos|Jue|Rut|Sam|Re|Cr|Esd|Neh|Tob|Jdt|Est|Mac|Job|Sal|Prov|Ecl|Cant|Sab|Sir|Is|Jer|Lam|Bar|Ez|Dn|Os|Jl|Am|Abd|Jon|Miq|Nah|Hab|Sof|Ag|Zac|Mal|Mt|Mc|Lc|Jn|Hch|Rom|Cor|Gal|Ef|Flp|Col|Tes|Tim|Tit|Flm|Heb|Sant|Pe|Jds|Ap)';
-  const bibleRx = new RegExp('\\\\[(' + books + '\\\\s+[\\\\d][\\\\d,\\\\.\\\\-–;\\\\s]*)\\\\]', 'g');
-  text = text.replace(bibleRx, (_, ref) =>
-    `<a href="#" class="cita-biblia" onclick="openCitaModal('biblia','${ref.trim().replace(/'/g,"\\'")}');return false;">${ref.trim()}</a>`
-  );
+  const bibleRx = new RegExp('\\[(' + books + '\\s+[\\d][\\d,\\.\\-\\u2013;\\s]*)\\]', 'g');
+  text = text.replace(bibleRx, (_, ref) => {
+    const r = ref.trim();
+    return `<a href="#" class="cita-biblia" onclick="openCitaModal('biblia','${r.replace(/'/g,"\\'")}');return false;">${r}</a>`;
+  });
 
-  // ── LINKS EXTERNOS ──
+  // Links externos
   text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
     '<a href="$2" target="_blank" rel="noopener" style="color:var(--ocre)">$1 ↗</a>');
 
-  // ── MARKDOWN ──
+  // Markdown
   return text
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -146,331 +74,166 @@ function parseMarkdown(text) {
     .replace(/\n/g, '<br>');
 }
 
-function esc(text) {
-  return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+// ── Sidebar ──
+function toggleSb() { sbOpen ? closeSb() : openSb(); }
+
+function openSb() {
+  const sb = document.getElementById('sb');
+  const ov = document.getElementById('sb-overlay');
+  if (sb) sb.classList.add('open');
+  if (ov) ov.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  sbOpen = true;
 }
 
-// ══════════════════════════════
-// DETECTAR TIPO DE CONTENIDO
-// ══════════════════════════════
-function detectContentType(text, userMsg) {
-  const msg = userMsg.toLowerCase();
-  const hasTable = text.includes('<table') || text.includes('|---|');
-  const isLiturgical = /cartilla|catequesis|novena|rosario|vía crucis|via crucis|homilía|homilia|oración|oracion|laudes|vísperas|visperas|completas|lecturas/i.test(msg);
-  return { hasTable, isLiturgical };
+function closeSb() {
+  const sb = document.getElementById('sb');
+  const ov = document.getElementById('sb-overlay');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('active');
+  document.body.style.overflow = '';
+  sbOpen = false;
 }
 
-// ══════════════════════════════
-// EXTRAER SUGERENCIAS DEL TEXTO
-// ══════════════════════════════
-function extractSuggestions(text) {
-  const sugs = [];
-  // Busca patrones de preguntas sugeridas entre comillas
-  const re = /"([^"]{10,80})"/g;
-  let match;
-  while ((match = re.exec(text)) !== null && sugs.length < 3) {
-    sugs.push(match[1]);
-  }
-  return sugs;
-}
-
-// ══════════════════════════════
-// RENDER BUBBLE
-// ══════════════════════════════
-function renderBubble(text, isUser, addActions = false, userMsg = '') {
-  document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'block';
-
-  const wrap = document.getElementById('chat-inner');
-  const d = document.createElement('div');
-  d.className = 'msg' + (isUser ? ' u' : '');
-
-  // Avatar
-  const av = document.createElement('div');
-  av.className = 'av ' + (isUser ? 'usr' : 'bot');
-  av.innerHTML = isUser
-    ? i18n[currentLang].you
-    : `<svg width="13" height="13" viewBox="0 0 80 80" fill="none">
-        <line x1="40" y1="8" x2="40" y2="52" stroke="#E8A84C" stroke-width="5" stroke-linecap="round"/>
-        <line x1="27" y1="20" x2="53" y2="20" stroke="#E8A84C" stroke-width="5" stroke-linecap="round"/>
-       </svg>`;
-
-  // Bubble
-  const b = document.createElement('div');
-  b.className = 'bubble ' + (isUser ? 'usr' : 'bot');
-
-  if (isUser) {
-    b.textContent = text;
-  } else {
-    b.innerHTML = parseMarkdown(text);
-
-    // Fuentes
-    b.innerHTML += '<div class="src-row"><span class="src">Magisterio</span><span class="src">Vatican.va</span></div>';
-
-    // ── BOTONES SIEMPRE VISIBLES en todas las respuestas ──
-    const hasTable = b.innerHTML.includes('<table');
-    let actHtml = '<div class="action-row">';
-    actHtml += `<button class="act-btn pdf" onclick="exportPDF(this)" title="Exportar PDF">📕 PDF</button>`;
-    actHtml += `<button class="act-btn word" onclick="exportWord(this)" title="Exportar Word">📝 Word</button>`;
-    actHtml += `<button class="act-btn ppt" onclick="exportPPT(this)" title="PowerPoint">📊 PPT</button>`;
-    actHtml += `<button class="act-btn copy" onclick="copyText(this)" title="Copiar">📋 Copiar</button>`;
-    if (hasTable) {
-      actHtml += `<button class="act-btn gdoc" onclick="openGoogleDocs(this)">📄 G.Docs</button>`;
-      actHtml += `<button class="act-btn gsheet" onclick="openGoogleSheets(this)">📊 G.Sheets</button>`;
-    }
-    actHtml += '</div>';
-    b.innerHTML += actHtml;
-
-    // ── SUGERENCIAS ──
-    const sugs = extractSuggestions(text);
-    if (sugs.length > 0) {
-      let sugHtml = '<div class="suggestions">';
-      sugs.forEach(s => {
-        sugHtml += `<span class="sug-chip" onclick="sendChip('${s.replace(/'/g,"\'")}')">💭 ${esc(s)}</span>`;
-      });
-      sugHtml += '</div>';
-      b.innerHTML += sugHtml;
-    }
-  }
-
-
-  d.appendChild(av);
-  d.appendChild(b);
-  wrap.appendChild(d);
-  wrap.scrollTop = wrap.scrollHeight;
-
-  if (!isUser) lastBotText = text;
-}
-
-// ══════════════════════════════
-// TYPING INDICATOR
-// ══════════════════════════════
-function addTyping() {
-  const wrap = document.getElementById('chat-inner');
-  const d = document.createElement('div');
-  d.className = 'msg'; d.id = 'typing-indicator';
-  const av = document.createElement('div');
-  av.className = 'av bot';
-  av.innerHTML = `<svg width="13" height="13" viewBox="0 0 80 80" fill="none">
-    <line x1="40" y1="8" x2="40" y2="52" stroke="#E8A84C" stroke-width="5" stroke-linecap="round"/>
-    <line x1="27" y1="20" x2="53" y2="20" stroke="#E8A84C" stroke-width="5" stroke-linecap="round"/>
-  </svg>`;
-  const b = document.createElement('div');
-  b.className = 'bubble bot typing';
-  b.innerHTML = '<span></span><span></span><span></span>';
-  d.appendChild(av); d.appendChild(b);
-  wrap.appendChild(d);
-  wrap.scrollTop = wrap.scrollHeight;
-}
-
-function removeTyping() {
-  const t = document.getElementById('typing-indicator');
-  if (t) t.remove();
-}
-
-// ══════════════════════════════
-// SEND
-// ══════════════════════════════
+// ── Chat ──
 async function send() {
   const cin = document.getElementById('cin');
   const val = cin.value.trim();
   if (!val || isLoading) return;
 
-  const lower = val.toLowerCase();
-
-  // ── INTERCEPTAR vistas especiales ──
-  if (/lecturas del d[ií]a|lecturas de hoy|ver lecturas|lecturas de la misa/.test(lower)) {
-    cin.value = ''; cin.style.height = 'auto';
-    loadLecturasReales(); return;
-  }
-  if (/^breviario/.test(lower)) {
-    cin.value = ''; cin.style.height = 'auto';
-    openView('breviario'); return;
-  }
-  if (/^calendario lit/.test(lower)) {
-    cin.value = ''; cin.style.height = 'auto';
-    openView('calendario'); return;
-  }
-
   isLoading = true;
-  isStreaming = true;
-  document.getElementById('send-btn').disabled = true;
-  showStopBtn(true);
-
-  const userMsg = val;
-  chatHistory.push({ role: 'user', content: val });
-  renderBubble(val, true);
   cin.value = ''; cin.style.height = 'auto';
 
-  // Crear bubble de respuesta vacía para streaming
-  const d = document.getElementById('chat-inner');
-  const wrap = document.createElement('div');
-  wrap.className = 'msg-row bot-row';
-  const av = document.createElement('div');
-  av.className = 'av av-bot';
-  av.innerHTML = '<svg viewBox="0 0 80 80" fill="none" style="width:100%;height:100%"><circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/><line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/><line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/></svg>';
-  const b = document.createElement('div');
-  b.className = 'bubble bubble-bot';
-  b.innerHTML = '<span class="typing-cursor">▋</span>';
-  wrap.appendChild(av);
-  wrap.appendChild(b);
-  d.appendChild(wrap);
-  d.scrollTop = d.scrollHeight;
-
-  // Mostrar chat
+  // Ocultar welcome, mostrar chat
   document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'block';
-  document.querySelector('.input-area').style.display = '';
+  document.getElementById('chat-area').style.display = 'flex';
+  document.getElementById('chat-area').style.flexDirection = 'column';
+  document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
+  document.getElementById('input-area').style.display = '';
 
-  const needsActions = /cartilla|catequesis|novena|rosario|v[ií]a crucis|hom[ií]l[ií]a|oraci[oó]n|tabla|l[ií]nea de tiempo|cronolog[ií]a|actividad|clase/i.test(val);
+  chatHistory.push({ role: 'user', content: val });
+
+  // Burbuja usuario
+  const inner = document.getElementById('chat-inner');
+  const userRow = document.createElement('div');
+  userRow.className = 'msg-row user-row';
+  userRow.innerHTML = `
+    <div class="av av-user">TÚ</div>
+    <div class="bubble bubble-user">${esc(val)}</div>`;
+  inner.appendChild(userRow);
+  inner.scrollTop = inner.scrollHeight;
+
+  // Burbuja bot
+  const botRow = document.createElement('div');
+  botRow.className = 'msg-row bot-row';
+  botRow.innerHTML = `
+    <div class="av">
+      <svg width="18" height="18" viewBox="0 0 80 80" fill="none">
+        <circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/>
+        <line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
+        <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="bubble bubble-bot" id="bot-bubble-${Date.now()}"><span class="typing-cursor">▋</span></div>`;
+  inner.appendChild(botRow);
+  inner.scrollTop = inner.scrollHeight;
+  const bubble = botRow.querySelector('.bubble-bot');
+
+  document.getElementById('send-btn').style.display = 'none';
 
   currentStream = new AbortController();
 
   try {
-    const res = await fetch('/api/chat', {
+    const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: chatHistory, stream: true }),
       signal: currentStream.signal
     });
 
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-
-    const reader = res.body.getReader();
+    const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let fullText = '';
+    let magText = '';
     let buffer = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop(); // guardar línea incompleta
-
-      for (const line of lines) {
+      const parts = buffer.split('\n');
+      buffer = parts.pop();
+      for (const line of parts) {
         if (!line.startsWith('data: ')) continue;
-        const jsonStr = line.slice(6).trim();
-        if (!jsonStr) continue;
         try {
-          const parsed = JSON.parse(jsonStr);
-          if (parsed.delta) {
-            fullText += parsed.delta;
-            b.innerHTML = parseMarkdown(fullText) + '<span class="typing-cursor">▋</span>';
-            d.scrollTop = d.scrollHeight;
+          const d = JSON.parse(line.slice(6));
+          if (d.delta) {
+            fullText += d.delta;
+            bubble.innerHTML = parseMarkdown(fullText) + '<span class="typing-cursor">▋</span>';
+            inner.scrollTop = inner.scrollHeight;
           }
-          if (parsed.done) {
-            b.innerHTML = parseMarkdown(fullText);
+          if (d.magisterium) magText = d.magisterium;
+          if (d.done) {
+            bubble.innerHTML = '';
+            // Mostrar Magisterium si hay
+            if (magText) {
+              bubble.innerHTML += `<div class="mag-badge">
+                <div class="mag-badge-title">Fuentes del Magisterio</div>
+                <div class="mag-badge-text">${parseMarkdown(magText)}</div>
+              </div>`;
+            }
+            bubble.innerHTML += parseMarkdown(fullText);
             chatHistory.push({ role: 'assistant', content: fullText });
-            addBubbleActions(b, fullText, userMsg, needsActions);
-            if (chatHistory.length === 2) saveConversation(userMsg);
+            addActions(bubble, fullText);
+            if (chatHistory.length === 2) saveConversation(val);
           }
-          if (parsed.error) throw new Error(parsed.error);
-        } catch(pe) { /* línea malformada */ }
+          if (d.error) throw new Error(d.error);
+        } catch(e) {}
       }
     }
 
-    // Por si acaso no llegó el evento done
-    if (fullText && !b.querySelector('.action-row')) {
-      b.innerHTML = parseMarkdown(fullText);
+    if (fullText && !bubble.querySelector('.action-row')) {
+      bubble.innerHTML = parseMarkdown(fullText);
       chatHistory.push({ role: 'assistant', content: fullText });
-      addBubbleActions(b, fullText, userMsg, needsActions);
-      if (chatHistory.length === 2) saveConversation(userMsg);
+      addActions(bubble, fullText);
+      if (chatHistory.length === 2) saveConversation(val);
     }
 
   } catch(e) {
-    if (e.name === 'AbortError') {
-      if (b.querySelector('.typing-cursor')) {
-        b.innerHTML = b.innerHTML.replace('<span class="typing-cursor">▋</span>', ' <em style="color:var(--ink4);font-size:12px">[detenido]</em>');
-      }
-    } else {
-      b.innerHTML = '<em style="color:var(--red)">Error al conectar. Intenta de nuevo.</em>';
+    if (e.name !== 'AbortError') {
+      bubble.innerHTML = '<em style="color:var(--red)">Error al conectar. Intenta de nuevo.</em>';
     }
   }
 
   isLoading = false;
-  isStreaming = false;
   currentStream = null;
-  document.getElementById('send-btn').disabled = false;
-  showStopBtn(false);
+  document.getElementById('send-btn').style.display = 'flex';
 }
 
-function stopStream() {
-  if (currentStream) {
-    currentStream.abort();
-    currentStream = null;
-  }
-  isLoading = false;
-  isStreaming = false;
-  document.getElementById('send-btn').disabled = false;
-  showStopBtn(false);
-}
+function addActions(bubble, text) {
+  // Extrae sugerencias de seguimiento del texto (→ ¿...)
+  const sugsMatch = text.match(/→\s*¿[^?]+\?/g) || [];
+  const sugs = sugsMatch.map(s => s.replace(/^→\s*/, '').trim()).slice(0, 3);
 
-function showStopBtn(show) {
-  let btn = document.getElementById('stop-btn');
-  const sendBtn = document.getElementById('send-btn');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'stop-btn';
-    btn.className = 'stop-btn';
-    btn.setAttribute('aria-label', 'Detener respuesta');
-    btn.innerHTML = '⏹';
-    btn.onclick = stopStream;
-    sendBtn.parentNode.insertBefore(btn, sendBtn);
-  }
-  btn.style.display = show ? 'flex' : 'none';
-  sendBtn.style.display = show ? 'none' : 'flex';
-}
+  let html = '<div class="action-row">';
+  html += `<button class="act-btn" onclick="exportPDF(this)">📕 PDF</button>`;
+  html += `<button class="act-btn" onclick="copyText(this)">📋 Copiar</button>`;
+  html += '</div>';
 
-function addBubbleActions(b, text, userMsg, needsActions) {
-  // Fuentes
-  b.innerHTML += '<div class="src-row"><span class="src">Magisterio</span><span class="src">Vatican.va</span></div>';
-
-  // Botones siempre visibles
-  const hasTable = b.innerHTML.includes('<table');
-  let actHtml = '<div class="action-row">';
-  actHtml += `<button class="act-btn pdf" onclick="exportPDF(this)" title="PDF">📕 PDF</button>`;
-  actHtml += `<button class="act-btn word" onclick="exportWord(this)" title="Word">📝 Word</button>`;
-  actHtml += `<button class="act-btn ppt" onclick="exportPPT(this)" title="PPT">📊 PPT</button>`;
-  actHtml += `<button class="act-btn copy" onclick="copyText(this)" title="Copiar">📋 Copiar</button>`;
-  if (hasTable) {
-    actHtml += `<button class="act-btn gdoc" onclick="openGoogleDocs(this)">📄 G.Docs</button>`;
-  }
-  actHtml += '</div>';
-  b.innerHTML += actHtml;
-
-  // Sugerencias
-  const sugs = extractSuggestions(text);
   if (sugs.length > 0) {
-    let sugHtml = '<div class="suggestions">';
+    html += '<div class="suggestions">';
     sugs.forEach(s => {
-      sugHtml += `<span class="sug-chip" onclick="sendChip('${s.replace(/'/g,"\'")}')">💭 ${esc(s)}</span>`;
+      html += `<span class="sug-chip" onclick="sendChip('${s.replace(/'/g,"\\'")}')">💭 ${esc(s)}</span>`;
     });
-    sugHtml += '</div>';
-    b.innerHTML += sugHtml;
+    html += '</div>';
   }
+
+  bubble.innerHTML += html;
 }
 
 function sendChip(t) {
-  closeSb();
-  const lower = t.toLowerCase();
-  if (/lecturas del d[ií]a|lecturas de hoy|ver lecturas/.test(lower)) {
-    setTimeout(() => loadLecturasReales(), 300);
-    return;
-  }
-  if (/^breviario/.test(lower)) {
-    setTimeout(() => openView('breviario'), 300);
-    return;
-  }
-  if (/^calendario lit/.test(lower)) {
-    setTimeout(() => openView('calendario'), 300);
-    return;
-  }
-  setTimeout(() => {
-    document.getElementById('cin').value = t;
-    send();
-  }, 300);
+  document.getElementById('cin').value = t;
+  send();
 }
 
 function onKey(e) {
@@ -479,584 +242,93 @@ function onKey(e) {
 
 function autoResize(el) {
   el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
 }
 
 function newChat() {
   chatHistory = [];
-  document.getElementById('welcome').style.display = 'flex';
-  document.getElementById('chat-area').style.display = 'none';
   document.getElementById('chat-inner').innerHTML = '';
+  document.getElementById('chat-area').style.display = 'none';
+  document.getElementById('welcome').style.display = 'flex';
+  document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
+  document.getElementById('input-area').style.display = '';
+}
+
+function saveConversation(title) {
+  const now = new Date();
+  const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+  conversations.unshift({ title: title.slice(0, 45), time, messages: [...chatHistory] });
+  if (conversations.length > 20) conversations.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (!el) return;
+  if (!conversations.length) {
+    el.innerHTML = '<div style="padding:4px 10px 8px;font-family:Inter,sans-serif;font-size:12px;color:var(--ink4)">Sin conversaciones aún</div>';
+    return;
+  }
+  el.innerHTML = conversations.map((c, i) => `
+    <div class="history-item" onclick="loadConversation(${i})">
+      <span class="hi-title">${esc(c.title)}</span>
+      <span class="hi-time">${c.time}</span>
+    </div>`).join('');
+}
+
+function loadConversation(i) {
+  const c = conversations[i];
+  if (!c) return;
+  chatHistory = [...c.messages];
+  document.getElementById('chat-inner').innerHTML = '';
+  chatHistory.forEach(m => {
+    const inner = document.getElementById('chat-inner');
+    if (m.role === 'user') {
+      const row = document.createElement('div');
+      row.className = 'msg-row user-row';
+      row.innerHTML = `<div class="av av-user">TÚ</div><div class="bubble bubble-user">${esc(m.content)}</div>`;
+      inner.appendChild(row);
+    } else {
+      const row = document.createElement('div');
+      row.className = 'msg-row bot-row';
+      row.innerHTML = `<div class="av"><svg width="18" height="18" viewBox="0 0 80 80" fill="none"><circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/><line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/><line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/></svg></div><div class="bubble bubble-bot">${parseMarkdown(m.content)}</div>`;
+      inner.appendChild(row);
+    }
+  });
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chat-area').style.display = 'flex';
+  document.getElementById('chat-area').style.flexDirection = 'column';
   closeSb();
 }
 
-// ══════════════════════════════
-// OBTENER TEXTO LIMPIO DEL BUBBLE
-// ══════════════════════════════
-function getBubbleText(btn) {
-  const bubble = btn.closest('.bubble');
-  const clone = bubble.cloneNode(true);
-  clone.querySelectorAll('.src-row,.action-row,.suggestions').forEach(el => el.remove());
-  return clone.innerText.trim();
-}
-
-function getBubbleHTML(btn) {
-  const bubble = btn.closest('.bubble');
-  const clone = bubble.cloneNode(true);
-  clone.querySelectorAll('.src-row,.action-row,.suggestions').forEach(el => el.remove());
-  return clone.innerHTML.trim();
-}
-
-// ══════════════════════════════
-// EXPORTS
-// ══════════════════════════════
-async function exportPDF(btn) {
-  if (!window.jspdf) { alert('Cargando... intenta en un momento.'); return; }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-
-  // ── LOGO SVG dibujado ──
-  const margin = 20;
-  let y = 15;
-
-  // Cruz dorada (logo)
-  doc.setDrawColor(201, 146, 58);
-  doc.setLineWidth(1.2);
-  doc.line(105, y, 105, y + 18);       // vertical
-  doc.line(99, y + 6, 111, y + 6);     // horizontal
-  doc.setDrawColor(122, 82, 48);
-  doc.setLineWidth(0.8);
-  doc.circle(105, y + 9, 8);           // círculo
-  y += 24;
-
-  // Título
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(92, 61, 30);
-  doc.text('CatolicosGPT', 105, y, { align: 'center' });
-  y += 7;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(168, 136, 88);
-  doc.text('catolicosgpt.com · Basado en el Magisterio de la Iglesia Católica', 105, y, { align: 'center' });
-  y += 5;
-
-  // Línea separadora dorada
-  doc.setDrawColor(201, 146, 58);
-  doc.setLineWidth(0.5);
-  doc.line(margin, y, 210 - margin, y);
-  y += 8;
-
-  // ── CONTENIDO: parsear el HTML del bubble ──
-  const bubble = btn.closest('.bubble');
-  const clone = bubble.cloneNode(true);
-  clone.querySelectorAll('.src-row,.action-row,.suggestions').forEach(el => el.remove());
-
-  // Procesar nodo por nodo para mantener formato
-  function processNode(node, indentLevel) {
-    if (node.nodeType === 3) { // texto
-      return node.textContent;
-    }
-    if (node.nodeType !== 1) return '';
-    const tag = node.tagName.toLowerCase();
-    let text = Array.from(node.childNodes).map(n => processNode(n, indentLevel)).join('');
-    if (tag === 'h2') return '\n\n[H2]' + text + '[/H2]\n';
-    if (tag === 'h3') return '\n\n[H3]' + text + '[/H3]\n';
-    if (tag === 'h4') return '\n[H4]' + text + '[/H4]\n';
-    if (tag === 'strong') return '[B]' + text + '[/B]';
-    if (tag === 'em') return '[I]' + text + '[/I]';
-    if (tag === 'li') return '\n  • ' + text;
-    if (tag === 'br') return '\n';
-    if (tag === 'hr') return '\n─────────────────────\n';
-    if (tag === 'p') return '\n' + text + '\n';
-    if (tag === 'tr') {
-      const cells = Array.from(node.querySelectorAll('th,td')).map(c => c.textContent.trim());
-      return cells.join(' | ') + '\n';
-    }
-    if (tag === 'table') {
-      return '\n[TABLA]\n' + text + '[/TABLA]\n';
-    }
-    return text;
-  }
-
-  const rawText = processNode(clone, 0);
-  const segments = rawText.split('\n');
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(24, 16, 10);
-
-  const pageH = 280;
-  const lineH = 6;
-  const maxW = 170;
-
-  segments.forEach(seg => {
-    if (y > pageH) { doc.addPage(); y = 20; }
-
-    if (seg.includes('[H2]')) {
-      const t = seg.replace('[H2]','').replace('[/H2]','').trim();
-      if (!t) return;
-      y += 3;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.setTextColor(92, 61, 30);
-      doc.text(t, margin, y);
-      y += 7;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(11);
-      doc.setTextColor(24, 16, 10);
-    } else if (seg.includes('[H3]')) {
-      const t = seg.replace('[H3]','').replace('[/H3]','').trim();
-      if (!t) return;
-      y += 2;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(122, 82, 48);
-      doc.text(t, margin, y);
-      y += 6;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(11);
-      doc.setTextColor(24, 16, 10);
-    } else if (seg.includes('[TABLA]') || seg.includes('[/TABLA]')) {
-      // ignorar marcadores
-    } else if (seg.includes(' | ')) {
-      // Fila de tabla
-      const cells = seg.split(' | ');
-      const colW = maxW / cells.length;
-      doc.setFontSize(10);
-      doc.setDrawColor(212, 192, 152);
-      doc.rect(margin, y - 4, maxW, lineH + 1);
-      cells.forEach((cell, ci) => {
-        doc.text(cell.trim().slice(0, 25), margin + (ci * colW) + 2, y);
-      });
-      y += lineH + 1;
-      doc.setFontSize(11);
-    } else if (seg.trim().startsWith('•')) {
-      const t = seg.trim();
-      if (!t || t === '•') return;
-      doc.setTextColor(201, 146, 58);
-      doc.text('•', margin + 2, y);
-      doc.setTextColor(24, 16, 10);
-      const lines = doc.splitTextToSize(t.replace('•','').trim(), maxW - 8);
-      doc.text(lines, margin + 8, y);
-      y += lines.length * lineH;
-    } else if (seg.includes('─────')) {
-      doc.setDrawColor(212, 192, 152);
-      doc.line(margin, y, 210 - margin, y);
-      y += 4;
-    } else {
-      const clean = seg.replace(/\[B\]|\[\/B\]|\[I\]|\[\/I\]|\[H4\]|\[\/H4\]/g, '').trim();
-      if (!clean) { y += 2; return; }
-      const lines = doc.splitTextToSize(clean, maxW);
-      if (y + lines.length * lineH > pageH) { doc.addPage(); y = 20; }
-      doc.text(lines, margin, y);
-      y += lines.length * lineH + 1;
-    }
-  });
-
-  // Footer
-  doc.setFontSize(8);
-  doc.setTextColor(168, 136, 88);
-  const fecha = new Date().toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
-  doc.text(`Generado el ${fecha} · catolicosgpt.com`, 105, 288, { align: 'center' });
-
-  doc.save('catolicosgpt.pdf');
-}
-
-function exportWord(btn) {
-  const text = getBubbleText(btn);
-  const htmlContent = getBubbleHTML(btn);
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
-<head><meta charset="UTF-8">
-<style>
-  body { font-family: Georgia, serif; font-size: 12pt; line-height: 1.8; color: #18100A; }
-  h1,h2,h3 { font-family: Georgia, serif; color: #5C3D1E; }
-  h2 { font-size: 16pt; } h3 { font-size: 14pt; } h4 { font-size: 12pt; }
-  strong { color: #7A5230; }
-  em { color: #A88858; font-style: italic; }
-  .footer { color: #A88858; font-size: 9pt; margin-top: 40px; border-top: 1px solid #D4C098; padding-top: 10px; }
-</style></head>
-<body>
-<h1 style="text-align:center;color:#5C3D1E">CatolicosGPT</h1>
-<p style="text-align:center;color:#A88858;font-size:9pt">catolicosgpt.com · Basado en el Magisterio de la Iglesia Católica</p>
-<hr style="border-color:#D4C098">
-${htmlContent}
-<div class="footer">Generado el ${new Date().toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })} · catolicosgpt.com</div>
-</body></html>`;
-  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'catolicosgpt.doc'; a.click();
-}
-
-function exportPPT(btn) {
-  const text = getBubbleText(btn);
-  const lines = text.split('\n').filter(l => l.trim()).slice(0, 8);
-  const content = encodeURIComponent(lines.join('\n\n'));
-  alert('💡 Para crear el PowerPoint:\n\n1. Descarga el Word con el botón "Word"\n2. Abre en PowerPoint y selecciona "Abrir"\n\nO copia el texto y pégalo en Google Slides.');
-}
-
-function copyText(btn) {
-  const text = getBubbleText(btn);
-  navigator.clipboard.writeText(text).then(() => {
-    btn.textContent = '✅ Copiado';
-    setTimeout(() => { btn.innerHTML = '📋 Copiar'; }, 2000);
-  }).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = text; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-    btn.textContent = '✅ Copiado';
-    setTimeout(() => { btn.innerHTML = '📋 Copiar'; }, 2000);
-  });
-}
-
-function openGoogleDocs(btn) {
-  const text = getBubbleText(btn);
-  const encoded = encodeURIComponent(text);
-  window.open(`https://docs.google.com/document/create?title=CatolicosGPT&body=${encoded}`, '_blank');
-}
-
-function openGoogleSheets(btn) {
-  window.open('https://sheets.google.com/create', '_blank');
-  const text = getBubbleText(btn);
-  navigator.clipboard.writeText(text).then(() => {
-    alert('Tabla copiada. Pégala en la hoja de cálculo que se abrió (Ctrl+V o Cmd+V).');
-  });
-}
-
-// ══════════════════════════════
-// DONAR
-// ══════════════════════════════
-function openDonate() { document.getElementById('donate-modal').classList.add('show'); }
-function closeDonate() { document.getElementById('donate-modal').classList.remove('show'); }
-function selectAmount(btn, amount) {
-  document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('paypal-link').href = `https://www.paypal.com/paypalme/schoolmarketing/${amount}`;
-}
-
-// ══════════════════════════════
-// INIT
-// ══════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('donate-modal').addEventListener('click', function(e) {
-    if (e.target === this) closeDonate();
-  });
-
-  // Fix iOS viewport height
-  function setVH() {
-    const vh = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
-  }
-  setVH();
-  window.addEventListener('resize', setVH);
-  window.addEventListener('orientationchange', () => setTimeout(setVH, 200));
-
-  // Focus input en desktop
-  if (window.innerWidth > 768) {
-    document.getElementById('cin').focus();
-  }
-});
-
-// ══════════════════════════════════════════════
-// VISTAS PRINCIPALES — Breviario y Calendario
-// Se abren en el frame central, no como panel lateral
-// ══════════════════════════════════════════════
-
-function openPanel(id) { openView(id); } // alias para compatibilidad
-
+// ── Vistas ──
 function openView(id) {
-  // Guardar chat en recientes si hay conversación activa
-  if (chatHistory.length >= 2) {
-    saveConversation(chatHistory[0].content);
-  }
-  // Ocultar todo
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('chat-area').style.display = 'none';
   document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-  // Mostrar vista solicitada
+  document.getElementById('input-area').style.display = 'none';
+
   const view = document.getElementById('view-' + id);
-  if (view) {
-    view.style.display = 'flex';
-    document.querySelector('.input-area').style.display = 'none';
-  }
-  if (id === 'breviario') initBreviario();
-  if (id === 'calendario') initCalendario();
+  if (view) view.style.display = 'flex';
+
   if (id === 'lecturas') initLecturas();
+  if (id === 'breviario') initBreviario();
+  if (id === 'misal') initMisal();
 }
 
 function closeView() {
-  // Restaurar vista normal del chat
   document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-  document.querySelector('.input-area').style.display = '';
+  document.getElementById('input-area').style.display = '';
   if (chatHistory.length > 0) {
-    document.getElementById('chat-area').style.display = 'block';
+    document.getElementById('chat-area').style.display = 'flex';
     document.getElementById('welcome').style.display = 'none';
   } else {
     document.getElementById('welcome').style.display = 'flex';
+    document.getElementById('chat-area').style.display = 'none';
   }
 }
 
-function closePanel(id) { closeView(); } // alias para compatibilidad
-
-// ── BREVIARIO ──────────────────────────────────
-
-const HORAS_DATA = {
-  laudes: {
-    nombre: 'Laudes',
-    prompt: 'Rezar las Laudes completas de hoy paso a paso, guíame versículo por versículo',
-    content: `
-      <div class="brev-rubrica">V. Señor, ábreme los labios.</div>
-      <div class="brev-verso"><span class="r">R/.</span> Y mi boca proclamará tu alabanza.</div>
-      <div class="brev-section-title">Himno</div>
-      <div class="brev-verso" style="font-size:14px">
-        Ya viene el alba, brillan los cielos,<br>
-        la noche oscura va a terminar.<br>
-        Cristo nos llama, rompe cadenas,<br>
-        los corazones llena de paz.
-      </div>
-      <div class="brev-salmo-ref">Salmo 50 (51) — Miserere</div>
-      <div class="brev-rubrica">Antífona: El Señor me ha enviado a dar la buena noticia a los pobres.</div>
-      <div class="brev-verso">
-        Misericordia, Señor, que soy un pecador;<br>
-        por tu bondad, borra mi culpa;<br>
-        por tu inmensa compasión, borra mis delitos.<br><br>
-        Lava del todo mi maldad,<br>limpia mi pecado.<br><br>
-        <span style="color:var(--ink4);font-size:13px;font-style:italic">Gloria al Padre, y al Hijo,<br>y al Espíritu Santo. Amén.</span>
-      </div>
-      <div class="brev-salmo-ref">Lectura breve — Rm 8, 35.37</div>
-      <div class="brev-verso" style="font-style:italic;font-size:14px;color:var(--ink3)">
-        «¿Quién nos separará del amor de Cristo?<br>
-        En todo esto salimos victoriosos<br>
-        gracias a aquel que nos amó.»
-      </div>
-      <div class="brev-rubrica">Preces</div>
-      <div class="brev-verso" style="font-size:14px">
-        Santificados por el sueño de la noche,<br>te ofrecemos las primicias del nuevo día.<br>
-        <span class="r">— Señor, te pedimos.</span>
-      </div>
-      <div class="brev-rubrica">Oración conclusiva</div>
-      <div class="brev-verso" style="font-size:14px">
-        Señor Dios, que con el amanecer del nuevo día<br>
-        renuevas nuestra esperanza en ti:<br>
-        acompáñanos durante esta jornada<br>
-        para que todo lo que hagamos sea para tu gloria.<br>
-        Por Jesucristo, nuestro Señor. <span class="r">Amén.</span>
-      </div>`
-  },
-  intermedia: {
-    nombre: 'Hora Intermedia',
-    prompt: 'Rezar la Hora Intermedia de hoy completa — Sexta del mediodía',
-    content: `
-      <div class="brev-rubrica">V. Dios mío, ven en mi auxilio.</div>
-      <div class="brev-verso"><span class="r">R/.</span> Señor, date prisa en socorrerme.</div>
-      <div class="brev-section-title">Himno — Sexta</div>
-      <div class="brev-verso" style="font-size:14px">
-        Ven, Santo Espíritu, de los cielos,<br>
-        manda tu luz desde el cielo.<br>
-        Padre de los pobres, ven,<br>
-        dador de dones, ven.
-      </div>
-      <div class="brev-salmo-ref">Salmo 118 (119) — La Ley del Señor</div>
-      <div class="brev-rubrica">Antífona: Enséñame tus mandatos, Señor.</div>
-      <div class="brev-verso">
-        Dichosos los que caminan sin tacha,<br>
-        los que marchan según la ley del Señor.<br>
-        Dichosos los que guardan sus preceptos<br>
-        y le buscan de todo corazón.<br><br>
-        <span style="color:var(--ink4);font-size:13px;font-style:italic">Gloria al Padre... Amén.</span>
-      </div>
-      <div class="brev-salmo-ref">Lectura breve — Gal 2, 19b-20</div>
-      <div class="brev-verso" style="font-style:italic;font-size:14px;color:var(--ink3)">
-        «Estoy crucificado con Cristo;<br>
-        vivo yo, pero no soy yo,<br>es Cristo quien vive en mí.»
-      </div>`
-  },
-  visperas: {
-    nombre: 'Vísperas',
-    prompt: 'Rezar las Vísperas completas de hoy paso a paso',
-    content: `
-      <div class="brev-rubrica">V. Dios mío, ven en mi auxilio.</div>
-      <div class="brev-verso"><span class="r">R/.</span> Señor, date prisa en socorrerme.</div>
-      <div class="brev-section-title">Himno vespertino</div>
-      <div class="brev-verso" style="font-size:14px">
-        El sol que declina muere en el poniente;<br>
-        tú eres, oh Cristo, la luz que no muere,<br>
-        ilumina nuestra noche oscura,<br>
-        llena de paz nuestra alma insegura.
-      </div>
-      <div class="brev-salmo-ref">Cántico — Flp 2, 6-11</div>
-      <div class="brev-rubrica">Antífona: Cristo fue obediente hasta la muerte, y muerte de Cruz.</div>
-      <div class="brev-verso">
-        Cristo, siendo de condición divina,<br>
-        no retuvo ávidamente el ser igual a Dios;<br>
-        al contrario, se despojó de su grandeza,<br>
-        tomó la condición de esclavo<br>
-        y se hizo semejante a los hombres.<br><br>
-        Por eso Dios le exaltó sobre todo<br>
-        y le otorgó el Nombre sobre todo nombre.<br><br>
-        <span style="color:var(--ink4);font-size:13px;font-style:italic">Gloria al Padre... Amén.</span>
-      </div>
-      <div class="brev-salmo-ref">Magnificat — Lc 1, 46-55</div>
-      <div class="brev-rubrica">Antífona: Santa María, ruega por nosotros.</div>
-      <div class="brev-verso" style="font-style:italic;font-size:14px;color:var(--ink3)">
-        «Proclama mi alma la grandeza del Señor,<br>
-        se alegra mi espíritu en Dios mi Salvador;<br>
-        porque ha mirado la humillación de su sierva.»
-      </div>`
-  },
-  completas: {
-    nombre: 'Completas',
-    prompt: 'Rezar las Completas de hoy para antes de dormir, guíame paso a paso',
-    content: `
-      <div class="brev-rubrica">Examen de conciencia breve</div>
-      <div class="brev-verso" style="font-size:13.5px;color:var(--ink3);font-style:italic;line-height:1.8">
-        Dedica un momento a repasar tu día:<br>
-        ¿Cómo respondiste al amor de Dios?<br>
-        ¿Actuaste con caridad hacia los demás?
-      </div>
-      <div class="brev-rubrica">V. Dios mío, ven en mi auxilio.</div>
-      <div class="brev-verso"><span class="r">R/.</span> Señor, date prisa en socorrerme.</div>
-      <div class="brev-salmo-ref">Salmo 90 (91) — Bajo la protección de Dios</div>
-      <div class="brev-rubrica">Antífona: Guárdanos, Señor, mientras velamos.</div>
-      <div class="brev-verso">
-        El que habita bajo la protección del Altísimo,<br>
-        se aloja a la sombra del Omnipotente.<br>
-        Yo digo al Señor: «Tú eres mi refugio y fortaleza,<br>
-        mi Dios, en quien confío.»<br><br>
-        <span style="color:var(--ink4);font-size:13px;font-style:italic">Gloria al Padre... Amén.</span>
-      </div>
-      <div class="brev-salmo-ref">Antífona final de la Virgen — Salve Regina</div>
-      <div class="brev-verso" style="font-style:italic;font-size:14px;color:var(--ink3)">
-        Salve, Regina, Mater misericordiae;<br>
-        vita, dulcedo et spes nostra, salve.<br>
-        Ad te clamamus, exsules filii Hevae...<br><br>
-        <span style="color:var(--ink);font-style:normal">Salve, oh Reina, Madre de misericordia,<br>
-        vida, dulzura y esperanza nuestra, salve.</span>
-      </div>`
-  }
-};
-
-let horaActual = 'laudes';
-
-async function initBreviario() {
-  const now = new Date();
-  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
-
-  const dateEl = document.getElementById('brev-date-label');
-  if (dateEl) dateEl.textContent = fechaStr;
-
-  const contentEl = document.getElementById('brev-content');
-  if (!contentEl) return;
-
-  contentEl.innerHTML = `<div style="text-align:center;padding:40px 20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
-    Cargando Laudes del ${fechaStr}...
-  </div>`;
-
-  try {
-    const resp = await fetch('/api/breviario');
-    const json = await resp.json();
-
-    if (json.ok && json.texto) {
-      // Renderizar secciones
-      const secciones = {
-        'HIMNO': 'Himno',
-        'SALMO_1': 'Salmo',
-        'SALMO_2': 'Salmo',
-        'CANTICO': 'Cántico',
-        'LECTURA_BREVE': 'Lectura breve',
-        'RESPONSORIO': 'Responsorio',
-        'BENEDICTUS': 'Cántico de Zacarías (Benedictus)',
-        'PRECES': 'Preces',
-        'ORACION': 'Oración conclusiva'
-      };
-
-      let html = `<div style="background:rgba(201,146,58,.08);border-radius:10px;padding:12px 16px;margin-bottom:20px;border-left:3px solid var(--ocre)">
-        <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre)">Laudes · Liturgia de las Horas</div>
-        <div style="font-family:'Playfair Display',serif;font-size:14px;color:var(--brown);margin-top:3px">${json.fecha}</div>
-      </div>`;
-
-      const keys = Object.keys(secciones);
-      const texto = json.texto;
-
-      for (let k = 0; k < keys.length; k++) {
-        const key = keys[k];
-        const marker = '---' + key + '---';
-        const nextMarker = k < keys.length - 1 ? '---' + keys[k+1] + '---' : null;
-
-        let startIdx = texto.indexOf(marker);
-        if (startIdx === -1) continue;
-        startIdx += marker.length;
-
-        let endIdx = texto.length;
-        if (nextMarker) {
-          const ni = texto.indexOf(nextMarker, startIdx);
-          if (ni !== -1) endIdx = ni;
-        }
-
-        const secTexto = texto.slice(startIdx, endIdx).trim();
-        if (!secTexto) continue;
-
-        html += `<div style="margin-bottom:20px">
-          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;
-               letter-spacing:.1em;color:var(--brown);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
-            ${secciones[key]}
-          </div>
-          <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(secTexto)}</div>
-        </div>`;
-      }
-
-      // Si no hay marcadores, mostrar texto completo
-      if (!json.texto.includes('---')) {
-        html += `<div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(json.texto)}</div>`;
-      }
-
-      contentEl.innerHTML = html;
-    } else {
-      throw new Error(json.error || 'Sin datos');
-    }
-  } catch(e) {
-    contentEl.innerHTML = `<div style="padding:20px;text-align:center">
-      <p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;margin-bottom:16px">
-        No se pudieron cargar los Laudes. Intenta de nuevo.
-      </p>
-      <button onclick="initBreviario()" style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Lora',serif;cursor:pointer">
-        Reintentar
-      </button>
-    </div>`;
-  }
-}
-
-function selectHora(hora, el) {
-  horaActual = hora;
-  document.querySelectorAll('.hora-pill').forEach(p => p.classList.remove('on'));
-  el.classList.add('on');
-  renderHora(hora);
-}
-
-function renderHora(hora) {
-  const h = HORAS_DATA[hora];
-  document.getElementById('brev-content').innerHTML = h.content;
-  document.getElementById('brev-guided-btn').onclick = () => {
-    closePanel('breviario');
-    setTimeout(() => sendChip(h.prompt), 350);
-  };
-}
-
-function exportBrevPDF() {
-  closeView();
-  setTimeout(() => sendChip('Exportar las ' + HORAS_DATA[horaActual].nombre + ' de hoy en PDF con formato litúrgico'), 350);
-}
-
-// ── LECTURAS REALES DESDE API ──────────────────
-async function loadLecturasReales() {
-  closeSb();
-  // Mostrar vista de lecturas directamente en el frame principal
-  openView('lecturas');
-}
-
+// ── Lecturas del día ──
 async function initLecturas() {
   const container = document.getElementById('lecturas-content');
   const dateEl = document.getElementById('lecturas-date');
@@ -1068,321 +340,242 @@ async function initLecturas() {
   const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
   if (dateEl) dateEl.textContent = fechaStr.toUpperCase();
 
-  container.innerHTML = `<div style="text-align:center;padding:40px 20px">
-    <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--brown);margin-bottom:8px">Cargando lecturas del ${fechaStr}</div>
-    <div style="font-family:'Lora',serif;font-size:13px;color:var(--ink4);font-style:italic">Conectando con el servidor litúrgico...</div>
+  container.innerHTML = `<div style="text-align:center;padding:40px 20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
+    Cargando lecturas del ${fechaStr}...
   </div>`;
 
   try {
     const resp = await fetch('/api/lecturas-dia');
     const json = await resp.json();
+    if (!json.ok || !json.texto) throw new Error(json.error || 'Sin datos');
 
-    if (json.ok && json.texto) {
-      // Servidor devolvió texto estructurado con ---ETIQUETA---
-      container.innerHTML = buildLecturasFromText(json.texto, json.fecha || fechaStr);
-    } else if (json.ok && json.lecturas) {
-      // Formato con .lecturas
-      const l = json.lecturas;
-      if (l.texto) {
-        container.innerHTML = buildLecturasFromText(l.texto, l.fecha || fechaStr);
-      } else if (l.data) {
-        container.innerHTML = buildLecturasHTML(l.data, fechaStr);
-      } else {
-        throw new Error('Formato inesperado');
+    const secciones = [
+      { key: 'PRIMERA_LECTURA', titulo: 'Primera Lectura', color: '#8B1A1A' },
+      { key: 'SALMO', titulo: 'Salmo Responsorial', color: '#4A2080' },
+      { key: 'SEGUNDA_LECTURA', titulo: 'Segunda Lectura', color: '#8B1A1A' },
+      { key: 'EVANGELIO', titulo: 'Evangelio', color: '#1E6B3A' },
+    ];
+
+    let html = `<div style="background:rgba(201,146,58,.08);border-radius:10px;padding:12px 16px;margin-bottom:20px;border-left:3px solid var(--ocre)">
+      <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre)">Lecturas de la Misa del Día</div>
+      <div style="font-family:'Playfair Display',serif;font-size:14px;color:var(--brown);margin-top:3px">${fechaStr}</div>
+    </div>`;
+
+    let found = false;
+    for (let k = 0; k < secciones.length; k++) {
+      const { key, titulo, color } = secciones[k];
+      const marker = '---' + key + '---';
+      let si = json.texto.indexOf(marker);
+      if (si === -1) continue;
+      found = true;
+      si += marker.length;
+
+      let ei = json.texto.length;
+      for (let j = k + 1; j < secciones.length; j++) {
+        const ni = json.texto.indexOf('---' + secciones[j].key + '---', si);
+        if (ni !== -1) { ei = ni; break; }
       }
-    } else {
-      throw new Error(json.error || 'Sin datos');
-    }
-  } catch(e) {
-    console.error('Error lecturas:', e);
-    container.innerHTML = `
-      <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:24px;text-align:center">
-        <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--brown);margin-bottom:8px">
-          Lecturas no disponibles en este momento
+
+      const secTexto = json.texto.slice(si, ei).trim();
+      if (!secTexto) continue;
+
+      html += `<div style="margin-bottom:24px">
+        <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;
+             letter-spacing:.1em;color:${color};margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+          ${titulo}
         </div>
-        <div style="font-family:'Lora',serif;font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:16px">
-          Puedes pedirlas directamente al asistente
-        </div>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button onclick="closeView();setTimeout(()=>sendChip('Dame las lecturas bíblicas completas de la misa de hoy ${fechaStr} — Primera Lectura, Salmo y Evangelio con los textos completos'),350)"
-            style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-family:'Lora',serif;font-size:13px;cursor:pointer">
-            📖 Pedir al asistente
-          </button>
-          <a href="https://www.vaticannews.va/es/palabra-de-dios.html" target="_blank"
-            style="background:transparent;color:var(--brown);border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-family:'Lora',serif;font-size:13px;text-decoration:none;display:inline-flex;align-items:center">
-            🌐 Vatican News
-          </a>
-        </div>
+        <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(secTexto)}</div>
       </div>`;
-  }
-}
-
-function buildLecturasFromText(text, fechaStr) {
-  let html = '';
-  // Parsear por secciones ---ETIQUETA---
-  const sections = text.split(/---([A-Z_]+)---/);
-
-  for (let i = 1; i < sections.length; i += 2) {
-    const tag = sections[i];
-    const body = (sections[i+1] || '').trim();
-    if (!body) continue;
-
-    const lines = body.split('\n');
-    const refLine = lines.find(l => l.startsWith('Referencia:'));
-    const ref = refLine ? refLine.replace('Referencia:', '').trim() : '';
-    const estrLine = lines.find(l => l.startsWith('Estribillo:'));
-    const estr = estrLine ? estrLine.replace('Estribillo:', '').trim() : '';
-    const texto = lines.filter(l =>
-      !l.startsWith('Referencia:') && !l.startsWith('Estribillo:')
-    ).join('\n').trim();
-
-    if (tag === 'PRIMERA_LECTURA') {
-      html += lecturBlock('Primera Lectura', ref, '', texto, '#8B1A1A');
-    } else if (tag === 'SALMO') {
-      html += salmoBlock(ref, estr, texto);
-    } else if (tag === 'SEGUNDA_LECTURA') {
-      html += lecturBlock('Segunda Lectura', ref, '', texto, '#8B1A1A');
-    } else if (tag === 'EVANGELIO') {
-      html += lecturBlock('Evangelio', ref, '', texto, '#1E6B3A');
     }
-  }
 
-  // Si no parseó bien, mostrar el texto formateado directamente
-  if (!html) {
-    html = `<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);font-style:italic">
-      ${parseMarkdown(text)}
+    if (!found) {
+      html += `<div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(json.texto)}</div>`;
+    }
+
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div style="padding:20px;text-align:center">
+      <p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;margin-bottom:16px">
+        No se pudieron cargar las lecturas. Intenta de nuevo.
+      </p>
+      <button onclick="initLecturas()" style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Lora',serif;cursor:pointer">
+        Reintentar
+      </button>
     </div>`;
   }
-
-  return html;
 }
 
-function buildLecturasHTML(data, fechaStr) {
-  let html = '';
-  // Manejar diferentes estructuras de la API AELF
-  const lectures = data.messes || data.lectures || data.messes_du_jour || [];
-  
-  if (Array.isArray(lectures) && lectures.length > 0) {
-    lectures.forEach(item => {
-      const type = (item.type || item.key || '').toLowerCase();
-      const ref = item.ref || item.reference || '';
-      const text = item.text || item.long_text || item.short_text || '';
-      const intro = item.intro_text || '';
-      
-      if (type.includes('lecture_1') || type.includes('reading_1') || type === 'lecture 1') {
-        html += lecturBlock('Primera Lectura', ref, intro, text, '#8B1A1A');
-      } else if (type.includes('psaume') || type.includes('psalm')) {
-        html += salmoBlock(ref, item.refrain_text || '', text);
-      } else if (type.includes('lecture_2') || type.includes('reading_2')) {
-        html += lecturBlock('Segunda Lectura', ref, intro, text, '#8B1A1A');
-      } else if (type.includes('evangile') || type.includes('gospel') || type.includes('evangelio')) {
-        html += lecturBlock('Evangelio', ref, intro, text, '#1E6B3A');
+// ── Breviario Laudes ──
+async function initBreviario() {
+  const container = document.getElementById('brev-content');
+  const dateEl = document.getElementById('brev-date-label');
+  if (!container) return;
+
+  const now = new Date();
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+  if (dateEl) dateEl.textContent = fechaStr.toUpperCase();
+
+  container.innerHTML = `<div style="text-align:center;padding:40px 20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
+    Cargando Laudes del ${fechaStr}...
+  </div>`;
+
+  try {
+    const resp = await fetch('/api/breviario');
+    const json = await resp.json();
+    if (!json.ok || !json.texto) throw new Error(json.error || 'Sin datos');
+
+    const secciones = [
+      { key: 'HIMNO', titulo: 'Himno', color: '#4A2080' },
+      { key: 'SALMO_1', titulo: 'Salmo', color: '#1E6B3A' },
+      { key: 'SALMO_2', titulo: 'Salmo', color: '#1E6B3A' },
+      { key: 'CANTICO', titulo: 'Cántico', color: '#7A5230' },
+      { key: 'LECTURA_BREVE', titulo: 'Lectura breve', color: '#8B1A1A' },
+      { key: 'RESPONSORIO', titulo: 'Responsorio', color: '#4A2080' },
+      { key: 'BENEDICTUS', titulo: 'Cántico de Zacarías (Benedictus)', color: '#C9923A' },
+      { key: 'PRECES', titulo: 'Preces', color: '#5C3D1E' },
+      { key: 'ORACION', titulo: 'Oración conclusiva', color: '#8B1A1A' },
+    ];
+
+    let html = `<div style="background:rgba(201,146,58,.08);border-radius:10px;padding:12px 16px;margin-bottom:20px;border-left:3px solid var(--ocre)">
+      <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre)">Laudes · Liturgia de las Horas</div>
+      <div style="font-family:'Playfair Display',serif;font-size:14px;color:var(--brown);margin-top:3px">${fechaStr}</div>
+    </div>`;
+
+    const texto = json.texto;
+    const keys = secciones.map(s => s.key);
+
+    for (let k = 0; k < secciones.length; k++) {
+      const { key, titulo, color } = secciones[k];
+      const marker = '---' + key + '---';
+      let si = texto.indexOf(marker);
+      if (si === -1) continue;
+      si += marker.length;
+
+      let ei = texto.length;
+      for (let j = k + 1; j < secciones.length; j++) {
+        const ni = texto.indexOf('---' + keys[j] + '---', si);
+        if (ni !== -1) { ei = ni; break; }
       }
-    });
-  }
-  
-  if (!html) html = buildLecturasFromAI('', fechaStr);
-  return html;
-}
 
-function buildLecturasFromAI(aiText, fechaStr) {
-  if (!aiText) return '<div style="padding:20px;color:var(--ink4);font-family:Lora,serif;text-align:center;font-style:italic">Sin datos disponibles</div>';
-  
-  let html = '';
-  // Parsear formato especial ##SECCION##
-  const parts = aiText.split(/##([A-Z_]+)##/);
-  let current = '';
-  
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i].trim();
-    if (!part) continue;
-    
-    if (part === 'PRIMERA_LECTURA') { current = 'primera'; continue; }
-    if (part === 'SALMO') { current = 'salmo'; continue; }
-    if (part === 'SEGUNDA_LECTURA') { current = 'segunda'; continue; }
-    if (part === 'EVANGELIO') { current = 'evangelio'; continue; }
-    
-    // Extraer referencia y texto
-    const refMatch = part.match(/Referencia:\s*(.+)/);
-    const textoMatch = part.match(/Texto:\s*([\s\S]+?)(?=Estribillo:|$)/);
-    const estrMatch = part.match(/Estribillo:\s*(.+)/);
-    const ref = refMatch ? refMatch[1].trim() : '';
-    const texto = textoMatch ? textoMatch[1].trim() : part;
-    
-    if (current === 'primera') html += lecturBlock('Primera Lectura', ref, '', texto, '#8B1A1A');
-    else if (current === 'salmo') html += salmoBlock(ref, estrMatch ? estrMatch[1] : '', texto);
-    else if (current === 'segunda') html += lecturBlock('Segunda Lectura', ref, '', texto, '#8B1A1A');
-    else if (current === 'evangelio') html += lecturBlock('Evangelio', ref, '', texto, '#1E6B3A');
-  }
-  
-  if (!html) {
-    // Fallback: mostrar el texto de la IA formateado
-    html = `<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;font-family:Lora,serif;font-size:14.5px;line-height:1.9;color:var(--ink)">
-      ${parseMarkdown(aiText)}
+      const secTexto = texto.slice(si, ei).trim();
+      if (!secTexto) continue;
+
+      html += `<div style="margin-bottom:20px">
+        <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;
+             letter-spacing:.1em;color:${color};margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+          ${titulo}
+        </div>
+        <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(secTexto)}</div>
+      </div>`;
+    }
+
+    if (!texto.includes('---')) {
+      html += `<div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(texto)}</div>`;
+    }
+
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div style="padding:20px;text-align:center">
+      <p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;margin-bottom:16px">
+        No se pudieron cargar los Laudes. Intenta de nuevo.
+      </p>
+      <button onclick="initBreviario()" style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Lora',serif;cursor:pointer">
+        Reintentar
+      </button>
     </div>`;
   }
-  
-  return html;
 }
 
-function lecturBlock(titulo, ref, intro, texto, color) {
-  return `<div style="margin-bottom:20px">
-    <div style="font-family:Inter,sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:${color};margin-bottom:6px">${titulo}</div>
-    ${ref ? `<div style="font-family:Lora,serif;font-size:13px;font-style:italic;color:var(--ocre);font-weight:500;margin-bottom:8px">${ref}</div>` : ''}
-    ${intro ? `<div style="font-family:Lora,serif;font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:8px">${intro}</div>` : ''}
-    <div style="font-family:Playfair Display,Georgia,serif;font-size:16px;line-height:2;color:var(--ink);font-style:italic">${texto.replace(/\n/g,'<br>')}</div>
-    <div style="margin-top:10px;font-family:Inter,sans-serif;font-size:10px;font-weight:600;color:${color};text-transform:uppercase;letter-spacing:.08em">Palabra de Dios</div>
-    <div style="border-top:1px solid var(--border);margin-top:12px"></div>
-  </div>`;
+// ── Misal del día ──
+function initMisal() {
+  const container = document.getElementById('misal-content');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="background:rgba(201,146,58,.08);border-radius:10px;padding:12px 16px;margin-bottom:20px;border-left:3px solid var(--ocre)">
+      <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre)">Ordinario de la Misa</div>
+    </div>
+    ${misalOrdinario()}`;
 }
 
-function salmoBlock(ref, estribillo, texto) {
-  return `<div style="margin-bottom:20px">
-    <div style="font-family:Inter,sans-serif;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:#4A2080;margin-bottom:6px">Salmo Responsorial</div>
-    ${ref ? `<div style="font-family:Lora,serif;font-size:13px;font-style:italic;color:var(--ocre);margin-bottom:8px">${ref}</div>` : ''}
-    ${estribillo ? `<div style="font-family:Playfair Display,Georgia,serif;font-size:15px;color:#8B1A1A;font-style:italic;margin-bottom:8px;padding:8px 12px;background:rgba(139,26,26,.05);border-left:3px solid #8B1A1A;border-radius:0 6px 6px 0">R/. ${estribillo}</div>` : ''}
-    <div style="font-family:Playfair Display,Georgia,serif;font-size:15px;line-height:2;color:var(--ink);font-style:italic">${texto.replace(/\n/g,'<br>')}</div>
-    <div style="border-top:1px solid var(--border);margin-top:12px"></div>
-  </div>`;
+function misalOrdinario() {
+  return `
+<div style="margin-bottom:24px">
+  <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8B1A1A;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Ritos iniciales</div>
+  <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">
+    <strong>Sacerdote:</strong> En el nombre del Padre, y del Hijo, y del Espíritu Santo.<br>
+    <strong>Pueblo: Amén.</strong><br><br>
+    <strong>Sacerdote:</strong> La gracia de nuestro Señor Jesucristo, el amor del Padre y la comunión del Espíritu Santo estén con todos vosotros.<br>
+    <strong>Pueblo: Y con tu espíritu.</strong>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8B1A1A;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Acto penitencial</div>
+  <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">
+    <strong>Todos:</strong> Yo confieso ante Dios todopoderoso y ante vosotros, hermanos, que he pecado mucho de pensamiento, palabra, obra y omisión. Por mi culpa, por mi culpa, por mi grande culpa. Por eso ruego a Santa María, siempre Virgen, a los ángeles, a los santos y a vosotros, hermanos, que intercedáis por mí ante Dios, nuestro Señor.
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#4A2080;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Gloria</div>
+  <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">
+    Gloria a Dios en el cielo, y en la tierra paz a los hombres que ama el Señor. Por tu inmensa gloria te alabamos, te bendecimos, te adoramos, te glorificamos, te damos gracias, Señor Dios, Rey celestial, Dios Padre todopoderoso.<br><br>
+    Señor, Hijo único, Jesucristo, Señor Dios, Cordero de Dios, Hijo del Padre; tú que quitas el pecado del mundo, ten piedad de nosotros; tú que quitas el pecado del mundo, atiende nuestra súplica; tú que estás sentado a la derecha del Padre, ten piedad de nosotros.<br><br>
+    Porque solo tú eres Santo, solo tú Señor, solo tú Altísimo, Jesucristo, con el Espíritu Santo en la gloria de Dios Padre. <strong>Amén.</strong>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#1E6B3A;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Liturgia de la Palabra</div>
+  <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">
+    <em>Primera Lectura — Lector:</em> Palabra de Dios. <strong>Pueblo: Te alabamos, Señor.</strong><br>
+    <em>Salmo responsorial.</em><br>
+    <em>Evangelio —</em> <strong>Pueblo: Gloria a ti, Señor Jesucristo.</strong><br>
+    <em>Al final:</em> Palabra del Señor. <strong>Pueblo: Gloria a ti, Señor Jesucristo.</strong>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#5C3D1E;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Credo</div>
+  <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">
+    Creo en un solo Dios, Padre todopoderoso, Creador del cielo y de la tierra, de todo lo visible y lo invisible. Creo en un solo Señor, Jesucristo, Hijo único de Dios, nacido del Padre antes de todos los siglos: Dios de Dios, Luz de Luz, Dios verdadero de Dios verdadero, engendrado, no creado, de la misma naturaleza del Padre, por quien todo fue hecho; que por nosotros, los hombres, y por nuestra salvación bajó del cielo, y por obra del Espíritu Santo se encarnó de María, la Virgen, y se hizo hombre; y por nuestra causa fue crucificado en tiempos de Poncio Pilato, padeció y fue sepultado, y resucitó al tercer día, según las Escrituras, y subió al cielo, y está sentado a la derecha del Padre; y de nuevo vendrá con gloria para juzgar a vivos y muertos, y su reino no tendrá fin. Creo en el Espíritu Santo, Señor y dador de vida, que procede del Padre y del Hijo, que con el Padre y el Hijo recibe una misma adoración y gloria, y que habló por los profetas. Creo en la Iglesia, que es una, santa, católica y apostólica. Confieso que hay un solo Bautismo para el perdón de los pecados. Espero la resurrección de los muertos y la vida del mundo futuro. <strong>Amén.</strong>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#C9923A;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Consagración</div>
+  <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">
+    <strong>ESTO ES MI CUERPO, QUE SERÁ ENTREGADO POR VOSOTROS.</strong><br><br>
+    <strong>ESTE ES EL CÁLIZ DE MI SANGRE, SANGRE DE LA ALIANZA NUEVA Y ETERNA, QUE SERÁ DERRAMADA POR VOSOTROS Y POR TODOS LOS HOMBRES PARA EL PERDÓN DE LOS PECADOS. HACED ESTO EN CONMEMORACIÓN MÍA.</strong><br><br>
+    <strong>Pueblo: Anunciamos tu muerte, proclamamos tu resurrección. ¡Ven, Señor Jesús!</strong>
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#5C3D1E;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Padrenuestro y Comunión</div>
+  <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">
+    Padre nuestro, que estás en el cielo, santificado sea tu Nombre; venga a nosotros tu reino; hágase tu voluntad en la tierra como en el cielo. Danos hoy nuestro pan de cada día; perdona nuestras ofensas, como también nosotros perdonamos a los que nos ofenden; no nos dejes caer en la tentación, y líbranos del mal.<br><br>
+    <strong>Cordero de Dios</strong>, que quitas el pecado del mundo, ten piedad de nosotros. (×2) ...danos la paz.<br><br>
+    <strong>Pueblo:</strong> Señor, no soy digno de que entres en mi casa, pero una palabra tuya bastará para sanarme.
+  </div>
+</div>
+
+<div style="margin-bottom:24px">
+  <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8B1A1A;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Bendición y despedida</div>
+  <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">
+    <strong>Sacerdote:</strong> La bendición de Dios todopoderoso, Padre, Hijo ✞ y Espíritu Santo, descienda sobre vosotros.<br>
+    <strong>Pueblo: Amén.</strong><br><br>
+    <strong>Sacerdote:</strong> Podéis ir en paz.<br>
+    <strong>Pueblo: Demos gracias a Dios.</strong>
+  </div>
+</div>`;
 }
 
-// ── CALENDARIO ────────────────────────────────
-
-const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-
-const FEASTS = {
-  '3-13': {n:'San Rodrigo de Córdoba',t:'feria',d:'Mártir de Córdoba (857). Murió decapitado junto a San Salomón.'},
-  '3-17': {n:'San Patricio',t:'memoria',d:'Apóstol de Irlanda. Patrón nacional de Irlanda.'},
-  '3-19': {n:'San José, Esposo de María',t:'solemnidad',d:'Patrono de la Iglesia Universal. Solemnidad de primer rango.'},
-  '3-25': {n:'Anunciación del Señor',t:'solemnidad',d:'El ángel Gabriel anuncia a María. El Verbo se hace carne.'},
-  '4-2':  {n:'San Francisco de Paula',t:'memoria',d:'Fundador de los Mínimos. Ermitaño calabrés.'},
-  '4-5':  {n:'Domingo de Ramos',t:'semana-santa',d:'Entrada triunfal de Jesús en Jerusalén. Inicio de la Semana Santa.'},
-  '4-9':  {n:'Jueves Santo',t:'semana-santa',d:'Institución de la Eucaristía y el Sacerdocio ministerial. Triduo Pascual.'},
-  '4-10': {n:'Viernes Santo',t:'semana-santa',d:'Pasión y Muerte del Señor. Ayuno y abstinencia obligatorios.'},
-  '4-11': {n:'Sábado Santo',t:'semana-santa',d:'Vigilia Pascual. La noche más sagrada del año.'},
-  '4-12': {n:'Domingo de Resurrección — Pascua',t:'pascua',d:'¡Alleluia! Cristo ha resucitado. Solemnidad de Solemnidades.'},
-  '4-23': {n:'San Jorge',t:'memoria',d:'Mártir. Patrón de Inglaterra, Cataluña, Portugal.'},
-  '4-29': {n:'Santa Catalina de Siena',t:'fiesta',d:'Doctora de la Iglesia. Copatrona de Europa.'},
-  '5-1':  {n:'San José Obrero',t:'memoria',d:'Dignidad del trabajo humano. Creado por Pío XII en 1955.'},
-  '5-13': {n:'Nuestra Señora de Fátima',t:'memoria',d:'Primera aparición en 1917. El 13 de mayo de 1981, atentado a JPII.'},
-  '5-26': {n:'San Felipe Neri',t:'memoria',d:'El Santo Apóstol de Roma. Fundó el Oratorio.'},
-  '6-13': {n:'San Antonio de Padua',t:'memoria',d:'Doctor de la Iglesia. Patrono para encontrar objetos perdidos.'},
-  '6-24': {n:'Natividad de San Juan Bautista',t:'solemnidad',d:'El Precursor. Único nacimiento celebrado como solemnidad además de Jesús.'},
-  '6-29': {n:'Santos Pedro y Pablo',t:'solemnidad',d:'Los dos pilares de la Iglesia. Mártires en Roma bajo Nerón.'},
-  '7-22': {n:'Santa María Magdalena',t:'fiesta',d:'Apóstola de los Apóstoles. Primera testigo de la Resurrección.'},
-  '7-25': {n:'Santiago Apóstol',t:'fiesta',d:'Patrón de España. Su tumba en Santiago de Compostela.'},
-  '8-6':  {n:'Transfiguración del Señor',t:'fiesta',d:'Jesús se transfigura ante Pedro, Santiago y Juan.'},
-  '8-15': {n:'Asunción de María',t:'solemnidad',d:'Dogma definido por Pío XII en 1950. María asunta en cuerpo y alma.'},
-  '8-28': {n:'San Agustín de Hipona',t:'memoria',d:'Doctor de la Iglesia. «Nos hiciste para Ti, Señor.»'},
-  '9-8':  {n:'Natividad de María',t:'fiesta',d:'Nacimiento de la Virgen María.'},
-  '10-1': {n:'Santa Teresita del Niño Jesús',t:'memoria',d:'Doctora de la Iglesia. La pequeña vía espiritual.'},
-  '10-4': {n:'San Francisco de Asís',t:'memoria',d:'El poverello. Fundador de los Franciscanos. Estigmatizado.'},
-  '10-7': {n:'Nuestra Señora del Rosario',t:'memoria',d:'En memoria de la batalla de Lepanto (1571).'},
-  '10-15':{n:'Santa Teresa de Ávila',t:'fiesta',d:'Doctora de la Iglesia. Reformó el Carmelo. Mística extraordinaria.'},
-  '11-1': {n:'Todos los Santos',t:'solemnidad',d:'Celebración de todos los santos canonizados y no canonizados.'},
-  '11-2': {n:'Conmemoración de los Fieles Difuntos',t:'conmemoracion',d:'Día de los muertos. Oración por las almas del Purgatorio.'},
-  '12-8': {n:'Inmaculada Concepción de María',t:'solemnidad',d:'Dogma de 1854. María concebida sin pecado original.'},
-  '12-12':{n:'Nuestra Señora de Guadalupe',t:'fiesta',d:'Patrona de América. Aparición a Juan Diego (1531).'},
-  '12-25':{n:'Natividad del Señor',t:'solemnidad',d:'Navidad. «El Verbo se hizo carne y habitó entre nosotros.»'},
-};
-
-const TIPO_STYLES = {
-  solemnidad: {bg:'rgba(139,26,26,.08)',c:'#8B1A1A',b:'rgba(139,26,26,.2)',label:'Solemnidad',dot:'#8B1A1A'},
-  fiesta:      {bg:'var(--ocre-bg)',c:'var(--brown)',b:'var(--border2)',label:'Fiesta',dot:'#C9923A'},
-  memoria:     {bg:'rgba(74,32,128,.08)',c:'#4A2080',b:'rgba(74,32,128,.2)',label:'Memoria',dot:'#4A2080'},
-  'semana-santa':{bg:'rgba(139,26,26,.08)',c:'#8B1A1A',b:'rgba(139,26,26,.2)',label:'Semana Santa',dot:'#8B1A1A'},
-  pascua:      {bg:'rgba(30,107,58,.08)',c:'#1E6B3A',b:'rgba(30,107,58,.2)',label:'Pascua',dot:'#1E6B3A'},
-  conmemoracion:{bg:'var(--bg3)',c:'var(--ink3)',b:'var(--border)',label:'Conmemoración',dot:'#888'},
-  feria:       {bg:'var(--bg3)',c:'var(--ink3)',b:'var(--border)',label:'Feria',dot:'#D4C098'},
-};
-
-let calYear = new Date().getFullYear();
-let calMonth = new Date().getMonth();
-
-function initCalendario() {
-  renderCalendario();
-  // Mostrar hoy por defecto
-  const today = new Date();
-  const key = `${today.getMonth()+1}-${today.getDate()}`;
-  showCalDetail(today.getDate(), today.getMonth()+1, today.getFullYear(), FEASTS[key]);
-}
-
-function renderCalendario() {
-  document.getElementById('cal-month-title').textContent = `${MESES[calMonth]} ${calYear}`;
-  // Tiempo litúrgico aproximado
-  const tiempos = getTiempoLiturgico(calYear, calMonth);
-  document.getElementById('tiempo-pill').textContent = tiempos;
-
-  const first = new Date(calYear, calMonth, 1).getDay();
-  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-  const today = new Date();
-  const grid = document.getElementById('cal-grid');
-  grid.innerHTML = '';
-
-  // Celdas vacías iniciales
-  for (let i = 0; i < first; i++) {
-    const empty = document.createElement('div');
-    empty.className = 'cal-day';
-    grid.appendChild(empty);
-  }
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dow = (first + d - 1) % 7;
-    const isToday = d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
-    const key = `${calMonth+1}-${d}`;
-    const feast = FEASTS[key];
-    const dotColor = feast ? (TIPO_STYLES[feast.t]?.dot || '#D4C098') : '#D4C098';
-
-    const el = document.createElement('div');
-    el.className = 'cal-day' + (dow === 0 ? ' sunday' : '') + (isToday ? ' today' : '');
-    const shortName = feast ? feast.n.split(' ').slice(-1)[0].slice(0,5) : '';
-    el.innerHTML = `<span class="cal-day-num">${d}</span>
-      <div class="cal-day-dot" style="background:${dotColor}"></div>
-      ${feast ? `<span class="cal-day-name">${shortName}</span>` : ''}`;
-    el.onclick = () => showCalDetail(d, calMonth + 1, calYear, feast);
-    grid.appendChild(el);
-  }
-}
-
-function showCalDetail(d, m, y, feast) {
-  const dow = new Date(y, m-1, d).getDay();
-  const el = document.getElementById('cal-detail');
-  const ts = feast ? (TIPO_STYLES[feast.t] || TIPO_STYLES.feria) : TIPO_STYLES.feria;
-  const title = feast ? feast.n : 'Feria — Tiempo Ordinario';
-  const desc = feast ? feast.d : 'Día ordinario del calendario litúrgico.';
-
-  el.innerHTML = `
-    <div class="cal-detail-date">${DIAS_SEMANA[dow].toUpperCase()} ${d} DE ${MESES[m-1].toUpperCase()} ${y}</div>
-    <div class="cal-detail-title">${title}</div>
-    <div class="cal-detail-desc">${desc}</div>
-    <div class="cal-detail-tags">
-      <span class="cal-tag" style="background:${ts.bg};color:${ts.c};border:1px solid ${ts.b}">${ts.label}</span>
-    </div>`;
-}
-
-function changeMonth(dir) {
-  calMonth += dir;
-  if (calMonth > 11) { calMonth = 0; calYear++; }
-  if (calMonth < 0) { calMonth = 11; calYear--; }
-  renderCalendario();
-}
-
-function getTiempoLiturgico(year, month) {
-  const m = month + 1;
-  if (m === 12 && new Date(year, month, 1).getDate() >= 1) return 'Adviento / Navidad';
-  if (m === 1) return 'Tiempo de Navidad / Ordinario';
-  if (m === 2 || m === 3) return 'Tiempo de Cuaresma';
-  if (m === 4 && new Date(year, month, 12).getDay() === 0) return 'Tiempo Pascual';
-  if (m >= 5 && m <= 11) return 'Tiempo Ordinario';
-  return 'Tiempo Ordinario';
-}
-
-// ══════════════════════════════════════════
-// MODAL DE CITAS — CIC y Biblia dentro de la app
-// ══════════════════════════════════════════
+// ── Modal de citas ──
 async function openCitaModal(tipo, ref) {
-  // Crear modal si no existe
   let modal = document.getElementById('cita-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -1395,9 +588,7 @@ async function openCitaModal(tipo, ref) {
           <div id="cita-title" style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--brown)"></div>
           <button onclick="closeCitaModal()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:13px;color:var(--ink4)">✕</button>
         </div>
-        <div id="cita-body" style="flex:1;overflow-y:auto;padding:16px 18px;-webkit-overflow-scrolling:touch">
-          <div style="text-align:center;padding:20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">Cargando...</div>
-        </div>
+        <div id="cita-body" style="flex:1;overflow-y:auto;padding:16px 18px;-webkit-overflow-scrolling:touch"></div>
         <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
           <a id="cita-ext" href="#" target="_blank" style="flex:1;padding:9px;background:var(--bg3);color:var(--brown);border:1px solid var(--border2);border-radius:8px;font-family:'Lora',serif;font-size:13px;text-decoration:none;text-align:center">Ver fuente ↗</a>
           <button onclick="closeCitaModal()" style="padding:9px 18px;background:var(--brown);color:#fff;border:none;border-radius:8px;font-family:'Lora',serif;font-size:13px;cursor:pointer">Cerrar</button>
@@ -1413,10 +604,8 @@ async function openCitaModal(tipo, ref) {
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 
-  // Desktop: centrado
-  const box = document.getElementById('cita-box');
   if (window.innerWidth >= 640) {
-    box.style.borderRadius = '14px';
+    document.getElementById('cita-box').style.cssText += ';border-radius:14px;max-width:560px';
     modal.style.alignItems = 'center';
   }
 
@@ -1428,49 +617,38 @@ async function openCitaModal(tipo, ref) {
     else if (n <= 421) page = 'p1s2_sp.html';
     else if (n <= 682) page = 'p1s2c5_sp.html';
     else if (n <= 975) page = 'p1s2c7_sp.html';
-    else if (n <= 1209) page = 'p2s1_sp.html';
     else if (n <= 1690) page = 'p2s2_sp.html';
     else if (n <= 1876) page = 'p3s1_sp.html';
     else if (n <= 2557) page = 'p3s2c1_sp.html';
     else page = 'p4_sp.html';
     extEl.href = `https://www.vatican.va/archive/catechism_sp/${page}`;
     extEl.textContent = 'Ver en Vatican.va ↗';
-    bodyEl.innerHTML = '<div style="text-align:center;padding:20px;font-family:\'Lora\',serif;color:var(--ink4);font-style:italic">Buscando artículo...</div>';
-
+    bodyEl.innerHTML = `<div style="text-align:center;padding:20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">Buscando artículo...</div>`;
     try {
       const r = await fetch(`/api/cic/${ref}`);
       const d = await r.json();
       if (d.ok && d.texto) {
-        bodyEl.innerHTML = `
-          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);margin-bottom:10px">
-            Catecismo de la Iglesia Católica · Art. ${ref}${d.fuente === 'dataset' ? ' · <span style="color:var(--green)">Dataset local</span>' : ''}
-          </div>
+        bodyEl.innerHTML = `<div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);margin-bottom:10px">CIC ${ref}${d.fuente==='dataset'?' · <span style="color:var(--green)">✓ Dataset</span>':''}</div>
           <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">${d.texto.split('\n').join('<br>')}</div>`;
       } else throw new Error();
     } catch(e) {
-      bodyEl.innerHTML = `<p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;text-align:center">
-        Consulta el artículo ${ref} directamente en Vatican.va</p>`;
+      bodyEl.innerHTML = `<p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;text-align:center;padding:20px">Consulta el artículo ${ref} en Vatican.va</p>`;
     }
 
   } else if (tipo === 'biblia') {
     titleEl.textContent = ref;
     extEl.href = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(ref)}&version=LBLA`;
     extEl.textContent = 'Ver en BibleGateway ↗';
-    bodyEl.innerHTML = '<div style="text-align:center;padding:20px;font-family:\'Lora\',serif;color:var(--ink4);font-style:italic">Buscando pasaje...</div>';
-
+    bodyEl.innerHTML = `<div style="text-align:center;padding:20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">Buscando pasaje...</div>`;
     try {
       const r = await fetch(`/api/biblia?ref=${encodeURIComponent(ref)}`);
       const d = await r.json();
       if (d.ok && d.texto) {
-        bodyEl.innerHTML = `
-          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);margin-bottom:10px">
-            ${ref} · Biblia de Jerusalén${d.fuente === 'dataset' ? ' · <span style="color:var(--green)">Dataset local</span>' : ''}
-          </div>
+        bodyEl.innerHTML = `<div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink4);margin-bottom:10px">${ref}${d.fuente==='dataset'?' · <span style="color:var(--green)">✓ Dataset</span>':''}</div>
           <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);font-style:italic">${d.texto.split('\n').join('<br>')}</div>`;
       } else throw new Error();
     } catch(e) {
-      bodyEl.innerHTML = `<p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;text-align:center">
-        Consulta ${ref} en BibleGateway.com</p>`;
+      bodyEl.innerHTML = `<p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;text-align:center;padding:20px">Consulta ${ref} en BibleGateway.com</p>`;
     }
   }
 }
@@ -1480,3 +658,42 @@ function closeCitaModal() {
   if (modal) modal.style.display = 'none';
   document.body.style.overflow = '';
 }
+
+// ── Donar ──
+function openDonate() {
+  document.getElementById('donate-modal').style.display = 'flex';
+}
+function closeDonate() {
+  document.getElementById('donate-modal').style.display = 'none';
+}
+function selectAmount(btn, amount) {
+  document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('paypal-link').href = `https://www.paypal.com/paypalme/schoolmarketing/${amount}`;
+}
+
+// ── Exportar PDF ──
+function exportPDF(btn) {
+  const bubble = btn.closest('.bubble-bot');
+  if (!bubble) return;
+  const text = bubble.innerText;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CatolicosGPT</title>
+    <style>body{font-family:Georgia,serif;max-width:700px;margin:40px auto;color:#18100A;line-height:1.8}
+    h1{color:#5C3D1E}h2,h3{color:#7A5230}</style></head>
+    <body><h1>CatolicosGPT</h1><pre style="white-space:pre-wrap;font-family:Georgia,serif">${esc(text)}</pre>
+    <script>window.print();window.close();</script></body></html>`);
+  win.document.close();
+}
+
+function copyText(btn) {
+  const bubble = btn.closest('.bubble-bot');
+  if (!bubble) return;
+  navigator.clipboard.writeText(bubble.innerText).then(() => {
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.innerHTML = '📋 Copiar'; }, 2000);
+  });
+}
+
+// Init
+renderHistory();
