@@ -91,6 +91,18 @@
           <div class="sb-row-sub">Ordinario de la Misa completo</div>
         </div>
       </div>
+
+      <div class="sb-row" onclick="openView('homilia');closeSb()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="7.5" cy="5" r="3" stroke="#8B1A1A" stroke-width="1.3"/>
+          <path d="M3 13c0-2.5 2-4.5 4.5-4.5S12 10.5 12 13" stroke="#8B1A1A" stroke-width="1.3" stroke-linecap="round"/>
+          <path d="M7.5 1v1M5 2l.5.8M10 2l-.5.8" stroke="#C9923A" stroke-width="1.1" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div class="sb-row-title">Homilía del día</div>
+          <div class="sb-row-sub">Reflexión pastoral · Fuentes actualizadas</div>
+        </div>
+      </div>
     </div>
 
     <a class="sb-donate" href="#" onclick="openDonate();closeSb();return false;">
@@ -177,6 +189,18 @@
         </div>
         <div class="view-body">
           <div id="misal-content" class="view-content-area"></div>
+        </div>
+      </div>
+
+      <!-- VISTA HOMILÍA -->
+      <div id="view-homilia" class="main-view" style="display:none">
+        <div class="view-header">
+          <button class="view-back" onclick="closeView()">← Volver</button>
+          <span class="view-title">🎙 Homilía del día</span>
+        </div>
+        <div class="view-body">
+          <div class="view-date" id="homilia-date"></div>
+          <div id="homilia-content" class="view-content-area"></div>
         </div>
       </div>
 

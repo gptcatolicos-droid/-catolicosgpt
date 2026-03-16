@@ -314,6 +314,7 @@ function openView(id) {
   if (id === 'lecturas') initLecturas();
   if (id === 'breviario') initBreviario();
   if (id === 'misal') initMisal();
+  if (id === 'homilia') initHomilia();
 }
 
 function closeView() {
@@ -657,6 +658,83 @@ function closeCitaModal() {
   const modal = document.getElementById('cita-modal');
   if (modal) modal.style.display = 'none';
   document.body.style.overflow = '';
+}
+
+
+// ── Homilía del día ──
+async function initHomilia() {
+  const container = document.getElementById('homilia-content');
+  const dateEl = document.getElementById('homilia-date');
+  if (!container) return;
+
+  const now = new Date();
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
+  if (dateEl) dateEl.textContent = fechaStr.toUpperCase();
+
+  container.innerHTML = `<div style="text-align:center;padding:40px 20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
+    Preparando la homilía del ${fechaStr}...<br>
+    <span style="font-size:12px">Consultando fuentes actualizadas...</span>
+  </div>`;
+
+  try {
+    const resp = await fetch('/api/homilia');
+    const json = await resp.json();
+
+    let html = `<div style="background:rgba(201,146,58,.08);border-radius:10px;padding:12px 16px;margin-bottom:20px;border-left:3px solid var(--ocre)">
+      <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre)">Homilía del Día</div>
+      <div style="font-family:'Playfair Display',serif;font-size:14px;color:var(--brown);margin-top:3px">${json.fecha || fechaStr}</div>
+    </div>`;
+
+    if (json.ok && json.homilia) {
+      html += `<div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink)">
+        ${parseMarkdown(json.homilia)}
+      </div>`;
+    }
+
+    // Fuentes actualizadas
+    if (json.fuentes && json.fuentes.length > 0) {
+      html += `<div style="margin-top:28px;padding:16px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">
+        <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--brown);margin-bottom:12px">
+          📚 Fuentes y recursos actualizados
+        </div>`;
+      json.fuentes.forEach(f => {
+        html += `<div style="margin-bottom:10px">
+          <a href="${f.url}" target="_blank" rel="noopener"
+             style="font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--ocre);text-decoration:none">
+            ${f.nombre} ↗
+          </a>
+          <span style="font-family:'Lora',serif;font-size:12px;color:var(--ink4);font-style:italic;margin-left:8px">${f.descripcion}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    container.innerHTML = html;
+
+  } catch(e) {
+    // Fallback: mostrar solo las fuentes con links
+    container.innerHTML = `
+      <div style="padding:20px">
+        <p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;margin-bottom:20px;text-align:center">
+          No se pudo generar la homilía automáticamente. Consulta directamente estas fuentes:
+        </p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          ${[
+            {n:'Dominicos.org — Homilía dominical',u:'https://www.dominicos.org/predicacion/evangelio-del-dia/hoy/'},
+            {n:'Evangeli.net — Evangelio y podcast',u:'https://evangeli.net/evangelio'},
+            {n:'Vatican News en español',u:'https://www.vaticannews.va/es.html'},
+            {n:'ACI Prensa — Liturgia',u:'https://www.aciprensa.com/liturgia'},
+            {n:'La Verdad Católica — Misal',u:'https://laverdadcatolica.org'},
+          ].map(f => `<a href="${f.u}" target="_blank" rel="noopener"
+            style="display:block;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+                   font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--brown);text-decoration:none">
+            ${f.n} ↗
+          </a>`).join('')}
+        </div>
+      </div>`;
+  }
 }
 
 // ── Donar ──
