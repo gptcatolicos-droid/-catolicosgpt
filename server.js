@@ -633,6 +633,350 @@ Incluye citas del Catecismo con formato [CIC XXXX] cuando sea relevante.`
 // ── Health ──
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '10.0' }));
 
+
+// ════════════════════════════════════════════════════
+// BLOG SEO — PROGRAMMATIC SEO
+// 115 páginas indexables, NO accesibles desde la app
+// Solo Google las encuentra → rankea por cada tema
+// ════════════════════════════════════════════════════
+const SEO_TOPICS = require('./seo-topics');
+
+// Cache de artículos generados (en memoria, se regenera si el servidor reinicia)
+const blogCache = {};
+
+// ── Función para generar artículo con GPT-4o ──
+async function generateBlogArticle(topic) {
+  if (blogCache[topic.slug]) return blogCache[topic.slug];
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 2000,
+      temperature: 0.3,
+      messages: [{
+        role: 'system',
+        content: `Eres un teólogo católico experto que escribe artículos de alta calidad para el sitio CatolicosGPT.
+Escribes en español claro, pastoral y bien fundamentado en el Magisterio.
+Siempre citas el Catecismo con el formato [CIC XXX] y la Biblia con [Libro cap,vers].
+Los artículos deben tener entre 800-1200 palabras, ser informativos y útiles para el lector.`
+      }, {
+        role: 'user',
+        content: `Escribe un artículo SEO completo sobre: "${topic.title}"
+
+El artículo debe incluir:
+
+## Introducción (2 párrafos)
+[Gancho que conecte con la vida del lector]
+
+## [Sección principal relacionada con el tema]
+[Contenido teológico sólido con citas del Catecismo y la Biblia]
+
+## [Segunda sección de profundización]
+[Más contenido, ejemplos prácticos]
+
+## Aplicación a la Vida Cristiana
+[Cómo vivir esto en la vida diaria]
+
+## Preguntas Frecuentes sobre ${topic.title.split('—')[0].trim()}
+- P: [Pregunta común]
+  R: [Respuesta concisa]
+- P: [Otra pregunta]
+  R: [Respuesta]
+
+## Conclusión
+[Cierre esperanzador con llamada a la oración]
+
+Incluye al menos 3 citas del Catecismo [CIC XXX] y 2 citas bíblicas [Libro cap,vers].
+Palabras clave a incluir naturalmente: ${topic.keywords.join(', ')}`
+      }]
+    });
+
+    const content = completion.choices[0].message.content;
+    const article = {
+      slug: topic.slug,
+      title: topic.title,
+      description: topic.description,
+      keywords: topic.keywords,
+      category: topic.category,
+      content,
+      generatedAt: new Date().toISOString(),
+      wordCount: content.split(' ').length
+    };
+    blogCache[topic.slug] = article;
+    return article;
+  } catch(e) {
+    console.error('[Blog] Error generando artículo:', topic.slug, e.message);
+    return null;
+  }
+}
+
+// ── HTML del artículo del blog ──
+function renderBlogHTML(topic, articleContent) {
+  const contentHTML = articleContent
+    .replace(/## (.+)/g, '<h2>$1</h2>')
+    .replace(/### (.+)/g, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\[CIC (\d+)\]/g, '<a href="https://catolicosgpt.com/?cic=$1" class="cic-link" target="_blank">CIC $1 ↗</a>')
+    .replace(/\[([A-Za-záéíóúñ]+ [\d,\.\-]+)\]/g, '<a href="https://catolicosgpt.com/?biblia=$1" class="bible-link" target="_blank">$1 ↗</a>')
+    .replace(/^- P: (.+)/gm, '<dt class="faq-q">$1</dt>')
+    .replace(/^  R: (.+)/gm, '<dd class="faq-a">$1</dd>')
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+
+  const relatedTopics = SEO_TOPICS
+    .filter(t => t.category === topic.category && t.slug !== topic.slug)
+    .slice(0, 4);
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${topic.title} | CatolicosGPT</title>
+  <meta name="description" content="${topic.description}">
+  <meta name="keywords" content="${topic.keywords.join(', ')}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://catolicosgpt.com/blog/${topic.slug}">
+
+  <meta property="og:title" content="${topic.title}">
+  <meta property="og:description" content="${topic.description}">
+  <meta property="og:url" content="https://catolicosgpt.com/blog/${topic.slug}">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="CatolicosGPT">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "${topic.title}",
+    "description": "${topic.description}",
+    "keywords": "${topic.keywords.join(', ')}",
+    "url": "https://catolicosgpt.com/blog/${topic.slug}",
+    "publisher": {
+      "@type": "Organization",
+      "name": "CatolicosGPT",
+      "url": "https://catolicosgpt.com"
+    },
+    "inLanguage": "es",
+    "about": {
+      "@type": "Thing",
+      "name": "Doctrina Católica"
+    }
+  }
+  </script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H8CB7M80S3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H8CB7M80S3');
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Georgia', serif; color: #18100A; background: #FAF7F0; line-height: 1.8; }
+    .container { max-width: 760px; margin: 0 auto; padding: 20px 16px 60px; }
+    .site-header { background: #5C3D1E; padding: 12px 16px; text-align: center; margin-bottom: 32px; }
+    .site-header a { color: #F5E6D0; text-decoration: none; font-family: 'Georgia', serif; font-size: 18px; font-weight: bold; }
+    .site-header a span { color: #C9923A; }
+    .breadcrumb { font-size: 12px; color: #9B8A77; margin-bottom: 20px; font-family: Arial, sans-serif; }
+    .breadcrumb a { color: #C9923A; text-decoration: none; }
+    .category-badge { display: inline-block; background: rgba(201,146,58,.1); color: #7A5230;
+      border: 1px solid rgba(201,146,58,.3); border-radius: 4px; padding: 2px 10px;
+      font-size: 11px; font-family: Arial, sans-serif; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px; }
+    h1 { font-size: clamp(22px, 4vw, 32px); color: #5C3D1E; line-height: 1.3; margin-bottom: 12px; }
+    .meta { font-size: 13px; color: #9B8A77; font-family: Arial, sans-serif; margin-bottom: 24px; }
+    .intro-box { background: rgba(201,146,58,.07); border-left: 3px solid #C9923A;
+      border-radius: 6px; padding: 14px 18px; margin-bottom: 28px;
+      font-style: italic; font-size: 15px; color: #5C3D1E; }
+    .content h2 { font-size: 20px; color: #5C3D1E; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #E0D5C2; }
+    .content h3 { font-size: 17px; color: #7A5230; margin: 24px 0 8px; }
+    .content p { margin-bottom: 14px; font-size: 15.5px; }
+    .content strong { color: #5C3D1E; }
+    .cic-link { color: #8B1A1A; text-decoration: none; background: rgba(139,26,26,.07);
+      border: 1px solid rgba(139,26,26,.2); border-radius: 4px; padding: 0 6px;
+      font-size: 13px; font-family: Arial, sans-serif; font-weight: 600; }
+    .bible-link { color: #1E6B3A; text-decoration: none; background: rgba(30,107,58,.07);
+      border: 1px solid rgba(30,107,58,.2); border-radius: 4px; padding: 0 6px;
+      font-size: 13px; font-family: Arial, sans-serif; font-weight: 600; }
+    .faq-q { font-weight: bold; color: #5C3D1E; margin-top: 14px; }
+    .faq-a { color: #4A3728; margin-left: 16px; margin-bottom: 8px; }
+    .cta-box { background: #5C3D1E; color: #F5E6D0; border-radius: 10px;
+      padding: 24px; margin: 40px 0; text-align: center; }
+    .cta-box h3 { color: #C9923A; font-size: 20px; margin-bottom: 8px; }
+    .cta-box p { color: #E8D5BE; font-size: 14px; margin-bottom: 16px; }
+    .cta-btn { display: inline-block; background: #C9923A; color: #fff;
+      text-decoration: none; padding: 12px 28px; border-radius: 8px;
+      font-family: Arial, sans-serif; font-weight: 600; font-size: 14px; }
+    .related { margin-top: 40px; }
+    .related h3 { font-size: 18px; color: #5C3D1E; margin-bottom: 16px; border-bottom: 1px solid #E0D5C2; padding-bottom: 8px; }
+    .related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .related-card { background: #F3EDE0; border: 1px solid #E0D5C2; border-radius: 8px;
+      padding: 14px; text-decoration: none; display: block; transition: all .1s; }
+    .related-card:hover { background: #EDE5D4; border-color: #C9923A; }
+    .related-card-title { font-size: 13px; font-weight: 600; color: #5C3D1E; line-height: 1.4; }
+    footer { margin-top: 60px; padding: 20px 16px; background: #5C3D1E; text-align: center; }
+    footer p { color: #C9A878; font-family: Arial, sans-serif; font-size: 12px; }
+    footer a { color: #C9923A; text-decoration: none; }
+    @media (max-width: 600px) { .related-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="https://catolicosgpt.com">Católicos<span>GPT</span> — IA Católica #1 en Español</a>
+</header>
+
+<div class="container">
+  <div class="breadcrumb">
+    <a href="https://catolicosgpt.com">Inicio</a> › 
+    <a href="https://catolicosgpt.com/blog">Blog Católico</a> › 
+    ${topic.title.split('—')[0].trim()}
+  </div>
+
+  <div class="category-badge">${topic.category}</div>
+  <h1>${topic.title}</h1>
+  <div class="meta">Por CatolicosGPT · Basado en el Magisterio de la Iglesia Católica</div>
+
+  <div class="intro-box">${topic.description}</div>
+
+  <article class="content">
+    <p>${contentHTML}</p>
+  </article>
+
+  <!-- CTA para ir a la app -->
+  <div class="cta-box">
+    <h3>¿Tienes más preguntas sobre la fe?</h3>
+    <p>CatolicosGPT es el asistente de IA católica #1 en español. Pregunta lo que quieras sobre el Catecismo, la Biblia, los sacramentos o cualquier tema de fe.</p>
+    <a href="https://catolicosgpt.com" class="cta-btn">Consultar con CatolicosGPT — Gratis 🙏</a>
+  </div>
+
+  <!-- Artículos relacionados -->
+  ${relatedTopics.length > 0 ? `
+  <div class="related">
+    <h3>Artículos Relacionados</h3>
+    <div class="related-grid">
+      ${relatedTopics.map(t => `
+        <a href="/blog/${t.slug}" class="related-card">
+          <div class="related-card-title">${t.title}</div>
+        </a>
+      `).join('')}
+    </div>
+  </div>
+  ` : ''}
+</div>
+
+<footer>
+  <p>© 2026 <a href="https://catolicosgpt.com">CatolicosGPT</a> — IA Católica en Español · 
+  <a href="https://catolicosgpt.com">Inicio</a> · 
+  <a href="https://catolicosgpt.com/blog">Blog</a></p>
+</footer>
+
+</body>
+</html>`;
+}
+
+// ── Ruta individual del blog: /blog/:slug ──
+app.get('/blog/:slug', async (req, res) => {
+  const { slug } = req.params;
+  const topic = SEO_TOPICS.find(t => t.slug === slug);
+  if (!topic) return res.status(404).send('Artículo no encontrado');
+
+  try {
+    const article = await generateBlogArticle(topic);
+    if (!article) return res.status(500).send('Error generando artículo');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache 24h
+    res.send(renderBlogHTML(topic, article.content));
+  } catch(e) {
+    res.status(500).send('Error interno');
+  }
+});
+
+// ── Índice del blog: /blog ──
+app.get('/blog', (req, res) => {
+  const categories = [...new Set(SEO_TOPICS.map(t => t.category))];
+  const categoriesHTML = categories.map(cat => {
+    const topics = SEO_TOPICS.filter(t => t.category === cat);
+    return `
+      <div class="cat-section">
+        <h2 class="cat-title">${cat.charAt(0).toUpperCase() + cat.slice(1)}</h2>
+        <div class="topics-grid">
+          ${topics.map(t => `
+            <a href="/blog/${t.slug}" class="topic-card">
+              <div class="topic-title">${t.title}</div>
+              <div class="topic-desc">${t.description.slice(0, 80)}...</div>
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  res.send(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog Católico — CatolicosGPT | Doctrina, Fe y Espiritualidad</title>
+  <meta name="description" content="Blog católico con artículos sobre doctrina, santos, novenas, oraciones, sacramentos y teología. Basado en el Magisterio de la Iglesia Católica.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://catolicosgpt.com/blog">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H8CB7M80S3"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-H8CB7M80S3');</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Georgia,serif;background:#FAF7F0;color:#18100A}
+    .header{background:#5C3D1E;padding:14px 16px;text-align:center}
+    .header a{color:#F5E6D0;text-decoration:none;font-size:20px;font-weight:bold}
+    .header a span{color:#C9923A}
+    .hero{background:linear-gradient(135deg,#5C3D1E,#7A5230);color:#F5E6D0;padding:40px 16px;text-align:center}
+    .hero h1{font-size:clamp(24px,4vw,36px);margin-bottom:10px}
+    .hero p{color:#C9A878;font-size:15px;max-width:600px;margin:0 auto}
+    .container{max-width:1000px;margin:0 auto;padding:32px 16px}
+    .cat-title{font-size:20px;color:#5C3D1E;margin:32px 0 16px;padding-bottom:8px;border-bottom:2px solid #C9923A;text-transform:capitalize}
+    .topics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+    .topic-card{background:#fff;border:1px solid #E0D5C2;border-radius:8px;padding:16px;text-decoration:none;display:block;transition:all .15s}
+    .topic-card:hover{border-color:#C9923A;background:#FFF8EE;transform:translateY(-1px)}
+    .topic-title{font-size:14px;font-weight:600;color:#5C3D1E;line-height:1.4;margin-bottom:6px}
+    .topic-desc{font-size:12px;color:#9B8A77;line-height:1.5}
+    .cta{background:#5C3D1E;color:#F5E6D0;text-align:center;padding:40px 16px;margin-top:48px}
+    .cta h2{color:#C9923A;margin-bottom:10px}
+    .cta p{color:#C9A878;margin-bottom:20px;font-size:14px}
+    .cta a{background:#C9923A;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-family:Arial,sans-serif}
+    footer{background:#3D2610;padding:16px;text-align:center}
+    footer p{color:#9B8A77;font-size:12px;font-family:Arial,sans-serif}
+    footer a{color:#C9923A;text-decoration:none}
+    @media(max-width:600px){.topics-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header class="header">
+  <a href="https://catolicosgpt.com">Católicos<span>GPT</span></a>
+</header>
+<div class="hero">
+  <h1>Blog Católico</h1>
+  <p>Artículos sobre doctrina, fe, novenas, santos y teología — basados en el Magisterio de la Iglesia Católica</p>
+</div>
+<div class="container">
+  ${categoriesHTML}
+  <div class="cta">
+    <h2>¿Tienes preguntas sobre la fe?</h2>
+    <p>Usa CatolicosGPT, el asistente de IA católica #1 en español. Gratis, siempre disponible.</p>
+    <a href="https://catolicosgpt.com">Consultar con IA →</a>
+  </div>
+</div>
+<footer>
+  <p>© 2026 <a href="https://catolicosgpt.com">CatolicosGPT</a> — IA Católica en Español</p>
+</footer>
+</body></html>`);
+});
+
+
 // ── Catch-all — sirve index.html ──
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
