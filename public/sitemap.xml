@@ -1,110 +1,80 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 
-  <!-- Páginas principales -->
+  <!-- PÁGINA PRINCIPAL -->
   <url>
     <loc>https://catolicosgpt.com/</loc>
-    <lastmod>2026-03-15</lastmod>
+    <lastmod>2026-03-16</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://catolicosgpt.com/blog</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://catolicosgpt.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-CO" href="https://catolicosgpt.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-MX" href="https://catolicosgpt.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-419" href="https://catolicosgpt.com/"/>
+    <image:image>
+      <image:loc>https://catolicosgpt.com/logo.png</image:loc>
+      <image:title>CatolicosGPT — IA Católica #1 en Español</image:title>
+    </image:image>
   </url>
 
-  <!-- Artículos del blog — GEO optimizados -->
+  <!-- RECURSOS LITÚRGICOS (daily — cambian cada día) -->
   <url>
-    <loc>https://catolicosgpt.com/blog/como-rezar-el-rosario-paso-a-paso</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <loc>https://catolicosgpt.com/lecturas</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://catolicosgpt.com/blog/que-es-la-eucaristia-iglesia-catolica</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <loc>https://catolicosgpt.com/breviario</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://catolicosgpt.com/blog/novena-san-jose-completa</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <loc>https://catolicosgpt.com/homilia</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://catolicosgpt.com/blog/lecturas-del-dia-liturgia-misa</loc>
-    <lastmod>2026-03-15</lastmod>
+    <loc>https://catolicosgpt.com/misal</loc>
+    <lastmod>2026-03-16</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- CONTENIDO DOCTRINAL -->
+  <url>
+    <loc>https://catolicosgpt.com/catecismo</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://catolicosgpt.com/blog/diferencia-entre-catolicos-y-protestantes</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <loc>https://catolicosgpt.com/biblia</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://catolicosgpt.com/blog/que-dice-la-iglesia-sobre-el-aborto</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <loc>https://catolicosgpt.com/santos</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://catolicosgpt.com/blog/como-hacer-una-buena-confesion</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <loc>https://catolicosgpt.com/oraciones</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://catolicosgpt.com/blog/papa-leon-xiv-primer-papa-americano</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://catolicosgpt.com/blog/parabolas-de-jesus-significado-y-ensenanza</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://catolicosgpt.com/blog/que-es-el-purgatorio-doctrina-catolica</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://catolicosgpt.com/blog/ia-catolica-en-espanol-catolicosgpt</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://catolicosgpt.com/blog/como-rezar-el-via-crucis-completo</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://catolicosgpt.com/blog/coronilla-divina-misericordia-completa</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://catolicosgpt.com/blog/santos-del-dia-santoral-catolico</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://catolicosgpt.com/blog/misal-romano-ordinario-misa-completo</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <loc>https://catolicosgpt.com/novenas</loc>
+    <lastmod>2026-03-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
 
 </urlset>
