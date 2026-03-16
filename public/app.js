@@ -342,7 +342,8 @@ async function initLecturas() {
   if (dateEl) dateEl.textContent = fechaStr.toUpperCase();
 
   container.innerHTML = `<div style="text-align:center;padding:40px 20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
-    Cargando lecturas del ${fechaStr}...
+    Cargando lecturas del ${fechaStr}...<br>
+    <span style="font-size:12px;margin-top:6px;display:block">Consultando fuente actualizada...</span>
   </div>`;
 
   try {
@@ -351,57 +352,95 @@ async function initLecturas() {
     if (!json.ok || !json.texto) throw new Error(json.error || 'Sin datos');
 
     const secciones = [
-      { key: 'PRIMERA_LECTURA', titulo: 'Primera Lectura', color: '#8B1A1A' },
-      { key: 'SALMO', titulo: 'Salmo Responsorial', color: '#4A2080' },
-      { key: 'SEGUNDA_LECTURA', titulo: 'Segunda Lectura', color: '#8B1A1A' },
-      { key: 'EVANGELIO', titulo: 'Evangelio', color: '#1E6B3A' },
+      { key: 'PRIMERA_LECTURA', titulo: 'Primera Lectura',   color: '#8B1A1A' },
+      { key: 'SALMO',           titulo: 'Salmo Responsorial', color: '#4A2080' },
+      { key: 'SEGUNDA_LECTURA', titulo: 'Segunda Lectura',   color: '#8B1A1A' },
+      { key: 'EVANGELIO',       titulo: 'Evangelio',          color: '#1E6B3A' },
+      { key: 'REFLEXION',       titulo: 'Reflexión',           color: '#5C3D1E' },
     ];
 
+    // Badge de fuente
+    const esDominicos = json.fuente === 'dominicos.org';
     let html = `<div style="background:rgba(201,146,58,.08);border-radius:10px;padding:12px 16px;margin-bottom:20px;border-left:3px solid var(--ocre)">
-      <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre)">Lecturas de la Misa del Día</div>
-      <div style="font-family:'Playfair Display',serif;font-size:14px;color:var(--brown);margin-top:3px">${fechaStr}</div>
+      <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre)">
+        Lecturas de la Misa del Día
+      </div>
+      <div style="font-family:'Playfair Display',serif;font-size:14px;color:var(--brown);margin-top:3px">${json.fecha || fechaStr}</div>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
+        <span style="font-family:'Inter',sans-serif;font-size:10px;color:var(--ink4)">Fuente:</span>
+        ${esDominicos
+          ? `<a href="${json.url}" target="_blank" rel="noopener"
+               style="font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:var(--green);text-decoration:none">
+               ✓ dominicos.org (actualizado hoy) ↗
+             </a>`
+          : `<span style="font-family:'Inter',sans-serif;font-size:10px;color:var(--ink4)">GPT-4o (Leccionario Romano)</span>`
+        }
+      </div>
     </div>`;
 
+    // Frase del día si existe (línea en cursiva antes de las secciones)
+    const fraseMatch = json.texto.match(/^_"([^"]+)"_/);
+    if (fraseMatch) {
+      html += `<div style="font-family:'Playfair Display',serif;font-size:17px;font-style:italic;
+                    color:var(--brown);text-align:center;margin-bottom:20px;line-height:1.6">
+        "${fraseMatch[1]}"
+      </div>`;
+    }
+
     let found = false;
+    const texto = json.texto;
+    const keys = secciones.map(s => s.key);
+
     for (let k = 0; k < secciones.length; k++) {
       const { key, titulo, color } = secciones[k];
       const marker = '---' + key + '---';
-      let si = json.texto.indexOf(marker);
+      let si = texto.indexOf(marker);
       if (si === -1) continue;
       found = true;
       si += marker.length;
 
-      let ei = json.texto.length;
+      let ei = texto.length;
       for (let j = k + 1; j < secciones.length; j++) {
-        const ni = json.texto.indexOf('---' + secciones[j].key + '---', si);
+        const ni = texto.indexOf('---' + keys[j] + '---', si);
         if (ni !== -1) { ei = ni; break; }
       }
 
-      const secTexto = json.texto.slice(si, ei).trim();
+      const secTexto = texto.slice(si, ei).trim();
       if (!secTexto) continue;
 
-      html += `<div style="margin-bottom:24px">
+      // La reflexión usa parseMarkdown para negritas/cursivas
+      const contenido = key === 'REFLEXION'
+        ? `<div style="font-family:'Lora',serif;font-size:15px;line-height:2;color:var(--ink)">${parseMarkdown(secTexto)}</div>`
+        : `<div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(secTexto)}</div>`;
+
+      html += `<div style="margin-bottom:28px">
         <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;
              letter-spacing:.1em;color:${color};margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">
           ${titulo}
         </div>
-        <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(secTexto)}</div>
+        ${contenido}
       </div>`;
     }
 
     if (!found) {
-      html += `<div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(json.texto)}</div>`;
+      html += `<div style="font-family:'Playfair Display',serif;font-size:15px;line-height:2;color:var(--ink);white-space:pre-wrap">${esc(texto)}</div>`;
     }
 
     container.innerHTML = html;
+
   } catch(e) {
     container.innerHTML = `<div style="padding:20px;text-align:center">
       <p style="font-family:'Lora',serif;font-size:14px;color:var(--ink4);font-style:italic;margin-bottom:16px">
         No se pudieron cargar las lecturas. Intenta de nuevo.
       </p>
-      <button onclick="initLecturas()" style="background:var(--brown);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Lora',serif;cursor:pointer">
-        Reintentar
-      </button>
+      <button onclick="initLecturas()" style="background:var(--brown);color:#fff;border:none;border-radius:8px;
+              padding:8px 16px;font-family:'Lora',serif;cursor:pointer">Reintentar</button>
+      <div style="margin-top:16px">
+        <a href="https://www.dominicos.org/predicacion/evangelio-del-dia/hoy/" target="_blank"
+           style="font-family:'Inter',sans-serif;font-size:13px;color:var(--ocre);text-decoration:none">
+          Ver en dominicos.org ↗
+        </a>
+      </div>
     </div>`;
   }
 }

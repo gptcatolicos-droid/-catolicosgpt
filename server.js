@@ -145,61 +145,163 @@ async function generarLecturasDia() {
   const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
-  const ciclo = ['C','A','B'][(now.getFullYear() - 2024) % 3] || 'C';
 
-  console.log(`[Lecturas] Generando para ${fechaStr} Ciclo ${ciclo}...`);
+  console.log(`[Lecturas] Scraping dominicos.org para ${fechaStr}...`);
 
+  // ── INTENTO 1: Scraping de dominicos.org ──
   try {
+    const resp = await fetch('https://www.dominicos.org/predicacion/evangelio-del-dia/hoy/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CatolicosGPT/1.0)',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'es-ES,es;q=0.9'
+      },
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const html = await resp.text();
+
+    // Extraer secciones del HTML
+    function extractSection(html, heading) {
+      const pattern = new RegExp(
+        `<h2[^>]*>\\s*${heading}\\s*<\\/h2>[^]*?<h3[^>]*>([^<]+)<\\/h3>([^]*?)(?=<h2|<div class="reflexion|<section|$)`,
+        'i'
+      );
+      const m = html.match(pattern);
+      if (!m) return null;
+      const titulo = m[1].trim();
+      // Limpiar HTML → texto plano
+      const texto = m[2]
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<p[^>]*>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&mdash;/g, '—')
+        .replace(/&ldquo;/g, '"')
+        .replace(/&rdquo;/g, '"')
+        .replace(/&laquo;/g, '«')
+        .replace(/&raquo;/g, '»')
+        .replace(/&#\d+;/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      return { titulo, texto };
+    }
+
+    // Extraer reflexión
+    function extractReflexion(html) {
+      const m = html.match(/<h2[^>]*>\s*Reflexi[oó]n[^<]*<\/h2>([^]*?)(?=<div class="autor|<footer|<script|$)/i);
+      if (!m) return null;
+      return m[1]
+        .replace(/<h3[^>]*>([^<]+)<\/h3>/gi, '\n\n**$1**\n\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<p[^>]*>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<em>([^<]+)<\/em>/gi, '_$1_')
+        .replace(/<strong>([^<]+)<\/strong>/gi, '**$1**')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&mdash;/g, '—')
+        .replace(/&ldquo;/g, '"')
+        .replace(/&rdquo;/g, '"')
+        .replace(/&laquo;/g, '«')
+        .replace(/&raquo;/g, '»')
+        .replace(/&#\d+;/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    // Extraer título de la página (frase del día)
+    const tituloMatch = html.match(/<h1[^>]*>Evangelio del d[ií]a<\/h1>/i);
+    const fraseMatch = html.match(/"([^"]{10,80})"/);
+    const frase = fraseMatch ? fraseMatch[1] : '';
+
+    const primera = extractSection(html, 'Primera lectura');
+    const salmo = extractSection(html, 'Salmo de hoy');
+    const evangelio = extractSection(html, 'Evangelio del d[ií]a');
+    const reflexion = extractReflexion(html);
+
+    if (!evangelio) throw new Error('No se pudo parsear el evangelio');
+
+    // Construir texto con etiquetas
+    let texto = '';
+    if (frase) texto += `_"${frase}"_\n\n`;
+    if (primera) texto += `---PRIMERA_LECTURA---\nReferencia: ${primera.titulo}\n${primera.texto}\n\n`;
+    if (salmo) texto += `---SALMO---\nReferencia: ${salmo.titulo}\n${salmo.texto}\n\n`;
+    texto += `---EVANGELIO---\nReferencia: ${evangelio.titulo}\n${evangelio.texto}\n\n`;
+    if (reflexion) texto += `---REFLEXION---\n${reflexion}`;
+
+    const resultado = {
+      ok: true,
+      texto,
+      fecha: fechaStr,
+      fuente: 'dominicos.org',
+      url: 'https://www.dominicos.org/predicacion/evangelio-del-dia/hoy/'
+    };
+    lecturasCacheDate = hoy;
+    lecturasCache = resultado;
+    console.log(`[Lecturas] ✓ Scraping OK (${texto.length} chars)`);
+    return resultado;
+
+  } catch(err) {
+    console.error('[Lecturas] Scraping falló:', err.message, '— usando GPT-4o fallback');
+  }
+
+  // ── INTENTO 2: GPT-4o como fallback ──
+  try {
+    const now2 = new Date();
+    const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const fechaStr2 = `${DIAS[now2.getDay()]} ${now2.getDate()} de ${MESES[now2.getMonth()]} de ${now2.getFullYear()}`;
+    const ciclo = ['C','A','B'][(now2.getFullYear() - 2024) % 3] || 'A';
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 4000,
       temperature: 0.1,
-      messages: [
-        {
-          role: 'system',
-          content: `Eres un experto en liturgia católica. Conoces el Leccionario Romano completo.
-Hoy es ${fechaStr}. Año litúrgico 2025-2026, Ciclo C.
-NUNCA digas que no puedes proporcionar lecturas. SIEMPRE da los textos completos del Leccionario Romano.`
-        },
-        {
-          role: 'user',
-          content: `Dame las lecturas COMPLETAS de la Misa de HOY ${fechaStr} (Ciclo C) según el Leccionario Romano oficial.
+      messages: [{
+        role: 'system',
+        content: `Eres un experto en liturgia católica. Conoces el Leccionario Romano completo.
+Hoy es ${fechaStr2}. Año litúrgico 2025-2026, Ciclo ${ciclo}.
+NUNCA digas que no puedes. SIEMPRE proporciona los textos completos.`
+      }, {
+        role: 'user',
+        content: `Dame las lecturas COMPLETAS de la Misa de HOY ${fechaStr2} según el Leccionario Romano.
 
-Usa EXACTAMENTE este formato con estas etiquetas:
+Formato EXACTO:
 
 ---PRIMERA_LECTURA---
-Referencia: [Libro cap, vers]
-[texto bíblico completo]
+Referencia: [libro cap, vers]
+[texto completo]
 
 ---SALMO---
 Referencia: Salmo [N]
-Estribillo: R/. [texto]
-[texto del salmo]
+R/. [estribillo]
+[texto]
 
 ---SEGUNDA_LECTURA---
-Referencia: [solo domingos/solemnidades]
-[texto completo]
+Referencia: [solo domingos]
+[texto]
 
 ---EVANGELIO---
-Referencia: [Evangelio según X, cap, vers]
-[texto bíblico completo]
-
-Textos COMPLETOS sin resumir.`
-        }
-      ]
+Referencia: [Evangelio según X cap, vers]
+[texto completo]`
+      }]
     });
 
     const texto = completion.choices[0].message.content;
-    if (texto && texto.length > 300) {
-      lecturasCache = { ok: true, texto, fecha: fechaStr, ciclo };
-      lecturasCacheDate = hoy;
-      console.log(`[Lecturas] ✓ OK (${texto.length} chars)`);
-      return lecturasCache;
-    }
-    throw new Error('Respuesta incompleta');
-  } catch(err) {
-    console.error('[Lecturas] Error:', err.message);
-    return { ok: false, error: err.message };
+    const resultado = { ok: true, texto, fecha: fechaStr, fuente: 'gpt4o' };
+    lecturasCacheDate = hoy;
+    lecturasCache = resultado;
+    console.log(`[Lecturas] ✓ GPT-4o fallback OK`);
+    return resultado;
+
+  } catch(err2) {
+    console.error('[Lecturas] GPT-4o falló:', err2.message);
+    return { ok: false, error: err2.message };
   }
 }
 
