@@ -1,0 +1,197 @@
+{
+  "titulo": "Documentos Pontificios — Dataset CatolicosGPT",
+  "fuente": "Vatican.va",
+  "encíclicas_sociales": [
+    {
+      "nombre": "Rerum Novarum",
+      "papa": "León XIII", "año": 1891,
+      "tema": "Cuestión obrera, capital y trabajo",
+      "resumen": "Primera encíclica social. Defiende el derecho a la propiedad privada, el salario justo, el derecho de asociación sindical. Rechaza tanto el socialismo como el capitalismo deshumanizante. Base de toda la DSI.",
+      "citas_clave": [
+        "El trabajo no es una mercancía (RN 34)",
+        "Todo hombre tiene derecho a un salario suficiente para su sustento y el de su familia (RN 45)"
+      ]
+    },
+    {
+      "nombre": "Quadragesimo Anno",
+      "papa": "Pío XI", "año": 1931,
+      "tema": "40 aniversario Rerum Novarum, entre capitalismo y socialismo",
+      "resumen": "Desarrolla la DSI. Introduce el principio de subsidiariedad. Condena tanto el comunismo como el capitalismo liberal extremo.",
+      "citas_clave": ["Principio de subsidiariedad: lo que puede hacer un ente menor no debe ser asumido por uno mayor"]
+    },
+    {
+      "nombre": "Mater et Magistra",
+      "papa": "Juan XXIII", "año": 1961,
+      "tema": "Economía moderna y justicia social",
+      "resumen": "Aplica la DSI al mundo moderno. Promueve la socialización y la cooperación internacional."
+    },
+    {
+      "nombre": "Pacem in Terris",
+      "papa": "Juan XXIII", "año": 1963,
+      "tema": "La paz entre las naciones",
+      "resumen": "Primera encíclica dirigida a todos los hombres de buena voluntad. Derechos humanos universales. Escrita durante la crisis de los misiles de Cuba.",
+      "citas_clave": ["Toda forma de gobierno debe ordenarse al bien común"]
+    },
+    {
+      "nombre": "Populorum Progressio",
+      "papa": "Pablo VI", "año": 1967,
+      "tema": "Desarrollo de los pueblos",
+      "resumen": "El desarrollo no es solo económico sino integral del hombre. El comercio entre naciones ricas y pobres debe ser justo.",
+      "citas_clave": ["El desarrollo es el nuevo nombre de la paz"]
+    },
+    {
+      "nombre": "Laborem Exercens",
+      "papa": "Juan Pablo II", "año": 1981,
+      "tema": "El trabajo humano",
+      "resumen": "El trabajo es una dimensión fundamental de la existencia humana. El trabajo es para el hombre, no el hombre para el trabajo. Escrita tras el surgimiento de Solidarność."
+    },
+    {
+      "nombre": "Centesimus Annus",
+      "papa": "Juan Pablo II", "año": 1991,
+      "tema": "100 aniversario Rerum Novarum, caída del comunismo",
+      "resumen": "Tras la caída del muro de Berlín. Analiza las causas del colapso del comunismo. Defiende la economía de mercado con marco moral."
+    },
+    {
+      "nombre": "Laudato Si",
+      "papa": "Francisco", "año": 2015,
+      "tema": "Ecología integral y cuidado de la casa común",
+      "resumen": "Primera encíclica sobre ecología. Une fe, ciencia y cuidado de la creación. Denuncia el paradigma tecnocrático. Propone una ecología integral.",
+      "citas_clave": [
+        "Laudato si', mi Signore — Alabado seas, mi Señor (LS 1)",
+        "Todo está conectado (LS 138)",
+        "La tierra es esencialmente una herencia común cuya cosecha es para beneficio de todos (LS 93)"
+      ]
+    },
+    {
+      "nombre": "Laudate Deum",
+      "papa": "Francisco", "año": 2023,
+      "tema": "Crisis climática urgente",
+      "resumen": "Exhortación apostólica. Denuncia la inacción ante el cambio climático. Escrita antes de la COP28."
+    }
+  ],
+  "encíclicas_doctrinales": [
+    {
+      "nombre": "Mystici Corporis Christi",
+      "papa": "Pío XII", "año": 1943,
+      "tema": "La Iglesia como Cuerpo Místico de Cristo",
+      "resumen": "La Iglesia es el Cuerpo Místico de Cristo. Cristo es la cabeza, los bautizados son los miembros."
+    },
+    {
+      "nombre": "Humani Generis",
+      "papa": "Pío XII", "año": 1950,
+      "tema": "Errores filosóficos modernos",
+      "resumen": "Advierte contra relativismo, evolucionismo materialista y teologías que niegan el dogma."
+    },
+    {
+      "nombre": "Humanae Vitae",
+      "papa": "Pablo VI", "año": 1968,
+      "tema": "Transmisión de la vida humana y matrimonio",
+      "resumen": "Reafirma que cada acto conyugal debe permanecer abierto a la vida. Condena la contracepción artificial. Permite la regulación natural de la natalidad.",
+      "citas_clave": [
+        "Es necesario que cada acto matrimonial quede abierto a la transmisión de la vida (HV 11)",
+        "La Iglesia es la primera en llorar por los que caen, pero no puede cambiar la verdad (HV 29)"
+      ]
+    },
+    {
+      "nombre": "Evangelium Vitae",
+      "papa": "Juan Pablo II", "año": 1995,
+      "tema": "El valor y la inviolabilidad de la vida humana",
+      "resumen": "La vida humana es sagrada desde la concepción hasta la muerte natural. Condena el aborto, la eutanasia y la pena de muerte como regla.",
+      "citas_clave": [
+        "El aborto directo... es siempre un desorden moral grave (EV 57)",
+        "La eutanasia es una grave violación de la ley de Dios (EV 65)"
+      ]
+    },
+    {
+      "nombre": "Veritatis Splendor",
+      "papa": "Juan Pablo II", "año": 1993,
+      "tema": "Fundamentos de la moral católica",
+      "resumen": "Hay actos intrínsecamente malos que nunca pueden justificarse. La conciencia debe formarse según la verdad objetiva.",
+      "citas_clave": ["Existen actos que por sí mismos y en sí mismos, con independencia de las circunstancias, son siempre y gravemente ilícitos (VS 80)"]
+    },
+    {
+      "nombre": "Fides et Ratio",
+      "papa": "Juan Pablo II", "año": 1998,
+      "tema": "Relación entre fe y razón",
+      "resumen": "Fe y razón son como las dos alas con las que el espíritu humano se eleva hacia la verdad.",
+      "citas_clave": ["La fe y la razón son como las dos alas con que el espíritu humano se eleva hacia la contemplación de la verdad (FR 1)"]
+    },
+    {
+      "nombre": "Deus Caritas Est",
+      "papa": "Benedicto XVI", "año": 2005,
+      "tema": "El amor cristiano — eros y ágape",
+      "resumen": "Primera encíclica de Benedicto. Dios es amor. Distingue eros (amor humano) y ágape (amor divino gratuito). La caridad es la esencia de la Iglesia.",
+      "citas_clave": ["Dios es amor; y el que permanece en el amor permanece en Dios, y Dios en él (1 Jn 4,16) (DCE 1)"]
+    },
+    {
+      "nombre": "Caritas in Veritate",
+      "papa": "Benedicto XVI", "año": 2009,
+      "tema": "Desarrollo humano integral en la caridad y la verdad",
+      "resumen": "La caridad necesita de la verdad. El desarrollo humano integral incluye la dimensión espiritual."
+    },
+    {
+      "nombre": "Evangelii Gaudium",
+      "papa": "Francisco", "año": 2013,
+      "tema": "La alegría del Evangelio",
+      "resumen": "La primera exhortación de Francisco. La Iglesia en salida. Denuncia la mundanidad espiritual. La alegría como rasgo del cristiano.",
+      "citas_clave": [
+        "Prefiero una Iglesia accidentada, herida y manchada por salir a la calle, antes que una Iglesia enferma por el encierro (EG 49)",
+        "El dinero debe servir, no gobernar (EG 58)"
+      ]
+    },
+    {
+      "nombre": "Amoris Laetitia",
+      "papa": "Francisco", "año": 2016,
+      "tema": "El amor en la familia",
+      "resumen": "Exhortación postsinodal sobre el matrimonio y la familia. Fruto de los Sínodos de 2014 y 2015. Subraya la misericordia y el acompañamiento pastoral.",
+      "citas_clave": ["La alegría del amor que se vive en las familias es también el gozo de la Iglesia (AL 1)"]
+    },
+    {
+      "nombre": "Fiducia Supplicans",
+      "papa": "Francisco", "año": 2023,
+      "tema": "Bendición pastoral de personas en situaciones irregulares",
+      "resumen": "Permite bendiciones pastorales (no litúrgicas) a parejas en situación irregular. Aclaración: no bendice la unión sino a las personas."
+    }
+  ],
+  "constituciones_vaticano2": [
+    {
+      "nombre": "Lumen Gentium",
+      "tipo": "Constitución dogmática sobre la Iglesia",
+      "año": 1964,
+      "resumen": "La Iglesia como Pueblo de Dios, Cuerpo de Cristo, Templo del Espíritu. Colegialidad episcopal. El papel de los laicos. Capítulo VIII: la Virgen María en el misterio de Cristo y de la Iglesia.",
+      "numeros_clave": [
+        "LG 1: Cristo es la luz de los pueblos",
+        "LG 8: La Iglesia de Cristo subsiste en la Iglesia católica",
+        "LG 16: Los no creyentes también pueden salvarse si siguen su conciencia"
+      ]
+    },
+    {
+      "nombre": "Dei Verbum",
+      "tipo": "Constitución dogmática sobre la Revelación Divina",
+      "año": 1965,
+      "resumen": "La Sagrada Escritura y la Tradición forman juntas el único depósito de la fe. El Magisterio sirve a la Palabra de Dios.",
+      "numeros_clave": [
+        "DV 4: Cristo es la Palabra definitiva de Dios",
+        "DV 12: La Biblia debe interpretarse según el género literario y la intención del autor"
+      ]
+    },
+    {
+      "nombre": "Sacrosanctum Concilium",
+      "tipo": "Constitución sobre la Sagrada Liturgia",
+      "año": 1963,
+      "resumen": "Primera constitución del Vaticano II. Reforma litúrgica. La participación activa de los fieles. La misa puede celebrarse en lengua vernácula.",
+      "numeros_clave": ["SC 7: Cristo está presente en la asamblea litúrgica", "SC 14: Se desea la participación plena, consciente y activa de los fieles"]
+    },
+    {
+      "nombre": "Gaudium et Spes",
+      "tipo": "Constitución pastoral sobre la Iglesia en el mundo actual",
+      "año": 1965,
+      "resumen": "Los gozos y las esperanzas, las tristezas y las angustias de los hombres de nuestro tiempo son también los gozos y las esperanzas, las tristezas y las angustias de los discípulos de Cristo.",
+      "numeros_clave": [
+        "GS 1: La Iglesia solidaria con la humanidad",
+        "GS 22: Cristo revela al hombre su plena vocación",
+        "GS 24: El hombre es la única criatura en la tierra querida por Dios por sí misma"
+      ]
+    }
+  ]
+}
