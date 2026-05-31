@@ -140,6 +140,13 @@ Cuando alguien pida homilía, reflexión del día, o recursos actuales, el siste
 REGLA 12 — TONO SIEMPRE PASTORAL
 Habla como un sacerdote sabio, cálido y accesible. Usa "hermano/hermana" con naturalidad. Transmite paz, acogida y amor de Dios. NUNCA condenes a la persona, aunque rechaces con firmeza el error.
 
+REGLA 13 — NUNCA MENCIONES LIMITACIONES DE ENTRENAMIENTO [CRÍTICA — PROHIBIDO ROMPER]
+JAMÁS uses frases como: "mi conocimiento llega hasta [fecha]", "no tengo acceso a información en tiempo real", "mis datos son hasta octubre de 2023", "no puedo verificar eventos recientes", o cualquier variante de fecha de corte de modelo.
+Eres CatolicosGPT con acceso directo a: datasets del Magisterio actualizados a 2026, API de Magisterium.com en tiempo real, documentos del Vaticano más recientes, encíclicas del Papa León XIV. Si no conoces un dato específico, di: "No tengo ese dato en mis fuentes, te recomiendo consultar vatican.va o aciprensa.com" — NUNCA menciones fechas de entrenamiento.
+
+REGLA 14 — INFORMACIÓN DE SANTOS [CRÍTICA]
+Cuando respondas sobre un santo, SOLO afirma datos que estés seguro de conocer. Si no tienes datos confirmados de un santo específico, di: "Para información verificada sobre este santo te recomiendo: https://www.aciprensa.com/santos/" — NUNCA inventes fechas de beatificación, canonización ni datos biográficos no confirmados. Es mejor reconocer que no tienes el dato, que dar información incorrecta.
+
 ════════════════════════════════════════════════════
 REGLAS DE FORMATO Y CALIDAD
 ════════════════════════════════════════════════════
@@ -409,19 +416,52 @@ Si el usuario acepta, genera el contenido en formato HTML con el diseño de Cato
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
-    // Magisterium y OpenAI arrancan en PARALELO
+    // ── ARQUITECTURA MEJORADA: Magisterium como RAG, luego GPT-4o ──
+    // 1. Consultar Magisterium en paralelo mientras preparamos el contexto
     const magPromise = magisterium.chat.completions.create({
-      model: 'magisterium-1', max_tokens: 600, stream: false,
+      model: 'magisterium-1', max_tokens: 800, stream: false,
       messages: [{ role: 'user', content: lastUserMsg }]
-    }).then(r => r.choices[0]?.message?.content || '').catch(() => '');
+    }).then(r => r.choices[0]?.message?.content || '').catch(e => {
+      console.error('[Magisterium] Error:', e.message);
+      return '';
+    });
+
+    // 2. Esperar Magisterium y usar su respuesta como contexto enriquecido
+    let magContextText = '';
+    try {
+      magContextText = await Promise.race([
+        magPromise,
+        new Promise(resolve => setTimeout(() => resolve(''), 4000)) // timeout 4s
+      ]);
+    } catch(e) { magContextText = ''; }
+
+    // 3. Inyectar la respuesta de Magisterium como contexto en el systemPrompt
+    let enrichedSystemPrompt = systemPrompt;
+    if (magContextText && magContextText.length > 50) {
+      enrichedSystemPrompt += `
+
+════════════════════════════════════════════════════
+FUENTE PRIMARIA — MAGISTERIUM.COM (RESPUESTA EN TIEMPO REAL)
+════════════════════════════════════════════════════
+La API de Magisterium.com, especializada en el Magisterio de la Iglesia Católica, 
+responde lo siguiente sobre esta consulta. USA ESTA INFORMACIÓN COMO FUENTE PRIMARIA
+y complementa con tu conocimiento teológico:
+
+${magContextText}
+
+════════════════════════════════════════════════════
+INSTRUCCIÓN: Integra esta información del Magisterio en tu respuesta de forma fluida,
+citando correctamente cuando corresponda. No la copies literalmente; sintetiza y amplía.
+════════════════════════════════════════════════════`;
+    }
 
     try {
       const stream = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        temperature: 0.3,
+        model: 'gpt-4o',
+        temperature: 0.2,
         max_tokens: 6000,
         stream: true,
-        messages: [{ role: 'system', content: systemPrompt }, ...messages]
+        messages: [{ role: 'system', content: enrichedSystemPrompt }, ...messages]
       });
 
       let fullReply = '';
@@ -434,13 +474,10 @@ Si el usuario acepta, genera el contenido en formato HTML con el diseño de Cato
         if (chunk.choices[0]?.finish_reason === 'stop') break;
       }
 
-      // Esperar Magisterium y enviar sus fuentes
-      try {
-        const magText = await magPromise;
-        if (magText && magText.length > 50) {
-          res.write(`data: ${JSON.stringify({ magisterium: magText })}\n\n`);
-        }
-      } catch(e) {}
+      // Enviar el badge de Magisterium al frontend si hubo respuesta útil
+      if (magContextText && magContextText.length > 50) {
+        res.write(`data: ${JSON.stringify({ magisterium: magContextText })}\n\n`);
+      }
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
@@ -471,7 +508,7 @@ Si el usuario acepta, genera el contenido en formato HTML con el diseño de Cato
     // No streaming
     try {
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini', temperature: 0.3, max_tokens: 6000,
+        model: 'gpt-4o', temperature: 0.2, max_tokens: 6000,
         messages: [{ role: 'system', content: systemPrompt }, ...messages]
       });
       res.json({ reply: completion.choices[0].message.content });
