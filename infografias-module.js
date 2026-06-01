@@ -46,6 +46,32 @@ const SIZES = {
 // BRANDING — Free usa CatolicosGPT, Premium usa logo propio
 // ══════════════════════════════════════════════════════════════════
 
+
+// ── Helper: instrucción visual según estilo visual elegido (3 BrandGrids) ──
+function getStyleInstructions(estilo) {
+  const styles = {
+    clasico: `
+VISUAL STYLE: Clásico — Cream parchment elegant Catholic poster.
+- PALETTE: Cream #F6F0E3 background, maroon #5E1B22 accents, ochre gold #BC8A36, espresso #3B2415 text
+- TYPOGRAPHY: Cormorant Garamond serif for titles (elegant italic), Cinzel for emblem, Montserrat for labels
+- DECORATION: Double frame border in gold, small ornate cross emblem, hairline rules
+- MOOD: Sacred, timeless, parchment-elegant, like an illuminated manuscript`,
+    cinematic: `
+VISUAL STYLE: Cinematic — Dark dramatic Catholic movie-poster aesthetic.
+- PALETTE: Deep black #0d0a07 background, dramatic golden light #BC8A36-#E2BE6E, cream #F2E4C3 text
+- TYPOGRAPHY: Cinzel serif for titles with text shadow, Cormorant Garamond italic for verses
+- DECORATION: Radial gold light source from top, dramatic vignette, gold border frame
+- MOOD: Cinematic chiaroscuro, dramatic light rays, deep shadows, golden bokeh, vintage film grain`,
+    infantil: `
+VISUAL STYLE: Infantil — Bright, playful, illustrated for children.
+- PALETTE: Soft cream-pink-blue gradient background #FFF6E9 to #EAF4FF, vibrant accents (red #FF6B6B, yellow #FFD93C, green #7BC74D, blue #4DA6FF, purple #9B6BD6)
+- TYPOGRAPHY: Montserrat bold rounded, colorful title words each in different color
+- DECORATION: Cartoon sun with rays, fluffy clouds, dashed purple border card, rainbow color dots
+- MOOD: Joyful, friendly, illustrated like a children's book, warm and approachable`,
+  };
+  return styles[estilo] || styles.clasico;
+}
+
 function getBrandingBlock(userPlan, customNombre, customLogo) {
   if (userPlan === 'premium' || userPlan === 'admin') {
     const nombre = customNombre || 'Mi Iglesia';
@@ -65,11 +91,13 @@ BRANDING (CATOLICOSGPT — MANDATORY, all elements must appear):
 }
 
 // ── PROMPT: Santo / Devocional (post único) ──
-function buildPromptSantoDevocional(params, userPlan, customNombre, customLogo) {
+function buildPromptSantoDevocional(params, userPlan, customNombre, customLogo, estilo = 'clasico') {
   const { categoria, titulo, subtitulo, visual, puntos } = params;
   const branding = getBrandingBlock(userPlan, customNombre, customLogo);
+  const styleBlock = getStyleInstructions(estilo);
   return `Create a professional Catholic devotional poster in portrait 2:3 format for a Catholic AI platform.
 ${branding}
+${styleBlock}
 
 GOLD RIBBON BANNER (below logo/header): Horizontal metallic gold gradient scroll with dark brown serif text: "${categoria}"
 
@@ -91,12 +119,14 @@ CRITICAL: All text must be clearly readable with high contrast.`;
 }
 
 // ── PROMPT: Serie educativa (4 slides) ──
-function buildPromptSerie(slide, slideNum, totalSlides, userPlan, customNombre, customLogo) {
+function buildPromptSerie(slide, slideNum, totalSlides, userPlan, customNombre, customLogo, estilo = 'clasico') {
   const { titulo, subtitulo, descripcion, puntos, cita, tagline, visual, capitulo } = slide;
   const branding = getBrandingBlock(userPlan, customNombre, customLogo);
+  const styleBlock = getStyleInstructions(estilo);
   const label = slideNum === 1 ? 'RESUMEN' : `CAPÍTULO ${capitulo || slideNum}`;
   return `Create slide ${slideNum} of ${totalSlides} for a Catholic educational series poster.
 ${branding}
+${styleBlock}
 
 SLIDE COUNTER: Top right corner "${slideNum}/${totalSlides}" in small gold text on dark pill
 
@@ -147,8 +177,34 @@ For serie:
 {"slug":"url-slug","altText":"SEO alt","metaDescription":"150 char","slides":[{"capitulo":1,"titulo":"UPPERCASE TITLE","subtitulo":"subtitle","descripcion":"1-2 lines","puntos":["p1","p2","p3"],"cita":"key quote","tagline":"BOTTOM TAGLINE UPPERCASE","visual":"visual description"}]}` }]
   });
 
-  const text = r.choices[0].message.content.trim().replace(/```json|```/g,'');
-  return JSON.parse(text);
+  let text = r.choices[0].message.content.trim().replace(/```json|```/g,'');
+  // Robust JSON extraction: find first { and last }
+  const firstBrace = text.indexOf('{');
+  const lastBrace  = text.lastIndexOf('}');
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    text = text.slice(firstBrace, lastBrace + 1);
+  }
+  try {
+    return JSON.parse(text);
+  } catch(parseErr) {
+    console.error('[buildInfografiaParams] JSON parse error:', parseErr.message);
+    console.error('[buildInfografiaParams] Raw text (first 300):', text.slice(0, 300));
+    // Fallback: build minimal params manually from tema
+    return {
+      categoria: tipo === 'santo' ? 'SANTO DEL DÍA' : tipo === 'devocional' ? 'DEVOCIÓN' : 'REFLEXIÓN',
+      titulo: tema.length < 50 ? tema : tema.slice(0, 50),
+      subtitulo: '',
+      visual: `Beautiful Catholic religious art depicting ${tema}. Classical painting style with warm dramatic lighting, gold accents, reverent atmosphere.`,
+      puntos: [
+        'Una reflexión profunda sobre la fe',
+        'Inspirado en el Magisterio de la Iglesia',
+        'Para compartir y orar en familia'
+      ],
+      slug: generateSlug(tema),
+      altText: `Infografía católica sobre ${tema}`,
+      metaDescription: `Infografía católica sobre ${tema}. Descarga gratis para compartir tu fe en WhatsApp e Instagram.`.slice(0, 155)
+    };
+  }
 }
 
 // ── Upload a Cloudinary ──
@@ -208,8 +264,7 @@ async function generarImagen(prompt, openai, formato = '9:16') {
   try {
     const r = await openai.images.generate({
       model: 'gpt-image-1', prompt, n: 1,
-      size: sizes.gpti, quality: 'medium',
-      response_format: 'b64_json'
+      size: sizes.gpti, quality: 'medium'
     });
     const b64 = r.data[0].b64_json;
     if (!b64) throw new Error('gpt-image-1: b64_json vacío en respuesta');
@@ -221,7 +276,7 @@ async function generarImagen(prompt, openai, formato = '9:16') {
   // DALL-E 3 fallback
   const r = await openai.images.generate({
     model: 'dall-e-3', prompt: prompt.slice(0,4000), n: 1,
-    size: sizes.dalle3, quality: 'standard', style: 'vivid'
+    size: sizes.dalle3, quality: 'standard'
   });
   return { data: r.data[0].url, type: 'url', model: 'dall-e-3' };
 }
@@ -229,12 +284,13 @@ async function generarImagen(prompt, openai, formato = '9:16') {
 // ══════════════════════════════════════════════════════════════════
 // FUNCIÓN PRINCIPAL
 // ══════════════════════════════════════════════════════════════════
-async function generarInfografia({ tema, tipo: tipoOverride, formato = '9:16', userId, userPlan = 'free', customNombre, customLogo, openai }) {
+async function generarInfografia({ tema, tipo: tipoOverride, formato = '9:16', estilo = 'clasico', userId, userPlan = 'free', customNombre, customLogo, openai }) {
   const tipo    = tipoOverride || detectarTipo(tema);
   const esSerie = tipo === 'serie';
   const validFormato = SIZES[formato] ? formato : '9:16';
 
-  console.log(`[Infografia] "${tema}" | tipo:${tipo} | formato:${validFormato} | plan:${userPlan}`);
+  const validEstilo = ['clasico','cinematic','infantil'].includes(estilo) ? estilo : 'clasico';
+  console.log(`[Infografia] "${tema}" | tipo:${tipo} | formato:${validFormato} | estilo:${validEstilo} | plan:${userPlan}`);
 
   // 1. Parámetros
   const params = await buildInfografiaParams(tema, tipo, openai);
@@ -245,8 +301,8 @@ async function generarInfografia({ tema, tipo: tipoOverride, formato = '9:16', u
   const imagenes = [];
   for (let i = 0; i < totalSlides; i++) {
     const prompt = esSerie
-      ? buildPromptSerie(params.slides[i], i+1, totalSlides, userPlan, customNombre, customLogo)
-      : buildPromptSantoDevocional(params, userPlan, customNombre, customLogo);
+      ? buildPromptSerie(params.slides[i], i+1, totalSlides, userPlan, customNombre, customLogo, validEstilo)
+      : buildPromptSantoDevocional(params, userPlan, customNombre, customLogo, validEstilo);
 
     const img      = await generarImagen(prompt, openai, validFormato);
     const cloudUrl = await uploadToCloudinary(img.data, slug, i);

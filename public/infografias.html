@@ -1,554 +1,671 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Infografías Católicas | CatolicosGPT — Descarga Gratis</title>
-<meta name="description" content="Genera y descarga infografías católicas con IA. Santos, encíclicas, apologética y devociones. CatolicosGPT.">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Infografías Católicas · CatólicosGPT</title>
+<meta name="description" content="Genera infografías católicas con IA. Santos, encíclicas, apologética y devociones. Tres estilos: Clásico, Cinematic e Infantil.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://catolicosgpt.com/infografias">
-<meta property="og:title" content="Infografías Católicas Gratis | CatolicosGPT">
-<meta property="og:description" content="Genera infografías católicas para compartir en WhatsApp e Instagram. Santos, encíclicas, apologética.">
+<meta property="og:title" content="Infografías Católicas Gratis · CatolicosGPT">
+<meta property="og:description" content="Genera infografías católicas para WhatsApp e Instagram en estilo Clásico, Cinematic o Infantil.">
+<meta name="keywords" content="infografías católicas, infografías católicas gratis, generador infografías IA, posters católicos Instagram, imágenes católicas WhatsApp, santos infografía, encíclicas visuales, apologética visual, evangelización digital, recursos catequistas, parroquia material gráfico, generador IA católica">
+<meta name="author" content="CatolicosGPT">
+<meta name="theme-color" content="#F6F0E3">
+
+<!-- Open Graph (mejorado) -->
+<meta property="og:type" content="website">
 <meta property="og:url" content="https://catolicosgpt.com/infografias">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#0A0705;--surface:#13100D;--surface2:#1C1712;--surface3:#252018;
-  --gold:#C9923A;--gold2:#E8B96A;--cream:#F5EDD8;
-  --text:#E8DDD0;--text2:#A89880;--text3:#6B5C4E;
-  --red:#8B1A1A;--border:rgba(201,146,58,0.15);--radius:14px;
+<meta property="og:title" content="Infografías Católicas con IA · Gratis · CatolicosGPT">
+<meta property="og:description" content="Genera infografías católicas en estilo Clásico, Cinematic o Infantil. Santos, encíclicas, oraciones y devocionales en segundos. Comparte tu fe en WhatsApp e Instagram.">
+<meta property="og:image" content="https://catolicosgpt.com/logo.png">
+<meta property="og:locale" content="es_ES">
+<meta property="og:site_name" content="CatolicosGPT">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Infografías Católicas con IA · CatolicosGPT">
+<meta name="twitter:description" content="Genera infografías católicas gratis con IA. 3 estilos · 8 tipos · 4 formatos.">
+<meta name="twitter:image" content="https://catolicosgpt.com/logo.png">
+
+<!-- JSON-LD: Servicio + FAQ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "name": "Infografías Católicas con IA",
+      "url": "https://catolicosgpt.com/infografias",
+      "description": "Generador gratis de infografías católicas con IA. Tres estilos visuales: Clásico, Cinematic e Infantil.",
+      "inLanguage": "es-ES",
+      "isPartOf": { "@type": "WebSite", "url": "https://catolicosgpt.com/" }
+    },
+    {
+      "@type": "Service",
+      "name": "Generador de Infografías Católicas con IA",
+      "description": "Genera infografías católicas profesionales con inteligencia artificial. Tres estilos visuales (Clásico, Cinematic, Infantil) y ocho tipos de contenido (Santo, Versículo, Cita, Educativa, Pregunta, Oración, Evento, Serie).",
+      "provider": { "@type": "Organization", "name": "CatolicosGPT", "url": "https://catolicosgpt.com" },
+      "areaServed": "Worldwide",
+      "offers": {
+        "@type": "AggregateOffer",
+        "lowPrice": "0",
+        "highPrice": "4.99",
+        "priceCurrency": "USD",
+        "offers": [
+          { "@type": "Offer", "name": "Plan Gratis", "price": "0", "priceCurrency": "USD", "description": "1 infografía/día con branding CatolicosGPT" },
+          { "@type": "Offer", "name": "Plan Premium", "price": "4.99", "priceCurrency": "USD", "description": "Infografías ilimitadas con branding propio" }
+        ]
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿Cómo genero una infografía católica gratis?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Crea una cuenta gratis en CatolicosGPT, escribe el tema (un santo, una oración, una doctrina), elige el estilo visual y el formato. La IA genera la infografía en 30-60 segundos. El plan gratuito permite 1 infografía diaria." }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Qué estilos visuales hay disponibles?",
+          "acceptedAnswer": { "@type": "Answer", "text": "CatolicosGPT ofrece 3 estilos visuales: Clásico (crema y pergamino elegante con tipografía serif), Cinematic (oscuro con dorado dramático estilo poster de cine) e Infantil (color vivo e ilustrado para niños y catequesis)." }
+        },
+        {
+          "@type": "Question",
+          "name": "¿En qué formatos puedo descargar las infografías?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Tres formatos: 9:16 (Instagram Stories y WhatsApp), 1:1 (Feed de Instagram y Facebook) y 16:9 (presentaciones y pantallas). Todos en alta resolución (1024-1536px) listos para imprimir o compartir." }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Puedo usar mi propio logo y branding?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Sí, con el plan Premium ($4.99/mes) puedes personalizar las infografías con el nombre y logo de tu parroquia, ministerio o grupo. El plan gratuito incluye el branding CatolicosGPT al pie." }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Las infografías son ortodoxas a la doctrina católica?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Sí. CatolicosGPT genera el contenido textual fundamentado en el Magisterio de la Iglesia, el Catecismo, las encíclicas papales y la Biblia. La revisión teológica está integrada en el prompt del sistema de IA." }
+        }
+      ]
+    }
+  ]
 }
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
-
-/* NAV */
-nav{position:sticky;top:0;z-index:100;background:rgba(10,7,5,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
-.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.nav-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--gold),#8B5E1A);border-radius:8px;display:grid;place-items:center;font-size:16px;color:#fff}
-.nav-logo-text{font-family:'Lora',serif;font-size:18px;font-weight:600;color:var(--cream)}
-.nav-logo-text span{color:var(--gold)}
-.nav-links{display:flex;gap:8px;align-items:center}
-.nav-link{color:var(--text2);font-size:13px;font-weight:500;text-decoration:none;padding:6px 12px;border-radius:8px;transition:all .2s}
-.nav-link:hover,.nav-link.active{color:var(--cream);background:rgba(255,255,255,0.07)}
-.nav-btn{padding:7px 16px;background:var(--gold);color:#000;font-size:13px;font-weight:600;border-radius:8px;text-decoration:none;transition:all .2s}
-.nav-btn:hover{background:var(--gold2)}
-
-/* HERO */
-.hero{padding:80px 24px 60px;text-align:center;max-width:760px;margin:0 auto}
-.hero-tag{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(201,146,58,0.1);border:1px solid rgba(201,146,58,0.3);border-radius:100px;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:24px}
-.hero h1{font-family:'Lora',serif;font-size:clamp(32px,5vw,56px);font-weight:600;line-height:1.15;color:var(--cream);margin-bottom:18px}
-.hero h1 em{font-style:italic;color:var(--gold)}
-.hero p{font-size:16px;color:var(--text2);line-height:1.7;max-width:520px;margin:0 auto 40px}
-.stats{display:flex;gap:40px;justify-content:center;flex-wrap:wrap}
-.stat-val{font-size:28px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
-.stat-lab{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
-
-/* GENERATOR SECTION */
-.gen-section{max-width:900px;margin:0 auto;padding:0 24px 64px}
-.gen-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden}
-.gen-header{padding:28px 32px 0;display:flex;align-items:center;gap:12px}
-.gen-header h2{font-family:'Lora',serif;font-size:22px;color:var(--cream)}
-.gen-header p{font-size:13px;color:var(--text2);margin-top:4px}
-.gen-body{padding:24px 32px 32px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
-@media(max-width:640px){.gen-body{grid-template-columns:1fr}}
-.gen-full{grid-column:1/-1}
-.form-group{display:flex;flex-direction:column;gap:8px}
-.form-label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
-.form-input,.form-select{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--cream);font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;appearance:none}
-.form-input:focus,.form-select:focus{border-color:var(--gold)}
-.form-input::placeholder{color:var(--text3)}
-.form-select{cursor:pointer}
-.gen-premium-box{grid-column:1/-1;background:rgba(201,146,58,0.05);border:1px solid rgba(201,146,58,0.15);border-radius:12px;padding:16px 20px}
-.gen-premium-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:6px}
-.gen-premium-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:500px){.gen-premium-grid{grid-template-columns:1fr}}
-.gen-status{font-size:12px;color:var(--text2);text-align:center;min-height:20px;font-style:italic;grid-column:1/-1}
-.gen-btn{grid-column:1/-1;padding:15px;background:linear-gradient(135deg,var(--gold),#A07028);color:#000;font-weight:700;font-size:15px;border:none;border-radius:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
-.gen-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(201,146,58,0.3)}
-.gen-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
-.gen-limit{font-size:12px;color:var(--text2);text-align:center;grid-column:1/-1}
-.gen-limit a{color:var(--gold);text-decoration:none}
-
-/* AUTH BUTTONS */
-.auth-gate{grid-column:1/-1;text-align:center;padding:20px 0 8px}
-.auth-gate p{font-size:14px;color:var(--text2);margin-bottom:16px}
-.auth-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.btn-login{padding:10px 20px;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:10px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;transition:all .2s}
-.btn-login:hover{border-color:var(--gold);color:var(--gold)}
-.btn-register{padding:10px 20px;background:var(--gold);color:#000;border:none;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;transition:all .2s}
-.btn-register:hover{background:var(--gold2)}
-
-/* FILTERS */
-.filters-section{max-width:900px;margin:0 auto;padding:0 24px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.filter-label{font-size:12px;color:var(--text3);font-weight:600;margin-right:4px}
-.filter-chip{padding:6px 14px;border-radius:100px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.08);background:transparent;color:var(--text2);transition:all .2s;font-family:'Inter',sans-serif}
-.filter-chip.on,.filter-chip:hover{background:var(--gold);color:#000;border-color:var(--gold)}
-
-/* GRID */
-.grid-section{max-width:900px;margin:0 auto;padding:0 24px 80px}
-.infografias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
-.card{background:var(--surface);border:1px solid rgba(255,255,255,0.06);border-radius:14px;overflow:hidden;cursor:pointer;text-decoration:none;display:block;transition:all .25s}
-.card:hover{border-color:rgba(201,146,58,0.4);transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,0.4)}
-.card-img{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--surface2);display:block}
-.card-img-placeholder{width:100%;aspect-ratio:2/3;background:linear-gradient(135deg,var(--surface2),var(--surface3));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-.card-img-placeholder .pi{font-size:28px}
-.card-img-placeholder .pt{font-size:11px;color:var(--text3);text-align:center;padding:0 12px}
-.card-body{padding:12px}
-.card-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:6px;display:block}
-.card-title{font-size:13px;font-weight:600;color:var(--cream);line-height:1.4;margin-bottom:4px}
-.card-date{font-size:11px;color:var(--text3)}
-.card-slides-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:var(--text2);font-size:10px;font-weight:600;padding:2px 7px;border-radius:100px}
-.card-wrap{position:relative}
-
-/* EMPTY */
-.empty{text-align:center;padding:60px 24px;grid-column:1/-1}
-.empty-icon{font-size:40px;margin-bottom:12px}
-.empty-title{font-size:18px;font-weight:600;color:var(--cream);margin-bottom:8px}
-.empty-sub{font-size:14px;color:var(--text2);margin-bottom:20px}
-.empty-btn{display:inline-block;padding:10px 22px;background:var(--gold);color:#000;font-weight:600;font-size:13px;border-radius:10px;cursor:pointer;border:none;font-family:'Inter',sans-serif}
-
-/* LOAD MORE */
-.load-more{text-align:center;margin-top:32px}
-.load-more-btn{padding:11px 28px;background:transparent;color:var(--text2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;transition:all .2s}
-.load-more-btn:hover{border-color:var(--gold);color:var(--gold)}
-
-/* MODAL AUTH */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .25s}
-.overlay.open{opacity:1;pointer-events:all}
-.modal{background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:32px;width:100%;max-width:420px;position:relative;transform:translateY(16px);transition:transform .25s}
-.overlay.open .modal{transform:translateY(0)}
-.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1}
-.modal h2{font-family:'Lora',serif;font-size:22px;color:var(--cream);margin-bottom:6px}
-.modal p{font-size:14px;color:var(--text2);margin-bottom:22px;line-height:1.6}
-.mform-group{margin-bottom:16px}
-.mform-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px}
-.mform-input{width:100%;padding:11px 14px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--cream);font-family:'Inter',sans-serif;font-size:14px;outline:none}
-.mform-input:focus{border-color:var(--gold)}
-.mform-error{color:#E06060;font-size:12px;margin-top:8px;min-height:18px}
-.mform-submit{width:100%;padding:13px;background:var(--gold);color:#000;font-weight:700;font-size:14px;border:none;border-radius:10px;cursor:pointer;margin-top:4px;font-family:'Inter',sans-serif}
-.mform-switch{text-align:center;margin-top:14px;font-size:13px;color:var(--text2)}
-.mform-switch a{color:var(--gold);cursor:pointer;font-weight:500}
-
-/* TOAST */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);color:var(--cream);padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:300;transition:transform .3s;border-left:3px solid var(--gold);white-space:nowrap}
-.toast.show{transform:translateX(-50%) translateY(0)}
-
-/* RESULT BOX */
-.result-box{background:var(--surface);border:1px solid rgba(201,146,58,0.25);border-radius:16px;padding:20px 24px;margin-top:16px;grid-column:1/-1;display:none}
-.result-box.show{display:block}
-.result-img{width:100%;max-width:320px;height:auto;border-radius:10px;margin:0 auto 16px;display:block}
-.result-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.result-btn{padding:9px 18px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;border:none;font-family:'Inter',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:all .2s}
-.result-btn.primary{background:var(--gold);color:#000}
-.result-btn.secondary{background:transparent;color:var(--text);border:1px solid rgba(255,255,255,0.12)}
-.result-btn.secondary:hover{border-color:var(--gold);color:var(--gold)}
-
-@media(max-width:600px){
-  .nav-links .nav-link:not(.nav-btn){display:none}
-  .infografias-grid{grid-template-columns:repeat(2,1fr)}
-  .gen-body{padding:20px}
-}
-</style>
+</script>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 
-<nav>
-  <a href="/" class="nav-logo">
-    <div class="nav-logo-icon">✝</div>
-    <div class="nav-logo-text">Católicos<span>GPT</span></div>
+<!-- ───────── NAV ───────── -->
+<header class="nav">
+  <a href="/" class="brand" style="text-decoration:none">
+    <div class="brand-mark">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round">
+        <circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/>
+      </svg>
+    </div>
+    <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
   </a>
-  <div class="nav-links">
-    <a href="/" class="nav-link">Chat IA</a>
-    <a href="/infografias" class="nav-link active">Infografías</a>
-    <a href="/planes" class="nav-link">Planes</a>
-    <a href="#" class="nav-link nav-btn" onclick="openAuth('register');return false" id="nav-auth-btn">Crear cuenta</a>
-  </div>
-</nav>
+  <nav class="nav-links">
+    <a class="nav-link" href="/" style="text-decoration:none">Chat IA</a>
+    <a class="nav-link active" href="/infografias" style="text-decoration:none">Infografías</a>
+    <a class="nav-link" href="/planes" style="text-decoration:none">Planes</a>
+    <a class="nav-user" href="#" id="nav-user-btn" onclick="openAuth('register');return false" style="text-decoration:none">
+      <span class="av">?</span><span id="nav-user-name">Iniciar sesión</span>
+    </a>
+  </nav>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+</header>
 
-<!-- HERO -->
+<!-- ───────── HERO ───────── -->
 <section class="hero">
-  <div class="hero-tag">✨ Generadas con IA · Actualizadas diariamente</div>
-  <h1>Infografías Católicas<br><em>para compartir tu fe</em></h1>
-  <p>Santos, encíclicas, apologética y devociones. Genera la tuya en segundos y compártela en WhatsApp, Instagram o tu parroquia.</p>
-  <div class="stats">
-    <div><div class="stat-val" id="total-stat">0</div><div class="stat-lab">Infografías</div></div>
-    <div><div class="stat-val">6</div><div class="stat-lab">Categorías</div></div>
-    <div><div class="stat-val">1</div><div class="stat-lab">Por día gratis</div></div>
+  <span class="hero-badge">✨ Generadas con IA · Actualizadas diariamente</span>
+  <h1 class="hero-title">Infografías Católicas<span class="accent">para compartir tu fe</span></h1>
+  <p class="hero-sub">Santos, encíclicas, apologética y devociones. Genera la tuya en segundos — en estilo Clásico, Cinematic o Infantil — y compártela en WhatsApp, Instagram o tu parroquia.</p>
+  <div class="hero-stats">
+    <div><div class="stat-num" id="stat-total">0</div><div class="stat-label">Infografías</div></div>
+    <div><div class="stat-num">3</div><div class="stat-label">Estilos</div></div>
+    <div><div class="stat-num">8</div><div class="stat-label">Tipos</div></div>
+    <div><div class="stat-num">1</div><div class="stat-label">Por día gratis</div></div>
+  </div>
+  <div class="cross-rule">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+      <path d="M12 3v8M12 14v7M9 6h6"/>
+    </svg>
   </div>
 </section>
 
-<!-- GENERATOR -->
-<section class="gen-section">
-  <div class="gen-card">
-    <div class="gen-header">
-      <div>
-        <h2>✨ Genera tu infografía con IA</h2>
-        <p>Escribe el tema — santo, doctrina, encíclica — y CatolicosGPT la crea en segundos.</p>
-      </div>
-    </div>
-    <div class="gen-body" id="gen-body">
-      <!-- Auth gate (si no ha iniciado sesión) -->
-      <div class="auth-gate" id="auth-gate">
-        <p>Crea una cuenta gratis para generar tu primera infografía.</p>
-        <div class="auth-btns">
-          <button class="btn-login" onclick="openAuth('login')">Iniciar sesión</button>
-          <button class="btn-register" onclick="openAuth('register')">Registrarme gratis</button>
+<!-- ───────── GENERATOR ───────── -->
+<section class="section">
+  <div class="wrap" style="max-width:880px">
+    <div class="gen style-cream" id="gen-card">
+
+      <!-- Auth gate -->
+      <div id="auth-gate" style="text-align:center;padding:30px 20px">
+        <div style="font-family:var(--font-display);font-size:24px;color:var(--espresso);margin-bottom:10px">Crea una cuenta gratis</div>
+        <p style="color:var(--ink-2);margin-bottom:20px;font-size:15px">Para generar infografías necesitas iniciar sesión. Una infografía por día gratis.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="chip" onclick="openAuth('login')">Iniciar sesión</button>
+          <button class="btn-generate" style="display:inline-flex;padding:11px 22px;width:auto" onclick="openAuth('register')">Registrarme gratis</button>
         </div>
       </div>
 
-      <!-- Form (si ha iniciado sesión) -->
-      <div class="form-group gen-full" id="gen-form" style="display:none">
-        <label class="form-label">Tema de la infografía</label>
-        <input type="text" id="gen-tema" class="form-input" placeholder="Ej: San Francisco de Asís, Rosario, Magnifica Humanitas...">
-      </div>
-
-      <div class="form-group" id="gen-formato-group" style="display:none">
-        <label class="form-label">Formato</label>
-        <select id="gen-formato" class="form-select">
-          <option value="9:16">9:16 — Instagram / WhatsApp</option>
-          <option value="1:1">1:1 — Square / Feed</option>
-          <option value="16:9">16:9 — Presentación 🔒</option>
-        </select>
-      </div>
-
-      <div class="form-group" id="gen-tipo-group" style="display:none">
-        <label class="form-label">Tipo</label>
-        <select id="gen-tipo" class="form-select">
-          <option value="">Auto-detectar</option>
-          <option value="santo">Santo / Devocional</option>
-          <option value="serie">Serie 4 slides</option>
-          <option value="doctrinal">Doctrina / Encíclica</option>
-        </select>
-      </div>
-
-      <div class="gen-premium-box" id="gen-branding-box" style="display:none">
-        <div class="gen-premium-label">✨ Branding Premium</div>
-        <div class="gen-premium-grid">
-          <div class="form-group">
-            <label class="form-label">Tu nombre / Parroquia / Ministerio</label>
-            <input type="text" id="gen-custom-nombre" class="form-input" placeholder="Ej: Grupo Jóvenes Fe...">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Logo (descripción)</label>
-            <input type="text" id="gen-custom-logo" class="form-input" placeholder="Ej: cruz dorada con paloma...">
+      <!-- Form -->
+      <div id="gen-form" style="display:none">
+        <div class="gen-head">
+          <span style="color:var(--accent-deep);margin-top:6px">✨</span>
+          <div>
+            <div class="gen-title">Genera tu infografía con IA</div>
+            <p class="gen-desc">Escribe el tema — un santo, una doctrina, un versículo — y CatolicosGPT diseña la infografía en segundos.</p>
           </div>
         </div>
-      </div>
 
-      <div class="gen-limit gen-full" id="gen-limit-info" style="display:none"></div>
-      <div class="gen-status gen-full" id="gen-status"></div>
-      <button class="gen-btn gen-full" id="gen-btn" style="display:none" onclick="submitGenerar()">
-        <span>✨</span> Generar infografía
-      </button>
+        <div class="field">
+          <label class="field-label">Tema / Prompt de la infografía</label>
+          <textarea class="textarea" id="f-tema" placeholder="Ej: San Francisco de Asís, el Rosario, la parábola del hijo pródigo..."></textarea>
+        </div>
 
-      <!-- Result -->
-      <div class="result-box gen-full" id="result-box">
-        <img id="result-img" class="result-img" alt="Infografía generada">
-        <div class="result-actions" id="result-actions"></div>
+        <div class="field grid-2">
+          <div>
+            <label class="field-label">Formato</label>
+            <select class="select" id="f-formato">
+              <option value="9:16">9:16 — Instagram / WhatsApp Stories</option>
+              <option value="1:1">1:1 — Post de Instagram / Facebook</option>
+              <option value="16:9">16:9 — Presentación / Pantalla</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Tipo de infografía</label>
+            <select class="select" id="f-tipo">
+              <option value="">Auto-detectar</option>
+              <option value="santo">Santo / Devocional</option>
+              <option value="versiculo">Versículo destacado</option>
+              <option value="cita">Cita / Reflexión</option>
+              <option value="educativa">Infografía educativa</option>
+              <option value="pregunta">Pregunta / Enseñanza</option>
+              <option value="oracion">Oración</option>
+              <option value="evento">Anuncio / Evento</option>
+              <option value="serie">Serie 4 slides</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Estilo visual</label>
+          <div class="styles-grid">
+            <button class="style-card active" data-style="clasico" onclick="selectStyle('clasico')">
+              <div class="style-check">✓</div>
+              <div class="style-swatch">
+                <span style="background:#5E1B22"></span>
+                <span style="background:#3B2415"></span>
+                <span style="background:#BC8A36"></span>
+                <span style="background:#D6BB95"></span>
+                <span style="background:#F6F0E3"></span>
+              </div>
+              <div class="style-meta">
+                <div class="style-name">Clásico</div>
+                <div class="style-tag">Crema · pergamino elegante</div>
+              </div>
+            </button>
+            <button class="style-card" data-style="cinematic" onclick="selectStyle('cinematic')">
+              <div class="style-check">✓</div>
+              <div class="style-swatch">
+                <span style="background:#1a120b"></span>
+                <span style="background:#2c1d10"></span>
+                <span style="background:#0d0a07"></span>
+                <span style="background:#BC8A36"></span>
+                <span style="background:#E2BE6E"></span>
+              </div>
+              <div class="style-meta">
+                <div class="style-name">Cinematic</div>
+                <div class="style-tag">Oscuro · dorado dramático</div>
+              </div>
+            </button>
+            <button class="style-card" data-style="infantil" onclick="selectStyle('infantil')">
+              <div class="style-check">✓</div>
+              <div class="style-swatch">
+                <span style="background:#FF6B6B"></span>
+                <span style="background:#FFC93C"></span>
+                <span style="background:#7BC74D"></span>
+                <span style="background:#4DA6FF"></span>
+                <span style="background:#9B6BD6"></span>
+              </div>
+              <div class="style-meta">
+                <div class="style-name">Infantil</div>
+                <div class="style-tag">Color · ilustrado y alegre</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="brand-box" id="brand-box" style="display:none">
+          <div class="brand-box-head">✨ Branding Premium</div>
+          <div class="grid-2">
+            <div>
+              <label class="field-label">Tu nombre / parroquia / ministerio</label>
+              <input class="input" id="f-custom-nombre" placeholder="Ej: Grupo Jóvenes Fe Viva">
+            </div>
+            <div>
+              <label class="field-label">Logo (descripción)</label>
+              <input class="input" id="f-custom-logo" placeholder="Ej: cruz dorada con paloma...">
+            </div>
+          </div>
+        </div>
+
+        <div class="gen-note" id="gen-note"></div>
+
+        <button class="btn-generate" id="gen-btn" onclick="generarInfografia()">
+          <span>✨</span> Generar infografía
+        </button>
+
+        <!-- Resultado -->
+        <div id="result-box" style="display:none;margin-top:24px;padding:24px;background:var(--cream-2);border:1px solid var(--accent);border-radius:var(--r-lg)">
+          <div style="font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--espresso);margin-bottom:14px;text-align:center" id="result-title">✅ Infografía generada</div>
+          <img id="result-img" style="width:100%;max-width:360px;height:auto;display:block;margin:0 auto 18px;border-radius:var(--r-md);box-shadow:var(--shadow-md)">
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap" id="result-actions"></div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- FILTERS -->
-<div class="filters-section">
-  <span class="filter-label">Filtrar:</span>
-  <button class="filter-chip on" onclick="filterBy('all',this)">Todas</button>
-  <button class="filter-chip" onclick="filterBy('santo',this)">Santos</button>
-  <button class="filter-chip" onclick="filterBy('devocional',this)">Devocionales</button>
-  <button class="filter-chip" onclick="filterBy('apologetica',this)">Apologética</button>
-  <button class="filter-chip" onclick="filterBy('enciclica',this)">Encíclicas</button>
-  <button class="filter-chip" onclick="filterBy('doctrinal',this)">Doctrina</button>
-</div>
+<!-- ───────── GALLERY ───────── -->
+<section class="section" id="galeria">
+  <div class="wrap">
+    <div class="gallery-head">
+      <h2 class="gallery-title">Galería de infografías <span class="sm">· <span id="gallery-count">0</span> creadas</span></h2>
+      <div class="filters">
+        <span class="lbl">Filtrar</span>
+        <button class="chip active" onclick="filterBy('todas',this)">Todas</button>
+        <button class="chip" onclick="filterBy('santo',this)">Santos</button>
+        <button class="chip" onclick="filterBy('devocional',this)">Devocionales</button>
+        <button class="chip" onclick="filterBy('apologetica',this)">Apologética</button>
+        <button class="chip" onclick="filterBy('enciclica',this)">Encíclicas</button>
+        <button class="chip" onclick="filterBy('doctrinal',this)">Doctrina</button>
+      </div>
+    </div>
 
-<!-- GRID -->
-<section class="grid-section">
-  <div class="infografias-grid" id="grid">
-    <div class="empty"><div class="empty-icon">⏳</div><div class="empty-title">Cargando...</div></div>
-  </div>
-  <div class="load-more" id="load-more-wrap" style="display:none">
-    <button class="load-more-btn" onclick="loadMore()">Ver más infografías</button>
+    <div class="grid-gallery cards-poster" id="grid"></div>
+    <div style="text-align:center;margin-top:32px" id="load-more-wrap" style="display:none">
+      <button class="chip" onclick="loadMore()">Ver más infografías</button>
+    </div>
   </div>
 </section>
 
-<!-- Auth Modal -->
-<div class="overlay" id="auth-overlay">
+<!-- ───────── FOOTER ───────── -->
+<footer class="foot" style="text-align:center;padding:40px 20px;border-top:1px solid var(--hairline);color:var(--ink-3);font-size:13px;margin-top:40px">
+  <div class="cross-rule" style="margin-bottom:14px"></div>
+  CatolicosGPT · Basado en el Magisterio y Vatican.va · Hecho con fe
+</footer>
+
+<!-- Modal Auth -->
+<div class="overlay" id="auth-overlay" onclick="if(event.target===this)closeAuth()">
   <div class="modal">
     <button class="modal-close" onclick="closeAuth()">✕</button>
-    <div id="auth-modal-content"></div>
+    <div id="auth-content"></div>
   </div>
 </div>
 
+<!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<style>
+/* Componentes adicionales del Claude Design no incluidos en styles.css base */
+.gen.style-cream { background: var(--grad-cream); border: 1px solid var(--hairline-2); }
+.brand-box { background: rgba(188,138,54,.06); border: 1px solid rgba(188,138,54,.2); border-radius: var(--r-md); padding: 16px 20px; margin-bottom: 20px; }
+.brand-box-head { font-family: var(--font-ui); font-weight: 700; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 14px; }
+.gen-note { font-size: 13px; color: var(--ink-2); margin: 10px 0 16px; text-align: center; min-height: 18px; }
+.gen-note .ok { color: #4CAF79; font-weight: 500; }
+.gen-note .warn { color: var(--maroon); }
+.gen-note a { color: var(--gold-deep); font-weight: 600; }
+
+.btn-generate {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; padding: 15px 24px; font-family: var(--font-ui); font-weight: 700; font-size: 15px;
+  color: #3a2a0c; background: var(--grad-gold); border: 1px solid rgba(154,110,38,.4);
+  border-radius: var(--r-md); cursor: pointer; transition: .2s var(--ease); box-shadow: var(--shadow-sm);
+}
+.btn-generate:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.btn-generate:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.spin { width: 16px; height: 16px; border: 2px solid rgba(58,42,12,.25); border-top-color: #3a2a0c; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.styles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 600px) { .styles-grid { grid-template-columns: 1fr; } }
+.style-card {
+  position: relative; border-radius: var(--r-lg); overflow: hidden; cursor: pointer;
+  border: 2px solid var(--hairline-2); background: var(--cream-2); transition: .2s var(--ease);
+  text-align: left; padding: 14px; font-family: var(--font-ui);
+}
+.style-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.style-card.active { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(188,138,54,.16), var(--shadow-md); }
+.style-check { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 12px; opacity: 0; transition: .2s; }
+.style-card.active .style-check { opacity: 1; }
+.style-swatch { display: flex; gap: 4px; margin-bottom: 12px; height: 40px; border-radius: 8px; overflow: hidden; }
+.style-swatch span { flex: 1; }
+.style-name { font-weight: 700; font-size: 16px; color: var(--espresso); }
+.style-tag { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+.gallery-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.gallery-title { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--espresso); }
+.gallery-title .sm { font-family: var(--font-ui); font-weight: 400; font-size: 14px; color: var(--ink-3); }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filters .lbl { font-size: 12px; color: var(--ink-3); font-weight: 600; }
+
+.grid-gallery { display: grid; gap: 18px; }
+.grid-gallery.cards-poster { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.gcard { background: var(--cream-2); border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; cursor: pointer; transition: .2s var(--ease); text-decoration: none; color: inherit; display: block; }
+.gcard:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--gold); }
+.gcard-media { position: relative; width: 100%; aspect-ratio: 2/3; overflow: hidden; background: var(--cream-3); }
+.gcard-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gcard-media .placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--grad-cream); color: var(--ink-3); padding: 20px; text-align: center; }
+.gcard-badges { position: absolute; top: 8px; left: 8px; display: flex; gap: 5px; z-index: 2; }
+.gbadge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; padding: 3px 8px; border-radius: 99px; color: #fff; }
+.gbadge.type { background: rgba(0,0,0,.55); backdrop-filter: blur(8px); }
+.gcard-foot { padding: 12px 14px; }
+.gcard-name { font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--espresso); line-height: 1.3; }
+.gcard-meta { font-size: 12px; color: var(--ink-3); margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+
+.empty { text-align: center; padding: 60px 20px; color: var(--ink-3); }
+.empty-mark { width: 64px; height: 64px; margin: 0 auto 16px; background: var(--cream-2); border-radius: 18px; display: grid; place-items: center; border: 1px solid var(--hairline-2); }
+
+.overlay { position: fixed; inset: 0; background: rgba(43,24,10,.55); backdrop-filter: blur(6px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+.overlay.open { display: flex; animation: fadeIn .2s var(--ease); }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal { background: var(--cream-2); border-radius: var(--r-xl); padding: 32px; width: 100%; max-width: 420px; box-shadow: var(--shadow-lg); position: relative; }
+.modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; cursor: pointer; font-size: 20px; color: var(--ink-3); }
+.modal h2 { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: var(--espresso); margin-bottom: 6px; }
+.modal p { font-size: 14px; color: var(--ink-2); margin-bottom: 20px; }
+.mform-group { margin-bottom: 14px; }
+.mform-label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.mform-input { width: 100%; padding: 12px 14px; background: var(--cream-3); border: 1.5px solid var(--hairline-2); border-radius: var(--r-md); font-family: var(--font-ui); font-size: 14px; outline: none; color: var(--ink); transition: .15s; }
+.mform-input:focus { border-color: var(--gold); }
+.mform-error { color: #B91C1C; font-size: 12px; margin-top: 8px; min-height: 18px; }
+.mform-submit { width: 100%; padding: 13px; background: var(--grad-gold); color: #3a2a0c; font-weight: 700; font-size: 14px; border: none; border-radius: var(--r-md); cursor: pointer; }
+.mform-switch { text-align: center; margin-top: 16px; font-size: 13px; color: var(--ink-2); }
+.mform-switch a { color: var(--gold-deep); cursor: pointer; font-weight: 600; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--espresso); color: #f3e4c6; padding: 12px 20px; border-radius: var(--r-md); font-size: 14px; box-shadow: var(--shadow-lg); z-index: 200; transition: transform .3s var(--ease); }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 768px) {
+  .nav-links { gap: 4px; }
+  .nav-link { padding: 6px 10px; font-size: 13px; }
+  .nav-user { padding: 4px 10px 4px 4px; font-size: 13px; }
+  .nav-user .av { width: 22px; height: 22px; font-size: 11px; }
+  .hero-title { font-size: clamp(32px, 8vw, 56px); }
+}
+</style>
 
 <script>
 const API = '';
 let token = localStorage.getItem('cgpt_token');
-let user  = null;
-let currentFilter = 'all';
-let currentPage   = 1;
-let totalPages    = 1;
+let user = null;
+let selectedStyle = 'clasico';
+let currentFilter = 'todas';
+let currentPage = 1;
+let totalPages = 1;
 
 // ── Init ──
 async function init() {
   loadGrid(true);
   if (token) await fetchUser();
   else showAuthGate();
+  
+  // Auto-fill desde URL ?tema=
+  const urlTema = new URLSearchParams(window.location.search).get('tema');
+  if (urlTema) {
+    setTimeout(() => {
+      const ta = document.getElementById('f-tema');
+      if (ta) { ta.value = decodeURIComponent(urlTema); ta.focus(); document.getElementById('gen-card').scrollIntoView({behavior:'smooth'}); }
+    }, 500);
+  }
 }
 
 async function fetchUser() {
   try {
-    const r = await fetch('/api/auth/me', { headers:{ Authorization:'Bearer '+token } });
-    if (!r.ok) { token=null; localStorage.removeItem('cgpt_token'); showAuthGate(); return; }
+    const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) { logout(); return; }
     user = (await r.json()).user;
     showGenerator();
-    // Update nav
-    document.getElementById('nav-auth-btn').textContent = user.nombre?.split(' ')[0] || 'Mi cuenta';
-    document.getElementById('nav-auth-btn').onclick = () => { localStorage.removeItem('cgpt_token'); location.reload(); return false; };
-  } catch(e) { showAuthGate(); }
+    // Nav user
+    document.getElementById('nav-user-name').textContent = user.nombre?.split(' ')[0] || 'Mi cuenta';
+    document.querySelector('#nav-user-btn .av').textContent = (user.nombre || 'U')[0].toUpperCase();
+    document.getElementById('nav-user-btn').onclick = (e) => { e.preventDefault(); if(confirm('¿Cerrar sesión?')) logout(); };
+  } catch (e) { showAuthGate(); }
 }
 
+function logout() { localStorage.removeItem('cgpt_token'); token = null; location.reload(); }
+
 function showAuthGate() {
-  document.getElementById('auth-gate').style.display='block';
-  ['gen-form','gen-formato-group','gen-tipo-group','gen-btn','gen-limit-info'].forEach(id=>{
-    const el=document.getElementById(id); if(el)el.style.display='none';
-  });
+  document.getElementById('auth-gate').style.display = 'block';
+  document.getElementById('gen-form').style.display = 'none';
 }
 
 async function showGenerator() {
-  document.getElementById('auth-gate').style.display='none';
-  ['gen-form','gen-formato-group','gen-tipo-group','gen-btn'].forEach(id=>{
-    const el=document.getElementById(id); if(el)el.style.display='block';
-  });
-  // Branding premium
+  document.getElementById('auth-gate').style.display = 'none';
+  document.getElementById('gen-form').style.display = 'block';
+  
   if (user?.plan === 'premium' || user?.plan === 'admin') {
-    document.getElementById('gen-branding-box').style.display='block';
-    if (user.customNombre) document.getElementById('gen-custom-nombre').value = user.customNombre;
-    if (user.customLogo)   document.getElementById('gen-custom-logo').value   = user.customLogo;
+    document.getElementById('brand-box').style.display = 'block';
+    if (user.customNombre) document.getElementById('f-custom-nombre').value = user.customNombre;
+    if (user.customLogo) document.getElementById('f-custom-logo').value = user.customLogo;
   }
-  // Limite
-  const limEl = document.getElementById('gen-limit-info');
-  limEl.style.display='block';
+  
+  // Mostrar límite
+  const note = document.getElementById('gen-note');
   if (user?.plan === 'admin' || user?.plan === 'premium') {
-    limEl.innerHTML = '✅ '+ucFirst(user.plan)+' — Infografías ilimitadas · Branding personalizado';
-    limEl.style.color='#4CAF79';
+    note.innerHTML = '<span class="ok">✓ ' + (user.plan === 'admin' ? 'Admin' : 'Premium') + ' — Infografías ilimitadas · Branding personalizado</span>';
   } else {
     try {
-      const r  = await fetch('/api/infografias/check-limit',{headers:{Authorization:'Bearer '+token}});
-      const d  = await r.json();
-      const rem = d.remaining ?? '?';
-      limEl.innerHTML = '📊 '+rem+' generación(es) disponible(s) hoy · <a href="/planes">Premium ilimitado →</a>';
-      limEl.style.color = rem > 0 ? '#A89880' : '#E06060';
-    } catch(e){}
+      const r = await fetch('/api/infografias/check-limit', { headers: { Authorization: 'Bearer ' + token } });
+      const d = await r.json();
+      const rem = d.remaining ?? 0;
+      note.innerHTML = rem > 0
+        ? '📊 ' + rem + ' generación(es) disponible(s) · <a href="/planes">Premium ilimitado →</a>'
+        : '<span class="warn">⚠️ Has alcanzado tu límite diario.</span> <a href="/planes">Obtener Premium →</a>';
+    } catch (e) {}
   }
 }
 
-function ucFirst(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function selectStyle(s) {
+  selectedStyle = s;
+  document.querySelectorAll('.style-card').forEach(b => b.classList.toggle('active', b.dataset.style === s));
+}
 
-// ── Generate ──
-async function submitGenerar() {
-  const tema   = document.getElementById('gen-tema').value.trim();
-  const formato= document.getElementById('gen-formato').value;
-  const tipo   = document.getElementById('gen-tipo').value;
-  const nombre = document.getElementById('gen-custom-nombre')?.value||'';
-  const logo   = document.getElementById('gen-custom-logo')?.value||'';
-  if (!tema){ showToast('Escribe un tema para generar'); document.getElementById('gen-tema').focus(); return; }
+async function generarInfografia() {
+  const tema = document.getElementById('f-tema').value.trim();
+  const formato = document.getElementById('f-formato').value;
+  const tipo = document.getElementById('f-tipo').value;
+  const customNombre = document.getElementById('f-custom-nombre')?.value || '';
+  const customLogo = document.getElementById('f-custom-logo')?.value || '';
+
+  if (!tema) {
+    showToast('Escribe un tema para generar');
+    document.getElementById('f-tema').focus();
+    return;
+  }
 
   const btn = document.getElementById('gen-btn');
-  const st  = document.getElementById('gen-status');
-  btn.disabled=true; btn.innerHTML='<span>⏳</span> Generando...';
-  st.textContent='Creando tu infografía con IA (30-60 segundos)...';
-  document.getElementById('result-box').classList.remove('show');
+  const note = document.getElementById('gen-note');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Generando tu infografía…';
+  note.innerHTML = '<span class="ok">🎨 Creando con IA (30-60 segundos)…</span>';
+  document.getElementById('result-box').style.display = 'none';
 
   try {
-    const r = await fetch('/api/infografias/generar',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({tema,formato,tipo:tipo||undefined,customNombre:nombre,customLogo:logo})
+    const body = { tema, formato, estilo: selectedStyle };
+    if (tipo) body.tipo = tipo;
+    if (customNombre) body.customNombre = customNombre;
+    if (customLogo) body.customLogo = customLogo;
+
+    const r = await fetch('/api/infografias/generar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify(body)
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.error||'Error al generar');
+    if (!r.ok) throw new Error(d.error || 'Error al generar');
 
-    st.textContent='';
+    note.innerHTML = '';
     showResult(d.infografia);
-    loadGrid(true); // Reload grid
-    await showGenerator(); // Update limit count
+    loadGrid(true);
+    showGenerator();
     showToast('¡Infografía generada! 🎉');
-  } catch(e) {
-    st.textContent='❌ '+e.message;
-    if (e.message.includes('upgrade') || e.message.includes('límite')) {
-      st.innerHTML='❌ '+e.message+' <a href="/planes" style="color:var(--gold)">Ver Premium →</a>';
+
+  } catch (e) {
+    note.innerHTML = '<span class="warn">❌ ' + e.message + '</span>';
+    if (e.message.includes('límite') || e.message.includes('upgrade')) {
+      note.innerHTML += ' <a href="/planes">Ver Premium →</a>';
     }
   } finally {
-    btn.disabled=false; btn.innerHTML='<span>✨</span> Generar infografía';
+    btn.disabled = false;
+    btn.innerHTML = '<span>✨</span> Generar infografía';
   }
 }
 
 function showResult(inf) {
   const box = document.getElementById('result-box');
   const img = document.getElementById('result-img');
-  const act = document.getElementById('result-actions');
-  const primerImg = inf.imagenes?.[0]?.url || '';
-  if (primerImg) {
-    img.src = primerImg;
-    img.alt = inf.altText || inf.titulo || 'Infografía';
-    img.style.display='block';
+  const acts = document.getElementById('result-actions');
+  const url = inf.imagenes?.[0]?.url || '';
+  document.getElementById('result-title').textContent = '✅ ' + (inf.titulo || 'Infografía generada');
+
+  if (url) {
+    img.src = url;
+    img.style.display = 'block';
   } else {
-    img.style.display='none';
+    img.style.display = 'none';
   }
+
   const slug = inf.slug || '';
-  const titulo = (inf.titulo || inf.tema || '').replace(/'/g, '');
-  act.innerHTML = `
-    <a href="${primerImg}" download="${slug}.png" class="result-btn primary" target="_blank">⬇️ Descargar PNG</a>
-    <a href="/infografias/${slug}" class="result-btn secondary" target="_blank">🔗 Ver página</a>
-    <button class="result-btn secondary" onclick="shareUrl('/infografias/${slug}','${titulo}')">📤 Compartir</button>
-  `;
-  box.classList.add('show');
-  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  acts.innerHTML = '<a href="' + url + '" download="' + slug + '.png" target="_blank" class="chip" style="background:var(--accent);color:#fff;border-color:var(--accent)">⬇️ Descargar PNG</a>' +
+    '<a href="/infografias/' + slug + '" target="_blank" class="chip">🔗 Ver página</a>' +
+    '<button class="chip" onclick="shareUrl(\'/infografias/' + slug + '\')">📤 Compartir</button>';
+
+  box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// ── Grid ──
-async function loadGrid(reset=false) {
-  if (reset) { currentPage=1; }
+// ── Gallery ──
+async function loadGrid(reset = false) {
+  if (reset) currentPage = 1;
   try {
-    const p = new URLSearchParams({page:currentPage,limit:20});
-    if (currentFilter!=='all') p.set('categoria',currentFilter);
-    const r = await fetch('/api/infografias?'+p);
+    const p = new URLSearchParams({ page: currentPage, limit: 20 });
+    if (currentFilter !== 'todas') p.set('categoria', currentFilter);
+    const r = await fetch('/api/infografias?' + p);
     const d = await r.json();
-    document.getElementById('total-stat').textContent = d.total||0;
-    totalPages = d.totalPages||1;
+    document.getElementById('stat-total').textContent = d.total || 0;
+    document.getElementById('gallery-count').textContent = d.total || 0;
+    totalPages = d.totalPages || 1;
     const g = document.getElementById('grid');
-    if (reset) g.innerHTML='';
-    if (!d.items?.length && currentPage===1) {
-      g.innerHTML=`<div class="empty"><div class="empty-icon">🎨</div><div class="empty-title">Sé el primero</div><div class="empty-sub">Genera la primera infografía de esta categoría.</div><button class="empty-btn" onclick="document.getElementById('gen-tema').focus();document.getElementById('gen-tema').scrollIntoView({behavior:'smooth'})">Generar ahora</button></div>`;
+    if (reset) g.innerHTML = '';
+    if (!d.items?.length && currentPage === 1) {
+      g.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-mark">🎨</div><h3 style="font-family:var(--font-display);font-size:22px;color:var(--espresso);margin:0">Sé el primero</h3><p style="margin-top:8px">Aún no hay infografías en esta categoría. Genera la primera ahora.</p></div>';
       return;
     }
     d.items.forEach(inf => g.insertAdjacentHTML('beforeend', buildCard(inf)));
-    document.getElementById('load-more-wrap').style.display = currentPage<totalPages ? 'block' : 'none';
-  } catch(e){ console.error(e); }
+    document.getElementById('load-more-wrap').style.display = currentPage < totalPages ? 'block' : 'none';
+  } catch (e) { console.error(e); }
 }
 
 function buildCard(inf) {
   const img = inf.imagenes?.[0]?.url;
-  const fecha = new Date(inf.fechaCreacion).toLocaleDateString('es-ES',{day:'numeric',month:'short'});
-  const slides = inf.totalSlides>1 ? `<span class="card-slides-badge">${inf.totalSlides} slides</span>` : '';
+  const fecha = new Date(inf.fechaCreacion).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  const slides = inf.totalSlides > 1 ? '<span class="gbadge type">' + inf.totalSlides + ' slides</span>' : '';
+  const cat = (inf.categoria || inf.tipo || 'católico').slice(0, 12);
   const thumb = img
-    ? `<img class="card-img" src="${img}" alt="${(inf.altText||inf.titulo||'').replace(/"/g,'')}" loading="lazy">`
-    : `<div class="card-img-placeholder"><div class="pi">✝</div><div class="pt">${(inf.titulo||inf.tema||'').slice(0,40)}</div></div>`;
-  return `<a class="card" href="/infografias/${inf.slug}">
-    <div class="card-wrap">${thumb}${slides}</div>
-    <div class="card-body">
-      <span class="card-badge">${inf.categoria||inf.tipo||'católico'}</span>
-      <div class="card-title">${(inf.titulo||inf.tema||'').slice(0,55)}</div>
-      <div class="card-date">${fecha}</div>
-    </div>
-  </a>`;
+    ? '<img src="' + img + '" alt="' + (inf.altText || inf.titulo || '').replace(/"/g, '') + '" loading="lazy">'
+    : '<div class="placeholder"><div style="font-size:32px;margin-bottom:8px">✝</div><div style="font-size:13px">' + (inf.titulo || '').slice(0, 40) + '</div></div>';
+  return '<a class="gcard" href="/infografias/' + inf.slug + '">' +
+    '<div class="gcard-media">' + thumb +
+    '<div class="gcard-badges"><span class="gbadge type">' + cat + '</span>' + slides + '</div>' +
+    '</div>' +
+    '<div class="gcard-foot">' +
+    '<div class="gcard-name">' + (inf.titulo || inf.tema || '').slice(0, 60) + '</div>' +
+    '<div class="gcard-meta">🕐 ' + fecha + '</div>' +
+    '</div></a>';
 }
 
 function loadMore() { currentPage++; loadGrid(false); }
-function filterBy(cat,btn) {
-  currentFilter=cat;
-  document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
+function filterBy(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.filters .chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
   loadGrid(true);
 }
 
 // ── Auth Modal ──
-function openAuth(mode='login') {
-  renderAuth(mode);
-  document.getElementById('auth-overlay').classList.add('open');
-}
+function openAuth(mode = 'login') { renderAuth(mode); document.getElementById('auth-overlay').classList.add('open'); }
 function closeAuth() { document.getElementById('auth-overlay').classList.remove('open'); }
+
 function renderAuth(mode) {
-  const c = document.getElementById('auth-modal-content');
-  if (mode==='login') {
-    c.innerHTML=`<h2>Bienvenido de vuelta</h2><p>Inicia sesión para generar infografías.</p>
-    <div class="mform-group"><label class="mform-label">Email</label><input id="m-email" type="email" class="mform-input" placeholder="tu@email.com"></div>
-    <div class="mform-group"><label class="mform-label">Contraseña</label><input id="m-pass" type="password" class="mform-input" placeholder="••••••••"></div>
-    <div class="mform-error" id="m-err"></div>
-    <button class="mform-submit" onclick="doLogin()">Iniciar sesión</button>
-    <div class="mform-switch">¿No tienes cuenta? <a onclick="renderAuth('register')">Regístrate gratis</a></div>`;
+  const c = document.getElementById('auth-content');
+  if (mode === 'login') {
+    c.innerHTML = '<h2>Bienvenido</h2><p>Inicia sesión para generar infografías.</p>' +
+      '<div class="mform-group"><label class="mform-label">Email</label><input id="m-email" type="email" class="mform-input"></div>' +
+      '<div class="mform-group"><label class="mform-label">Contraseña</label><input id="m-pass" type="password" class="mform-input"></div>' +
+      '<div class="mform-error" id="m-err"></div>' +
+      '<button class="mform-submit" onclick="doLogin()">Iniciar sesión</button>' +
+      '<div class="mform-switch">¿No tienes cuenta? <a onclick="renderAuth(\'register\')">Regístrate gratis</a></div>';
   } else {
-    c.innerHTML=`<h2>Crear cuenta gratis</h2><p>1 infografía por día sin costo.</p>
-    <div class="mform-group"><label class="mform-label">Nombre</label><input id="m-nombre" type="text" class="mform-input" placeholder="Tu nombre"></div>
-    <div class="mform-group"><label class="mform-label">Email</label><input id="m-email" type="email" class="mform-input" placeholder="tu@email.com"></div>
-    <div class="mform-group"><label class="mform-label">Contraseña (mín. 8 caracteres)</label><input id="m-pass" type="password" class="mform-input" placeholder="••••••••"></div>
-    <div class="mform-error" id="m-err"></div>
-    <button class="mform-submit" onclick="doRegister()">Crear cuenta gratis</button>
-    <div class="mform-switch">¿Ya tienes cuenta? <a onclick="renderAuth('login')">Inicia sesión</a></div>`;
+    c.innerHTML = '<h2>Crear cuenta gratis</h2><p>Una infografía por día sin costo.</p>' +
+      '<div class="mform-group"><label class="mform-label">Nombre</label><input id="m-nombre" type="text" class="mform-input"></div>' +
+      '<div class="mform-group"><label class="mform-label">Email</label><input id="m-email" type="email" class="mform-input"></div>' +
+      '<div class="mform-group"><label class="mform-label">Contraseña (mín. 8)</label><input id="m-pass" type="password" class="mform-input"></div>' +
+      '<div class="mform-error" id="m-err"></div>' +
+      '<button class="mform-submit" onclick="doRegister()">Crear cuenta gratis</button>' +
+      '<div class="mform-switch">¿Ya tienes cuenta? <a onclick="renderAuth(\'login\')">Inicia sesión</a></div>';
   }
 }
 
 async function doLogin() {
-  const email=document.getElementById('m-email').value.trim();
-  const pass=document.getElementById('m-pass').value;
-  document.getElementById('m-err').textContent='';
+  const email = document.getElementById('m-email').value.trim();
+  const pass = document.getElementById('m-pass').value;
+  document.getElementById('m-err').textContent = '';
   try {
-    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
-    const d=await r.json();
-    if(!r.ok) throw new Error(d.error||'Error al iniciar sesión');
-    token=d.token; localStorage.setItem('cgpt_token',token); user=d.user;
+    const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pass }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    token = d.token; localStorage.setItem('cgpt_token', token); user = d.user;
     closeAuth(); showGenerator();
-    document.getElementById('nav-auth-btn').textContent=user.nombre?.split(' ')[0]||'Mi cuenta';
-    showToast('¡Bienvenido, '+user.nombre+'! 🙏');
-  } catch(e){document.getElementById('m-err').textContent=e.message;}
+    document.getElementById('nav-user-name').textContent = user.nombre?.split(' ')[0] || 'Mi cuenta';
+    document.querySelector('#nav-user-btn .av').textContent = (user.nombre || 'U')[0].toUpperCase();
+    showToast('¡Bienvenido, ' + user.nombre + '! 🙏');
+  } catch (e) { document.getElementById('m-err').textContent = e.message; }
 }
 
 async function doRegister() {
-  const nombre=document.getElementById('m-nombre').value.trim();
-  const email=document.getElementById('m-email').value.trim();
-  const pass=document.getElementById('m-pass').value;
-  document.getElementById('m-err').textContent='';
+  const nombre = document.getElementById('m-nombre').value.trim();
+  const email = document.getElementById('m-email').value.trim();
+  const pass = document.getElementById('m-pass').value;
+  document.getElementById('m-err').textContent = '';
   try {
-    const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre,email,password:pass})});
-    const d=await r.json();
-    if(!r.ok) throw new Error(d.error||'Error al registrarse');
-    token=d.token; localStorage.setItem('cgpt_token',token); user=d.user;
+    const r = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, email, password: pass }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    token = d.token; localStorage.setItem('cgpt_token', token); user = d.user;
     closeAuth(); showGenerator();
-    document.getElementById('nav-auth-btn').textContent=user.nombre?.split(' ')[0]||'Mi cuenta';
+    document.getElementById('nav-user-name').textContent = user.nombre?.split(' ')[0] || 'Mi cuenta';
+    document.querySelector('#nav-user-btn .av').textContent = (user.nombre || 'U')[0].toUpperCase();
     showToast('¡Cuenta creada! Tienes 1 infografía gratis hoy 🎉');
-  } catch(e){document.getElementById('m-err').textContent=e.message;}
+  } catch (e) { document.getElementById('m-err').textContent = e.message; }
 }
 
-// ── Utils ──
-function shareUrl(path, titulo) {
-  const url = 'https://catolicosgpt.com'+path;
-  if (navigator.share) navigator.share({title:titulo+' — CatolicosGPT', url});
-  else { navigator.clipboard.writeText(url); showToast('Link copiado 📋'); }
+function shareUrl(path) {
+  const url = 'https://catolicosgpt.com' + path;
+  if (navigator.share) navigator.share({ url });
+  else { navigator.clipboard.writeText(url); showToast('Enlace copiado 📋'); }
 }
 
 function showToast(msg) {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3500);
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
-
-// Close overlays on backdrop click
-document.getElementById('auth-overlay').addEventListener('click',e=>{if(e.target.id==='auth-overlay')closeAuth();});
-
-// Expose for external calls (from chat)
-window.openInfografiaGenerator = (tema) => {
-  document.getElementById('gen-tema').value = tema || '';
-  document.getElementById('gen-tema').scrollIntoView({behavior:'smooth'});
-  document.getElementById('gen-tema').focus();
-};
 
 init();
-
-// Detectar ?tema= en URL (desde chat IA)
-const urlTema = new URLSearchParams(window.location.search).get('tema');
-if (urlTema) {
-  // Esperar a que el DOM esté listo con el generator
-  setTimeout(() => {
-    const input = document.getElementById('gen-tema');
-    if (input) {
-      input.value = decodeURIComponent(urlTema);
-      input.scrollIntoView({ behavior: 'smooth' });
-      input.focus();
-    }
-  }, 800);
-}
 </script>
 </body>
 </html>

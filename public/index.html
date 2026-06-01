@@ -1,632 +1,553 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CatólicosGPT · Tu IA Católica · Pregunta sobre Fe, Biblia y Magisterio</title>
+<meta name="description" content="CatólicosGPT es la IA católica en español. Pregunta sobre la fe, la Biblia, los santos, encíclicas y la doctrina de la Iglesia. Respuestas fundamentadas en el Magisterio. Gratis.">
+<meta name="keywords" content="IA católica, ChatGPT católico, inteligencia artificial católica, Magisterio IA, pregunta sobre fe, Biblia IA, santos del día, lecturas católicas, doctrina católica, apologética católica, CatolicosGPT">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="author" content="CatolicosGPT">
+<link rel="canonical" href="https://catolicosgpt.com/">
 
-  <!-- ═══════════════════════════════════════════
-       PRIMARY SEO META TAGS
-  ═══════════════════════════════════════════ -->
-  <title>CatolicosGPT — IA Católica #1 en Español | Asistente Teológico Gratis</title>
-  <meta name="description" content="CatolicosGPT: la inteligencia artificial católica #1 en español. Consulta el Catecismo, lecturas del día, santos, oraciones, teología y doctrina. Gratis para toda Latinoamérica y el mundo hispanohablante.">
-  <meta name="keywords" content="inteligencia artificial católica, IA católica, asistente católico IA, catolicismo inteligencia artificial, catecismo online, lecturas del día católico, biblia católica online, santos católicos, oraciones católicas, teología católica, doctrina católica, magisterio iglesia, catolicosgpt, católicos gpt, ia religion, chatbot católico, asistente teológico, fe católica, iglesia católica inteligencia artificial, breviario digital, misal digital, homilía del día, rosario virtual, novenas católicas, moral católica, sacramentos católicos, confesión guiada, examen de conciencia, catecismo iglesia católica, biblia de jerusalén, vatican ia, papa francisco ia, evangelio del día, liturgia horas, laudes digitales">
-  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-  <meta name="author" content="CatolicosGPT">
-  <meta name="language" content="Spanish">
-  <meta name="revisit-after" content="3 days">
-  <meta name="rating" content="general">
-  <link rel="canonical" href="https://catolicosgpt.com/">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://catolicosgpt.com/">
+<meta property="og:title" content="CatolicosGPT · IA Católica gratis en español">
+<meta property="og:description" content="Pregunta sobre fe, Biblia, santos y doctrina de la Iglesia. La IA más fiel al Magisterio Católico.">
+<meta property="og:image" content="https://catolicosgpt.com/logo.png">
+<meta property="og:locale" content="es_ES">
+<meta property="og:site_name" content="CatolicosGPT">
 
-  <!-- ═══════════════════════════════════════════
-       OPEN GRAPH — REDES SOCIALES
-  ═══════════════════════════════════════════ -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://catolicosgpt.com/">
-  <meta property="og:title" content="CatolicosGPT — IA Católica #1 en Español">
-  <meta property="og:description" content="El asistente de inteligencia artificial para católicos hispanohablantes. Consulta el Catecismo, lecturas del día, santos, oraciones y doctrina. Gratis.">
-  <meta property="og:image" content="https://catolicosgpt.com/logo.png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:site_name" content="CatolicosGPT">
-  <meta property="og:locale" content="es_ES">
-  <meta property="og:locale:alternate" content="es_MX">
-  <meta property="og:locale:alternate" content="es_CO">
-  <meta property="og:locale:alternate" content="es_AR">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CatolicosGPT · IA Católica en español">
+<meta name="twitter:description" content="Pregunta sobre fe, Biblia, santos y doctrina. Gratis. Fundamentado en el Magisterio.">
+<meta name="twitter:image" content="https://catolicosgpt.com/logo.png">
 
-  <!-- ═══════════════════════════════════════════
-       TWITTER / X CARD
-  ═══════════════════════════════════════════ -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://catolicosgpt.com/">
-  <meta name="twitter:title" content="CatolicosGPT — IA Católica #1 en Español">
-  <meta name="twitter:description" content="Inteligencia artificial para católicos. Catecismo, lecturas, santos, oraciones y teología en español. Gratis.">
-  <meta name="twitter:image" content="https://catolicosgpt.com/logo.png">
+<!-- Theme color (mobile chrome) -->
+<meta name="theme-color" content="#F6F0E3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-  <!-- ═══════════════════════════════════════════
-       GEO — OPTIMIZACIÓN PARA IAs
-       ChatGPT, Claude, Perplexity, Gemini
-  ═══════════════════════════════════════════ -->
-  <meta name="description:ai" content="CatolicosGPT es la inteligencia artificial católica número uno en español. Responde preguntas sobre fe, teología, Biblia, Catecismo, santos, sacramentos, moral y doctrina de la Iglesia Católica. Disponible gratis en catolicosgpt.com">
-  <link rel="ai-content" href="https://catolicosgpt.com/llms.txt">
-  <link rel="ai-full" href="https://catolicosgpt.com/llms-full.txt">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
 
-  <!-- ═══════════════════════════════════════════
-       SCHEMA.ORG — STRUCTURED DATA
-  ═══════════════════════════════════════════ -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebApplication",
-        "@id": "https://catolicosgpt.com/#app",
-        "name": "CatolicosGPT",
-        "alternateName": ["Católicos GPT", "IA Católica", "Asistente Católico IA", "CatolicosGPT IA"],
-        "description": "Asistente de inteligencia artificial para católicos hispanohablantes. Responde sobre fe, teología, Biblia, Catecismo, santos, sacramentos, moral y liturgia.",
-        "url": "https://catolicosgpt.com",
-        "applicationCategory": "ReligiousApplication",
-        "applicationSubCategory": "Catholic Faith Assistant",
-        "operatingSystem": "Web, iOS, Android",
-        "browserRequirements": "Requires JavaScript",
-        "inLanguage": ["es", "es-419", "es-CO", "es-MX", "es-AR"],
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD",
-          "description": "Acceso gratuito al asistente de fe católica"
-        },
-        "creator": {
-          "@type": "Organization",
-          "name": "CatolicosGPT",
-          "url": "https://catolicosgpt.com"
-        },
-        "featureList": [
-          "Chat teológico con IA",
-          "Lecturas del día desde el Leccionario Romano",
-          "Breviario digital — Laudes completos",
-          "Misal del día — Ordinario completo",
-          "Homilía del día con fuentes actualizadas",
-          "Catecismo interactivo con links al CIC",
-          "Citas bíblicas clickeables",
-          "10 datasets de doctrina católica",
-          "Integración con Magisterium AI"
-        ],
-        "keywords": "IA católica, inteligencia artificial católica, catecismo online, fe católica, teología, biblia, santos, oraciones"
-      },
-      {
-        "@type": "Organization",
-        "@id": "https://catolicosgpt.com/#org",
-        "name": "CatolicosGPT",
-        "url": "https://catolicosgpt.com",
-        "logo": "https://catolicosgpt.com/logo.png",
-        "description": "Plataforma de inteligencia artificial al servicio de la fe católica en español",
-        "foundingDate": "2025",
-        "areaServed": {
-          "@type": "AdministrativeArea",
-          "name": "Latinoamérica y mundo hispanohablante"
-        },
-        "knowsAbout": [
-          "Catolicismo",
-          "Teología católica",
-          "Catecismo de la Iglesia Católica",
-          "Biblia católica",
-          "Liturgia romana",
-          "Santos católicos",
-          "Moral católica",
-          "Espiritualidad católica"
-        ],
-        "sameAs": [
-          "https://catolicosgpt.com"
-        ]
-      },
-      {
-        "@type": "WebSite",
-        "@id": "https://catolicosgpt.com/#website",
-        "url": "https://catolicosgpt.com",
-        "name": "CatolicosGPT",
-        "description": "IA Católica #1 en Español",
-        "inLanguage": "es",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://catolicosgpt.com/?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
-      },
-      {
-        "@type": "FAQPage",
-        "@id": "https://catolicosgpt.com/#faq",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "¿Qué es CatolicosGPT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "CatolicosGPT es el asistente de inteligencia artificial católica número uno en español. Responde preguntas sobre fe, teología, Biblia, Catecismo, santos, sacramentos y doctrina de la Iglesia Católica de forma gratuita."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "¿Es gratis CatolicosGPT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sí, CatolicosGPT es completamente gratuito. Puedes consultar el Catecismo, las lecturas del día, el breviario, la homilía y hacer preguntas teológicas sin costo."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "¿Qué preguntas puedo hacer a CatolicosGPT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Puedes preguntar sobre cualquier tema de fe católica: doctrina, moral, sacramentos, Biblia, santos, oraciones, historia de la Iglesia, liturgia, novenas, y más. La IA responde basándose en el Magisterio oficial de la Iglesia Católica."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "¿CatolicosGPT tiene las lecturas del día?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sí. CatolicosGPT muestra las lecturas de la Misa del día actualizadas cada día, incluyendo la Primera Lectura, el Salmo Responsorial, la Segunda Lectura (en domingos) y el Evangelio, con su reflexión."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "¿Tiene breviario digital CatolicosGPT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sí. CatolicosGPT incluye el Breviario digital con los Laudes completos del día: Himno, Salmos, Cántico, Lectura breve, Responsorio, Benedictus, Preces y Oración conclusiva."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "¿Cómo usa CatolicosGPT la inteligencia artificial?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "CatolicosGPT combina GPT-4o de OpenAI con el Magisterium AI y 10 datasets propios de doctrina católica para dar respuestas precisas, fundamentadas en el Catecismo y la Biblia, con citas verificables."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "¿Está disponible para Latinoamérica?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sí. CatolicosGPT está diseñado especialmente para católicos de habla hispana en Colombia, México, Argentina, España, Perú, Chile, Venezuela y todo el mundo hispanohablante."
-            }
-          }
-        ]
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/chat.css">
+
+<!-- JSON-LD: Sitio web + organización -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://catolicosgpt.com/#website",
+      "url": "https://catolicosgpt.com/",
+      "name": "CatólicosGPT",
+      "description": "IA Católica en español fundamentada en el Magisterio",
+      "inLanguage": "es-ES",
+      "publisher": { "@id": "https://catolicosgpt.com/#organization" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://catolicosgpt.com/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
       }
-    ]
-  }
-  </script>
-
-  <!-- ═══════════════════════════════════════════
-       GOOGLE ANALYTICS 4
-  ═══════════════════════════════════════════ -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H8CB7M80S3"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-H8CB7M80S3', {
-      page_title: 'CatolicosGPT - IA Católica',
-      page_location: window.location.href,
-      send_page_view: true
-    });
-  </script>
-
-  <!-- ═══════════════════════════════════════════
-       FAVICONS Y PWA
-  ═══════════════════════════════════════════ -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#5C3D1E">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="CatolicosGPT">
-
-  <!-- ═══════════════════════════════════════════
-       FUENTES
-  ═══════════════════════════════════════════ -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://catolicosgpt.com/#organization",
+      "name": "CatolicosGPT",
+      "url": "https://catolicosgpt.com/",
+      "logo": "https://catolicosgpt.com/logo.png",
+      "description": "IA Católica para evangelización digital en español"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "CatolicosGPT",
+      "applicationCategory": "ReligiousApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "description": "IA Católica que responde preguntas sobre fe, Biblia, santos, encíclicas y doctrina, basada en el Magisterio de la Iglesia."
+    }
+  ]
+}
+</script>
 </head>
 <body>
-<div class="app">
 
-  <!-- SIDEBAR -->
-  <div id="sb-overlay" onclick="closeSb()"></div>
-  <nav class="sb" id="sb">
-    <div class="sb-top">
-      <div class="sb-brand">
-        <svg width="22" height="22" viewBox="0 0 80 80" fill="none">
-          <circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/>
-          <line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
-          <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
-        </svg>
-        <span class="sb-name">Católicos<em>GPT</em></span>
-      </div>
-      <button class="sb-x" onclick="closeSb()">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
+<div class="chat-shell">
+  <!-- ──────── NAV ──────── -->
+  <header class="nav">
+    <div class="nav-left">
+      <button class="icon-btn" onclick="toggleSb()" aria-label="Menú">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       </button>
+      <a href="/" class="brand" style="text-decoration:none">
+        <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/></svg></div>
+        <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
+      </a>
     </div>
+    <nav class="nav-links">
+      <a class="nav-link active" href="/" style="text-decoration:none">Chat IA</a>
+      <a class="nav-link" href="/infografias" style="text-decoration:none">Infografías</a>
+      <a class="nav-link" href="/planes" style="text-decoration:none">Planes</a>
+      <a class="nav-user" href="#" id="nav-user-btn" onclick="navUserClick();return false" style="text-decoration:none">
+        <span class="av" id="nav-av">?</span>
+        <span id="nav-user-name">Iniciar sesión</span>
+      </a>
+    </nav>
+  </header>
 
-    <button class="sb-new" onclick="newChat();closeSb()">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <line x1="6" y1="1" x2="6" y2="11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      </svg>
-      Nueva consulta
-    </button>
-
-    <div class="sb-scroll">
-      <!-- Historial -->
-      <div class="sb-label">Recientes</div>
-      <div id="history-list"></div>
-
-      <!-- Litúrgico -->
-      <div class="sb-label">Litúrgico</div>
-
-      <div class="sb-row" onclick="openView('lecturas');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <path d="M2 2h11v11H2z" stroke="#8B1A1A" stroke-width="1.3" stroke-linejoin="round"/>
-          <path d="M4 5h7M4 7.5h7M4 10h4.5" stroke="#8B1A1A" stroke-width="1.3" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Lecturas de la Misa</div>
-          <div class="sb-row-sub">Primera lectura · Salmo · Evangelio</div>
-        </div>
-      </div>
-
-      <div class="sb-row" onclick="openView('breviario');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <circle cx="7.5" cy="7.5" r="5.5" stroke="#4A2080" stroke-width="1.3"/>
-          <path d="M7.5 4v3.8l2.2 2.2" stroke="#4A2080" stroke-width="1.3" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Breviario — Laudes</div>
-          <div class="sb-row-sub">Oficio de la mañana completo</div>
-        </div>
-      </div>
-
-      <div class="sb-row" onclick="openView('misal');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <path d="M2 1.5h9.5v12H2z" stroke="#5C3D1E" stroke-width="1.3" stroke-linejoin="round"/>
-          <path d="M4 4.5h5.5M4 6.5h5.5M4 8.5h3.5" stroke="#5C3D1E" stroke-width="1.3" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Misal del día</div>
-          <div class="sb-row-sub">Ordinario de la Misa completo</div>
-        </div>
-      </div>
-
-      <div class="sb-row" onclick="openView('homilia');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <circle cx="7.5" cy="5" r="3" stroke="#8B1A1A" stroke-width="1.3"/>
-          <path d="M3 13c0-2.5 2-4.5 4.5-4.5S12 10.5 12 13" stroke="#8B1A1A" stroke-width="1.3" stroke-linecap="round"/>
-          <path d="M7.5 1v1M5 2l.5.8M10 2l-.5.8" stroke="#C9923A" stroke-width="1.1" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Homilía del día</div>
-          <div class="sb-row-sub">Reflexión pastoral · Fuentes actualizadas</div>
-        </div>
-      </div>
-
-      <!-- Magisterio -->
-      <div class="sb-label">Magisterio del Papa</div>
-
-      <div class="sb-row" onclick="openView('enciclica');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <path d="M2 2h11v11H2z" stroke="#7A5230" stroke-width="1.3" stroke-linejoin="round" fill="rgba(122,82,48,.1)"/>
-          <path d="M5 5h5M5 7.5h5M5 10h3" stroke="#C9923A" stroke-width="1.3" stroke-linecap="round"/>
-          <circle cx="11.5" cy="3.5" r="2.5" fill="#8B1A1A"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Magnifica Humanitas</div>
-          <div class="sb-row-sub">Encíclica León XIV · IA y dignidad humana</div>
-        </div>
-      </div>
-
-      <div class="sb-row" id="santo-row" onclick="openView('santo');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <circle cx="7.5" cy="5" r="3.5" stroke="#C9923A" stroke-width="1.3"/>
-          <path d="M2.5 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="#C9923A" stroke-width="1.3" stroke-linecap="round"/>
-          <path d="M7.5 1v1.5M4.5 2l1 1M10.5 2l-1 1" stroke="#8B1A1A" stroke-width="1.2" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="sb-row-title" id="santo-nombre">Santo del día</div>
-          <div class="sb-row-sub" id="santo-fecha">Cargando...</div>
-        </div>
-      </div>
-
-      <!-- Biblioteca Magisterium v3 -->
-      <div class="sb-label">Biblioteca · 25,000 docs</div>
-
-      <div class="sb-row" onclick="openView('buscar');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <circle cx="6.5" cy="6.5" r="4" stroke="#C9923A" stroke-width="1.3"/>
-          <path d="M10 10l3 3" stroke="#C9923A" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Buscar en el Magisterio</div>
-          <div class="sb-row-sub">25,000 documentos · Fuentes verificables</div>
-        </div>
-      </div>
-
-      <div class="sb-row" onclick="setChatMode('magisterial');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <path d="M7.5 1L9 5.5h5L10 8.5l1.5 5L7.5 11 3.5 13.5 5 8.5 1 5.5h5z" stroke="#C9923A" stroke-width="1.2" fill="rgba(201,146,58,.1)"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Modo Magisterial</div>
-          <div class="sb-row-sub">Solo doctrina oficial · Enseñanza de la Iglesia</div>
-        </div>
-      </div>
-
-      <div class="sb-row" onclick="setChatMode('scholarly');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <path d="M2 12L7.5 2l5.5 10H2z" stroke="#7A5230" stroke-width="1.3" fill="rgba(122,82,48,.08)"/>
-          <path d="M5 9h5M7.5 6v3" stroke="#C9923A" stroke-width="1.2" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Modo Scholarly</div>
-          <div class="sb-row-sub">Aquino · Agustín · Padres · Biblias</div>
-        </div>
-      </div>
-
-      <div class="sb-row" onclick="openView('apologetica');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <path d="M7.5 1v8M7.5 11v2" stroke="#8B1A1A" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="7.5" cy="7.5" r="6.5" stroke="#8B1A1A" stroke-width="1.2"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Apologética</div>
-          <div class="sb-row-sub">Respuestas con fuentes del Magisterio</div>
-        </div>
-      </div>
-    </div>
-
-      <!-- v4: Infografías y Planes -->
-      <div class="sb-label">Herramientas</div>
-
-      <div class="sb-row" onclick="window.open('/infografias','_blank');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <rect x="1" y="1" width="13" height="13" rx="2" stroke="#C9923A" stroke-width="1.3" fill="rgba(201,146,58,.08)"/>
-          <path d="M4 4h7M4 7h5M4 10h6" stroke="#C9923A" stroke-width="1.2" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Infografías IA</div>
-          <div class="sb-row-sub">Repositorio · Generador · SEO</div>
-        </div>
-      </div>
-
-      <div class="sb-row" onclick="window.open('/planes','_blank');closeSb()">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <path d="M7.5 1L9 5h4.5L10 8l1.5 5L7.5 11 3.5 13 5 8 1.5 5H6z" stroke="#C9923A" stroke-width="1.2" fill="rgba(201,146,58,.08)"/>
-        </svg>
-        <div>
-          <div class="sb-row-title">Planes y Precios</div>
-          <div class="sb-row-sub">Gratis · Premium $4.99/mes</div>
-        </div>
-      </div>
-
-    <a class="sb-donate" href="#" onclick="openDonate();closeSb();return false;">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M7 12s-5.5-3-5.5-6.5a3.5 3.5 0 0 1 5.5-2.88A3.5 3.5 0 0 1 12.5 5.5C12.5 9 7 12 7 12z" stroke="#C9923A" stroke-width="1.3" fill="rgba(201,146,58,.1)"/>
-      </svg>
-      <span>Apoya CatolicosGPT · PayPal</span>
-    </a>
-  </nav>
-
-  <!-- MAIN -->
-  <div class="main">
-    <header class="topbar">
-      <div class="tb-left">
-        <button class="menu-btn" onclick="toggleSb()">
-          <span></span><span></span><span></span>
+  <div class="chat-body">
+    <!-- ──────── SIDEBAR ──────── -->
+    <aside class="side closed" id="sb">
+      <div class="side-top">
+        <button class="btn-new" onclick="newChat();closeSb()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Nueva conversación
         </button>
-        <div class="tb-brand">
-          <svg width="20" height="20" viewBox="0 0 80 80" fill="none">
-            <circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/>
-            <line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
-            <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
-          </svg>
-          <span class="tb-name">Católicos<em>GPT</em></span>
-        </div>
-      </div>
-      <button class="tb-new-btn" onclick="newChat()" title="Nueva consulta">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-          <line x1="6.5" y1="1" x2="6.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="1" y1="6.5" x2="12" y2="6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </header>
-
-    <div class="content" id="content">
-
-      <!-- WELCOME -->
-      <div class="welcome" id="welcome">
-        <div class="wlc-wrap">
-          <svg class="wlc-icon" viewBox="0 0 80 80" fill="none">
-            <circle cx="40" cy="30" r="21" stroke="#7A5230" stroke-width="2.2"/>
-            <line x1="40" y1="9" x2="40" y2="51" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
-            <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
-          </svg>
-          <h1 class="wlc-title">¿En qué puedo ayudarte, <em>hermano</em>?</h1>
-          <p class="wlc-hint">Pregunta sobre fe, Biblia, santos o doctrina de la Iglesia.</p>
-        </div>
       </div>
 
-      <!-- CHAT -->
-      <div class="chat-area" id="chat-area" style="display:none">
-        <div class="chat-inner" id="chat-inner"></div>
+      <div class="side-scroll">
+        <!-- Holy Widgets -->
+        <div class="side-group">Hoy</div>
+        <div class="side-item" onclick="openView('lecturas');closeSb()">
+          <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h7v16H4zM13 4h7v16h-7z"/></svg></span>
+          <span>Lecturas del día</span>
+        </div>
+        <div class="side-item" onclick="openView('santo');closeSb()">
+          <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.866 3.134-7 7-7s7 3.134 7 7"/></svg></span>
+          <span>Santo del día</span>
+        </div>
+        <div class="side-item" onclick="openView('oracion');closeSb()">
+          <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M5 9l7-7 7 7"/></svg></span>
+          <span>Oración del día</span>
+        </div>
+
+        <!-- Herramientas -->
+        <div class="side-group">Herramientas</div>
+        <a class="side-item" href="/infografias" style="text-decoration:none;color:inherit">
+          <span class="ic">✨</span>
+          <span>Infografías</span>
+        </a>
+        <a class="side-item" href="/planes" style="text-decoration:none;color:inherit">
+          <span class="ic">⭐</span>
+          <span>Planes</span>
+        </a>
+
+        <!-- History -->
+        <div class="side-group">Conversaciones</div>
+        <div id="history-list"></div>
       </div>
 
-      <!-- VISTA LECTURAS -->
-      <div id="view-lecturas" class="main-view" style="display:none">
-        <div class="view-header">
-          <button class="view-back" onclick="closeView()">← Volver</button>
-          <span class="view-title">📖 Lecturas del día</span>
-        </div>
-        <div class="view-body">
-          <div class="view-date" id="lecturas-date"></div>
-          <div id="lecturas-content" class="view-content-area"></div>
-        </div>
-      </div>
-
-      <!-- VISTA BREVIARIO -->
-      <div id="view-breviario" class="main-view" style="display:none">
-        <div class="view-header">
-          <button class="view-back" onclick="closeView()">← Volver</button>
-          <span class="view-title">🕯 Breviario — Laudes</span>
-        </div>
-        <div class="view-body">
-          <div class="view-date" id="brev-date-label"></div>
-          <div id="brev-content" class="view-content-area"></div>
-        </div>
-      </div>
-
-      <!-- VISTA MISAL -->
-      <div id="view-misal" class="main-view" style="display:none">
-        <div class="view-header">
-          <button class="view-back" onclick="closeView()">← Volver</button>
-          <span class="view-title">📗 Misal del día</span>
-        </div>
-        <div class="view-body">
-          <div id="misal-content" class="view-content-area"></div>
-        </div>
-      </div>
-
-      <!-- VISTA HOMILÍA -->
-      <div id="view-homilia" class="main-view" style="display:none">
-        <div class="view-header">
-          <button class="view-back" onclick="closeView()">← Volver</button>
-          <span class="view-title">🎙 Homilía del día</span>
-        </div>
-        <div class="view-body">
-          <div class="view-date" id="homilia-date"></div>
-          <div id="homilia-content" class="view-content-area"></div>
-        </div>
-      </div>
-
-      <!-- VISTA ENCÍCLICA MAGNIFICA HUMANITAS -->
-      <div id="view-enciclica" class="main-view" style="display:none">
-        <div class="view-header">
-          <button class="view-back" onclick="closeView()">← Volver</button>
-          <span class="view-title">📜 Magnifica Humanitas</span>
-        </div>
-        <div class="view-body">
-          <div id="enciclica-content" class="view-content-area"></div>
-        </div>
-      </div>
-
-      <!-- VISTA SANTO DEL DÍA -->
-      <div id="view-santo" class="main-view" style="display:none">
-        <div class="view-header">
-          <button class="view-back" onclick="closeView()">← Volver</button>
-          <span class="view-title">✨ Santo del día</span>
-        </div>
-        <div class="view-body">
-          <div class="view-date" id="santo-view-fecha"></div>
-          <div id="santo-content" class="view-content-area"></div>
-        </div>
-      </div>
-
-      <!-- VISTA BÚSQUEDA EN MAGISTERIUM -->
-      <div id="view-buscar" class="main-view" style="display:none">
-        <div class="view-header">
-          <button class="view-back" onclick="closeView()">← Volver</button>
-          <span class="view-title">🔍 Buscar en el Magisterio</span>
-        </div>
-        <div class="view-body">
-          <div style="padding:16px">
-            <div style="display:flex;gap:8px;margin-bottom:16px">
-              <input id="buscar-input" type="text" placeholder="¿Qué quieres encontrar en los 25,000 documentos?"
-                style="flex:1;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--ink);font-family:'Lora',serif;font-size:13px;outline:none"
-                onkeydown="if(event.key==='Enter')ejecutarBusqueda()">
-              <select id="buscar-modo" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--ink);font-size:12px;cursor:pointer">
-                <option value="auto">Auto</option>
-                <option value="magisterial">Magisterial</option>
-                <option value="scholarly">Scholarly</option>
-              </select>
-              <button onclick="ejecutarBusqueda()" style="padding:10px 16px;background:var(--ocre);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px">Buscar</button>
-            </div>
-            <div id="buscar-results" class="view-content-area"></div>
+      <div class="side-foot">
+        <div class="side-user" id="side-user-info">
+          <span class="av" id="side-av">?</span>
+          <div>
+            <div class="nm" id="side-name">Invitado</div>
+            <div class="pl" id="side-plan">Gratis</div>
           </div>
         </div>
+        <a class="side-cta" href="/planes" style="text-decoration:none">Planes</a>
       </div>
+    </aside>
+    <div class="side-backdrop hidden" id="sb-overlay" onclick="closeSb()"></div>
 
-      <!-- VISTA APOLOGÉTICA -->
-      <div id="view-apologetica" class="main-view" style="display:none">
-        <div class="view-header">
-          <button class="view-back" onclick="closeView()">← Volver</button>
-          <span class="view-title">⚔️ Apologética</span>
-        </div>
-        <div class="view-body">
-          <div style="padding:16px">
-            <div style="font-family:'Lora',serif;font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:16px;padding:12px;background:var(--bg2);border-radius:10px;border-left:3px solid var(--ocre)">
-              Respuestas basadas únicamente en fuentes oficiales del Magisterio para defender y explicar la fe católica.
-            </div>
-            <textarea id="apol-input" placeholder="Escribe la pregunta o el desafío que quieres responder desde el Magisterio..."
-              style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--ink);font-family:'Lora',serif;font-size:13px;outline:none;resize:vertical;min-height:90px;margin-bottom:10px"></textarea>
-            <button onclick="ejecutarApologetica()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--ocre),#8B5E1A);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px">
-              Buscar respuesta en el Magisterio
+    <!-- ──────── MAIN ──────── -->
+    <main class="chat-main">
+      <div class="chat-scroll" id="chat-scroll">
+
+        <!-- Empty state -->
+        <div class="empty-chat" id="welcome">
+          <div class="empty-emblem">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/>
+            </svg>
+          </div>
+          <h1 class="empty-h">¿En qué puedo ayudarte, <span class="it">hermano</span>?</h1>
+          <p class="empty-sub">Pregunta sobre fe, Biblia, santos o doctrina de la Iglesia.</p>
+
+          <div class="sugg-grid">
+            <button class="sugg" onclick="sendSuggestion('¿Quién fue San Agustín y qué nos enseña hoy?')">
+              <span class="sugg-ic">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h7v16H4zM13 4h7v16h-7z"/></svg>
+              </span>
+              <span><span class="sugg-t">Vidas de santos</span><span class="sugg-ex">"¿Quién fue San Agustín y qué nos enseña?"</span></span>
             </button>
-            <div id="apol-results" style="margin-top:16px"></div>
+            <button class="sugg" onclick="sendSuggestion('¿Qué significa Juan 3, 16?')">
+              <span class="sugg-ic">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2L8 8h8z M12 22l-4-6h8z M2 12l6-4v8z M22 12l-6 4V8z"/></svg>
+              </span>
+              <span><span class="sugg-t">Explica un versículo</span><span class="sugg-ex">"¿Qué significa Juan 3, 16?"</span></span>
+            </button>
+            <button class="sugg" onclick="sendSuggestion('Una oración breve para empezar el día')">
+              <span class="sugg-ic">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+              </span>
+              <span><span class="sugg-t">Una oración</span><span class="sugg-ex">"Una oración breve para empezar el día"</span></span>
+            </button>
+            <button class="sugg" onclick="sendSuggestion('¿Qué enseña la Iglesia sobre el perdón?')">
+              <span class="sugg-ic">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10c-2.5-3-4-6.5-4-10s1.5-7 4-10z"/></svg>
+              </span>
+              <span><span class="sugg-t">Doctrina y moral</span><span class="sugg-ex">"¿Qué enseña la Iglesia sobre el perdón?"</span></span>
+            </button>
+          </div>
+
+          <div class="quick-row">
+            <button class="quick" onclick="sendSuggestion('Explícame el Credo')">El Credo, explicado</button>
+            <button class="quick" onclick="sendSuggestion('Examen de conciencia diario')">Examen de conciencia</button>
+            <button class="quick" onclick="sendSuggestion('¿Por qué la confesión es necesaria?')">¿Por qué la confesión?</button>
+            <button class="quick" onclick="sendSuggestion('¿Cuál es el sentido de la Cuaresma?')">Sentido de la Cuaresma</button>
+          </div>
+        </div>
+
+        <!-- Chat area (mensajes) -->
+        <div id="chat-area" class="chat-inner" style="display:none">
+          <div id="chat-inner"></div>
+        </div>
+
+        <!-- Vistas embebidas (Lecturas, Santo, Oración) -->
+        <div id="view-lecturas" class="view-section" style="display:none">
+          <div class="view-card">
+            <div class="view-head"><h2>Lecturas del día</h2><button class="view-back" onclick="closeView()">← Volver</button></div>
+            <div id="view-lecturas-content" class="view-content"><div class="loader">Cargando lecturas...</div></div>
+          </div>
+        </div>
+
+        <div id="view-santo" class="view-section" style="display:none">
+          <div class="view-card">
+            <div class="view-head"><h2>Santo del día</h2><button class="view-back" onclick="closeView()">← Volver</button></div>
+            <div id="view-santo-content" class="view-content"><div class="loader">Cargando santo...</div></div>
+          </div>
+        </div>
+
+        <div id="view-oracion" class="view-section" style="display:none">
+          <div class="view-card">
+            <div class="view-head"><h2>Oración del día</h2><button class="view-back" onclick="closeView()">← Volver</button></div>
+            <div id="view-oracion-content" class="view-content"><div class="loader">Cargando oración...</div></div>
           </div>
         </div>
       </div>
 
-    </div><!-- /content -->
-
-    <!-- INPUT -->
-    <div class="input-area" id="input-area">
-      <div class="input-wrap">
-        <textarea
-          class="cin" id="cin" rows="1"
-          placeholder="Pregunta sobre fe, oración, santos, moral…"
-          onkeydown="onKey(event)"
-          oninput="autoResize(this)"
-          autocomplete="off"
-        ></textarea>
-        <button class="send-btn" id="send-btn" onclick="send()">
-          <svg viewBox="0 0 24 24" stroke-width="2.5" fill="none" stroke="currentColor">
-            <line x1="5" y1="12" x2="19" y2="12"/>
-            <polyline points="12 5 19 12 12 19"/>
-          </svg>
-        </button>
+      <!-- ──────── COMPOSER ──────── -->
+      <div class="composer-wrap">
+        <div class="composer">
+          <div class="composer-bar">
+            <textarea class="composer-input" id="composer" rows="1" placeholder="Pregunta sobre fe, oración, santos, moral…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}" oninput="growComposer(this)"></textarea>
+            <button class="composer-send" id="send-btn" onclick="sendMessage()" aria-label="Enviar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+          <div class="composer-foot">CatólicosGPT · Basado en el Magisterio y Vatican.va · Puede contener imprecisiones</div>
+        </div>
       </div>
-      <div class="input-hint">CatolicosGPT · Basado en el Magisterio y Vatican.va</div>
-    </div>
-
-  </div><!-- /main -->
-</div><!-- /app -->
-
-<!-- MODAL DONAR -->
-<div id="donate-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeDonate()">
-  <div class="modal-box">
-    <svg width="48" height="48" viewBox="0 0 80 80" fill="none" style="margin:0 auto 12px;display:block">
-      <circle cx="40" cy="30" r="22" stroke="#7A5230" stroke-width="2"/>
-      <line x1="40" y1="8" x2="40" y2="52" stroke="#C9923A" stroke-width="3" stroke-linecap="round"/>
-      <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="3" stroke-linecap="round"/>
-    </svg>
-    <div class="modal-title">Apoya CatolicosGPT</div>
-    <div class="modal-sub">Este proyecto es gratuito y sostenido por la comunidad católica.</div>
-    <div class="modal-amounts">
-      <button class="amount-btn" onclick="selectAmount(this,'1')">$1 USD</button>
-      <button class="amount-btn on" onclick="selectAmount(this,'5')">$5 USD</button>
-      <button class="amount-btn" onclick="selectAmount(this,'10')">$10 USD</button>
-    </div>
-    <a class="paypal-btn" id="paypal-link" href="https://www.paypal.com/paypalme/schoolmarketing/5" target="_blank">
-      💙 Donar con PayPal
-    </a>
-    <button class="modal-close" onclick="closeDonate()">Cerrar</button>
+    </main>
   </div>
 </div>
 
+<!-- Toast -->
+<div class="toast" id="toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--espresso);color:#f3e4c6;padding:12px 20px;border-radius:14px;font-size:14px;box-shadow:var(--shadow-lg);z-index:200;transition:transform .3s var(--ease)"></div>
+
+<!-- Modal Auth -->
+<div class="overlay" id="auth-overlay" onclick="if(event.target===this)closeAuth()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuth()">✕</button>
+    <div id="auth-content"></div>
+  </div>
+</div>
+
+<style>
+/* Estilos específicos del chat sobre el chat.css existente */
+.history-item { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 10px; font-size: 13.5px; color: var(--ink-2); cursor: pointer; transition: .14s; white-space: nowrap; overflow: hidden; }
+.history-item:hover { background: rgba(255,255,255,.55); color: var(--ink); }
+.history-item .hi-title { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.history-item .hi-time { font-size: 11px; color: var(--ink-3); flex-shrink: 0; }
+
+/* Sidebar overlay & mobile open */
+.side.open { margin-left: 0; }
+@media (max-width: 860px) { .side { position: fixed; top: 60px; bottom: 0; left: 0; z-index: 30; transform: translateX(-100%); transition: transform .28s var(--ease); margin-left: 0; box-shadow: var(--shadow-lg); }
+  .side.open { transform: translateX(0); }
+  .side.closed { transform: translateX(-100%); }
+}
+
+/* Message rows (compat con app.js) */
+.msg-row { display: flex; gap: 14px; margin-bottom: 26px; animation: rise .35s var(--ease) both; }
+.msg-row.user-row { flex-direction: row-reverse; }
+.av { width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; display: grid; place-items: center; background: var(--grad-cream); border: 1px solid var(--hairline-2); color: var(--gold-deep); }
+.av-user { background: var(--espresso); color: #f3e4c6; font-weight: 700; font-size: 12px; border: none; font-family: var(--font-ui); }
+.bubble { min-width: 0; max-width: 100%; padding: 13px 18px; line-height: 1.6; font-size: 15.5px; border-radius: 18px; }
+.bubble-user { background: var(--grad-maroon); color: #f6ead2; border-radius: 18px 18px 6px 18px; max-width: 560px; box-shadow: var(--shadow-sm); }
+.bubble-bot { background: transparent; padding: 0; color: var(--ink); line-height: 1.72; font-size: var(--body-size, 15.5px); }
+.bubble-bot p { margin: 0 0 14px; }
+.bubble-bot h1, .bubble-bot h2, .bubble-bot h3 { font-family: var(--font-display); font-weight: 700; color: var(--espresso); margin: 20px 0 12px; line-height: 1.2; }
+.bubble-bot h1 { font-size: 24px; } .bubble-bot h2 { font-size: 21px; } .bubble-bot h3 { font-size: 18px; }
+.bubble-bot ul, .bubble-bot ol { margin: 8px 0 14px; padding-left: 22px; }
+.bubble-bot li { margin: 6px 0; line-height: 1.55; }
+.bubble-bot blockquote { margin: 8px 0 16px; padding: 14px 20px; border-left: 3px solid var(--gold); background: linear-gradient(120deg, rgba(188,138,54,.07), transparent); border-radius: 0 var(--r-md) var(--r-md) 0; font-family: var(--font-display); font-style: italic; font-size: 17px; color: var(--coffee); }
+.bubble-bot strong { color: var(--espresso); font-weight: 700; }
+.bubble-bot a { color: var(--gold-deep); text-decoration: underline; text-underline-offset: 3px; }
+.bubble-bot code { background: var(--cream-3); padding: 2px 6px; border-radius: 5px; font-size: 13.5px; font-family: ui-monospace, monospace; color: var(--coffee); }
+.typing-cursor { display: inline-block; width: 2px; background: var(--gold); animation: blink 1s infinite; margin-left: 2px; height: 18px; vertical-align: text-bottom; }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.action-row { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+.action-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-family: var(--font-ui); font-size: 12.5px; font-weight: 500; color: var(--ink-2); background: transparent; border: 1px solid var(--hairline-2); border-radius: 99px; cursor: pointer; transition: .15s var(--ease); }
+.action-btn:hover { color: var(--espresso); border-color: var(--gold); background: var(--cream-2); }
+.action-btn.feat { color: var(--gold-deep); border-color: var(--gold); }
+.action-btn.feat:hover { background: var(--grad-gold); color: #3a2a0c; border-color: transparent; }
+
+/* Sources panel */
+.sources-panel { margin-top: 14px; padding: 14px 18px; background: var(--cream-2); border: 1px solid var(--hairline-2); border-radius: var(--r-md); }
+.sources-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-family: var(--font-ui); font-weight: 600; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.sources-title { color: var(--gold-deep); }
+.sources-modo { padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; }
+.sources-list { display: flex; flex-direction: column; gap: 8px; }
+.source-item { padding: 10px 12px; background: var(--cream-3); border-radius: 8px; border-left: 2px solid var(--gold); }
+.source-doc { font-size: 13px; font-weight: 600; color: var(--espresso); }
+.source-frag { font-family: var(--font-display); font-style: italic; font-size: 13px; color: var(--ink-2); line-height: 1.45; margin-top: 4px; }
+.source-link { display: inline-block; margin-top: 4px; font-size: 12px; color: var(--gold-deep); text-decoration: none; }
+.mag-badge { margin-top: 12px; padding: 12px 16px; background: var(--cream-2); border-radius: var(--r-md); border-left: 3px solid var(--gold); }
+.mag-badge-title { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 6px; }
+.mag-badge-text { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+
+/* Vistas */
+.view-section { padding: 30px clamp(16px, 4vw, 32px); }
+.view-card { max-width: 780px; margin: 0 auto; background: var(--cream-2); border: 1px solid var(--hairline-2); border-radius: var(--r-lg); padding: 24px; }
+.view-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--hairline); }
+.view-head h2 { font-family: var(--font-display); font-size: 26px; color: var(--espresso); font-weight: 700; }
+.view-back { background: transparent; border: 1px solid var(--hairline-2); padding: 6px 14px; border-radius: 99px; font-size: 12px; color: var(--ink-2); cursor: pointer; }
+.view-back:hover { border-color: var(--gold); color: var(--espresso); }
+.view-content { font-size: 15px; color: var(--ink); line-height: 1.6; }
+.view-content h3 { font-family: var(--font-display); font-size: 20px; color: var(--espresso); margin: 16px 0 8px; }
+.loader { text-align: center; padding: 30px; color: var(--ink-3); }
+
+/* Modal Auth */
+.overlay { position: fixed; inset: 0; background: rgba(43,24,10,.55); backdrop-filter: blur(6px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+.overlay.open { display: flex; }
+.modal { background: var(--cream-2); border-radius: var(--r-xl); padding: 32px; width: 100%; max-width: 420px; box-shadow: var(--shadow-lg); position: relative; }
+.modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; cursor: pointer; font-size: 20px; color: var(--ink-3); }
+.modal h2 { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: var(--espresso); margin-bottom: 6px; }
+.modal p { font-size: 14px; color: var(--ink-2); margin-bottom: 20px; }
+.mform-group { margin-bottom: 14px; }
+.mform-label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.mform-input { width: 100%; padding: 12px 14px; background: var(--cream-3); border: 1.5px solid var(--hairline-2); border-radius: var(--r-md); font-family: var(--font-ui); font-size: 14px; outline: none; color: var(--ink); }
+.mform-input:focus { border-color: var(--gold); }
+.mform-error { color: #B91C1C; font-size: 12px; margin-top: 8px; min-height: 18px; }
+.mform-submit { width: 100%; padding: 13px; background: var(--grad-gold); color: #3a2a0c; font-weight: 700; font-size: 14px; border: none; border-radius: var(--r-md); cursor: pointer; }
+.mform-switch { text-align: center; margin-top: 16px; font-size: 13px; color: var(--ink-2); }
+.mform-switch a { color: var(--gold-deep); cursor: pointer; font-weight: 600; }
+
+.toast.show { transform: translateX(-50%) translateY(0) !important; }
+
+/* Inline infografia link button */
+.chat-infografia-btn, .infografia-link-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--grad-gold); color: #3a2a0c; font-weight: 700; font-size: 13px; border-radius: var(--r-md); text-decoration: none; margin: 8px 0; transition: .2s; }
+.chat-infografia-btn:hover, .infografia-link-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+@media (max-width: 768px) {
+  .nav-links { gap: 2px; }
+  .nav-link { padding: 6px 10px; font-size: 13px; }
+  .nav-user { padding: 4px 10px 4px 4px; font-size: 13px; }
+  .nav-user .av { width: 22px; height: 22px; font-size: 11px; }
+  .nav-links .nav-link:nth-child(2), .nav-links .nav-link:nth-child(3) { display: none; }
+  .empty-emblem { width: 60px; height: 60px; }
+  .empty-h { font-size: clamp(28px, 7vw, 40px); }
+  .sugg-grid { grid-template-columns: 1fr; }
+  .composer-input { font-size: 16px; }
+}
+</style>
+
+<!-- LÓGICA — Adaptaciones para mantener compatibilidad con app.js -->
+<script>
+// Sidebar toggle
+function toggleSb() { const sb = document.getElementById('sb'); const o = document.getElementById('sb-overlay'); if (sb.classList.contains('open') || !sb.classList.contains('closed')) { closeSb(); } else { sb.classList.add('open'); sb.classList.remove('closed'); if (o) o.classList.remove('hidden'); } }
+function closeSb() { const sb = document.getElementById('sb'); const o = document.getElementById('sb-overlay'); sb.classList.add('closed'); sb.classList.remove('open'); if (o) o.classList.add('hidden'); }
+
+// Composer auto-grow
+function growComposer(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px'; }
+
+// Send via Enter or button
+function sendMessage() {
+  const ta = document.getElementById('composer');
+  const val = ta.value.trim();
+  if (!val) return;
+  if (typeof send === 'function') {
+    send(val);  // función del app.js original
+  } else if (typeof sendChat === 'function') {
+    sendChat(val);
+  }
+  ta.value = '';
+  ta.style.height = 'auto';
+}
+
+// Suggestion → enviar
+function sendSuggestion(text) {
+  document.getElementById('composer').value = text;
+  sendMessage();
+}
+
+// Vistas (Lecturas, Santo, Oración)
+async function openView(id) {
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chat-area').style.display = 'none';
+  ['lecturas', 'santo', 'oracion'].forEach(v => {
+    document.getElementById('view-' + v).style.display = v === id ? 'block' : 'none';
+  });
+
+  const target = document.getElementById('view-' + id + '-content');
+  if (target.dataset.loaded === '1') return;
+  target.innerHTML = '<div class="loader">Cargando…</div>';
+
+  try {
+    let endpoint = id === 'lecturas' ? '/api/lecturas-dia' : id === 'santo' ? '/api/santo-del-dia' : '/api/oracion-magisterium';
+    const r = await fetch(endpoint);
+    const d = await r.json();
+    if (id === 'lecturas') {
+      const lectures = d.lecturas || d.data || [];
+      let html = '<div style="font-style:italic;color:var(--ink-3);margin-bottom:14px">' + (d.fecha || new Date().toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })) + '</div>';
+      if (Array.isArray(lectures) && lectures.length) {
+        lectures.forEach(l => {
+          html += '<h3>' + (l.titulo || l.cita || 'Lectura') + '</h3>';
+          html += '<p>' + (l.texto || '').replace(/\n/g, '<br>') + '</p>';
+        });
+      } else if (d.ok && d.contenido) {
+        html += '<div>' + d.contenido.replace(/\n/g, '<br>') + '</div>';
+      } else {
+        html += '<p style="color:var(--ink-3)">No fue posible cargar las lecturas hoy.</p>';
+      }
+      target.innerHTML = html;
+    } else if (id === 'santo') {
+      const s = d.santo || d;
+      target.innerHTML = '<h3>' + (s.nombre || 'Santo del día') + '</h3>' +
+        '<p style="color:var(--ink-3);font-style:italic">' + (s.fecha || s.fechaFestivo || '') + '</p>' +
+        '<p>' + (s.biografia || s.texto || s.descripcion || s.contenido || '').replace(/\n/g, '<br>') + '</p>';
+    } else if (id === 'oracion') {
+      const o = d.oracion || d;
+      target.innerHTML = '<p>' + (o.texto || o.contenido || JSON.stringify(o, null, 2)).replace(/\n/g, '<br>') + '</p>';
+    }
+    target.dataset.loaded = '1';
+  } catch (e) {
+    target.innerHTML = '<p style="color:var(--red)">Error al cargar: ' + e.message + '</p>';
+  }
+}
+
+function closeView() {
+  ['lecturas', 'santo', 'oracion'].forEach(v => document.getElementById('view-' + v).style.display = 'none');
+  document.getElementById('welcome').style.display = 'flex';
+}
+
+// ── Auth ──
+let chatToken = localStorage.getItem('cgpt_token');
+let chatUser = null;
+
+async function loadUser() {
+  if (!chatToken) return updateNavGuest();
+  try {
+    const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + chatToken } });
+    if (!r.ok) { localStorage.removeItem('cgpt_token'); chatToken = null; return updateNavGuest(); }
+    chatUser = (await r.json()).user;
+    updateNavUser();
+  } catch (e) { updateNavGuest(); }
+}
+
+function updateNavGuest() {
+  document.getElementById('nav-user-name').textContent = 'Iniciar sesión';
+  document.getElementById('nav-av').textContent = '?';
+  document.getElementById('side-name').textContent = 'Invitado';
+  document.getElementById('side-plan').textContent = 'Gratis';
+  document.getElementById('side-av').textContent = 'I';
+}
+
+function updateNavUser() {
+  if (!chatUser) return;
+  const initial = (chatUser.nombre || 'U')[0].toUpperCase();
+  document.getElementById('nav-user-name').textContent = chatUser.nombre.split(' ')[0];
+  document.getElementById('nav-av').textContent = initial;
+  document.getElementById('side-name').textContent = chatUser.nombre;
+  document.getElementById('side-plan').textContent = 'Plan ' + (chatUser.plan === 'admin' ? 'Admin' : chatUser.plan === 'premium' ? 'Premium' : 'Gratis');
+  document.getElementById('side-av').textContent = initial;
+}
+
+function navUserClick() {
+  if (chatUser) {
+    if (confirm('¿Cerrar sesión?')) { localStorage.removeItem('cgpt_token'); location.reload(); }
+  } else {
+    openAuth('login');
+  }
+}
+
+function openAuth(mode = 'login') { renderAuth(mode); document.getElementById('auth-overlay').classList.add('open'); }
+function closeAuth() { document.getElementById('auth-overlay').classList.remove('open'); }
+
+function renderAuth(mode) {
+  const c = document.getElementById('auth-content');
+  if (mode === 'login') {
+    c.innerHTML = '<h2>Bienvenido</h2><p>Inicia sesión para generar infografías y guardar conversaciones.</p>' +
+      '<div class="mform-group"><label class="mform-label">Email</label><input id="m-email" type="email" class="mform-input"></div>' +
+      '<div class="mform-group"><label class="mform-label">Contraseña</label><input id="m-pass" type="password" class="mform-input"></div>' +
+      '<div class="mform-error" id="m-err"></div>' +
+      '<button class="mform-submit" onclick="doLogin()">Iniciar sesión</button>' +
+      '<div class="mform-switch">¿No tienes cuenta? <a onclick="renderAuth(\'register\')">Regístrate gratis</a></div>';
+  } else {
+    c.innerHTML = '<h2>Crear cuenta gratis</h2><p>1 infografía por día sin costo.</p>' +
+      '<div class="mform-group"><label class="mform-label">Nombre</label><input id="m-nombre" type="text" class="mform-input"></div>' +
+      '<div class="mform-group"><label class="mform-label">Email</label><input id="m-email" type="email" class="mform-input"></div>' +
+      '<div class="mform-group"><label class="mform-label">Contraseña (mín. 8)</label><input id="m-pass" type="password" class="mform-input"></div>' +
+      '<div class="mform-error" id="m-err"></div>' +
+      '<button class="mform-submit" onclick="doRegister()">Crear cuenta gratis</button>' +
+      '<div class="mform-switch">¿Ya tienes cuenta? <a onclick="renderAuth(\'login\')">Inicia sesión</a></div>';
+  }
+}
+
+async function doLogin() {
+  const email = document.getElementById('m-email').value.trim();
+  const pass = document.getElementById('m-pass').value;
+  document.getElementById('m-err').textContent = '';
+  try {
+    const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pass }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    chatToken = d.token;
+    localStorage.setItem('cgpt_token', chatToken);
+    chatUser = d.user;
+    closeAuth(); updateNavUser();
+    showToast('¡Bienvenido, ' + chatUser.nombre + '! 🙏');
+  } catch (e) { document.getElementById('m-err').textContent = e.message; }
+}
+
+async function doRegister() {
+  const nombre = document.getElementById('m-nombre').value.trim();
+  const email = document.getElementById('m-email').value.trim();
+  const pass = document.getElementById('m-pass').value;
+  document.getElementById('m-err').textContent = '';
+  try {
+    const r = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, email, password: pass }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    chatToken = d.token;
+    localStorage.setItem('cgpt_token', chatToken);
+    chatUser = d.user;
+    closeAuth(); updateNavUser();
+    showToast('¡Cuenta creada! 🎉');
+  } catch (e) { document.getElementById('m-err').textContent = e.message; }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Iniciar
+loadUser();
+</script>
+
+<!-- app.js original con toda la lógica de chat (streaming, parseMarkdown, send, etc.) -->
 <script src="/app.js"></script>
 </body>
 </html>

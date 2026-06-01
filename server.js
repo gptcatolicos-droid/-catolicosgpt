@@ -1495,7 +1495,7 @@ app.get('/api/infografias/check-limit', auth.authenticateToken, (req, res) => {
 
 // ── Generar infografía ──
 app.post('/api/infografias/generar', auth.authenticateToken, async (req, res) => {
-  const { tema, formato = '9:16', customNombre: bodyCustomNombre, customLogo: bodyCustomLogo } = req.body;
+  const { tema, formato = '9:16', tipo, estilo = 'clasico', customNombre: bodyCustomNombre, customLogo: bodyCustomLogo } = req.body;
   if (!tema) return res.status(400).json({ error: 'Tema requerido' });
 
   // Verificar límite
@@ -1510,7 +1510,8 @@ app.post('/api/infografias/generar', auth.authenticateToken, async (req, res) =>
 
   try {
     const infografia = await generarInfografia({
-      tema, formato, userId: req.user.id,
+      tema, formato, tipo, estilo,
+      userId: req.user.id,
       userPlan,
       customNombre: bodyCustomNombre || customNombre,
       customLogo: bodyCustomLogo || customLogo, openai
@@ -1983,6 +1984,170 @@ app.post('/api/paypal/subscription-approved', auth.authenticateToken, (req, res)
     console.log('[PayPal] Suscripción activada para usuario', req.user.id, 'subID:', subscriptionID);
     res.json({ ok: true, message: '¡Plan Premium activado!' });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ════════════════════════════════════════════════════════════════
+// V5 — ADMIN ENDPOINTS
+// ════════════════════════════════════════════════════════════════
+
+// Ruta del panel admin
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// ── SEO con IA: generar descripción o keywords desde el título ──
+app.post('/api/admin/seo-generate', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
+  const { titulo, field } = req.body;
+  if (!titulo) return res.status(400).json({ error: 'Título requerido' });
+  if (!['descripcion', 'keywords'].includes(field)) return res.status(400).json({ error: 'field debe ser descripcion o keywords' });
+
+  const prompt = field === 'descripcion'
+    ? `Genera UNA descripción meta para Google SEO en español, sobre "${titulo}" para una página de infografía católica. EXACTAMENTE 150-160 caracteres, atractiva, con keywords católicas. Responde SOLO la descripción, sin comillas ni explicación.`
+    : `Genera 8-10 keywords SEO en español, separadas por comas, sobre "${titulo}" para una página de infografía católica. Incluye términos católicos relevantes y de búsqueda. Responde SOLO las keywords separadas por comas, sin punto final, sin explicación.`;
+
+  try {
+    const r = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.6,
+      max_tokens: 200,
+      messages: [
+        { role: 'system', content: 'Eres un experto en SEO católico que escribe en español de forma clara y precisa.' },
+        { role: 'user', content: prompt }
+      ]
+    });
+    const result = r.choices[0].message.content.trim().replace(/^["']|["']$/g, '');
+    res.json({ ok: true, result, field });
+  } catch (e) {
+    res.status(500).json({ error: 'Error de IA: ' + e.message });
+  }
+});
+
+// ── Admin: subir infografía manual (imagen + meta + SEO) ──
+app.post('/api/admin/infografias/upload', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
+  const { imageData, titulo, slug, descripcion, keywords, categoria, tipo } = req.body;
+  if (!imageData || !titulo) return res.status(400).json({ error: 'Imagen y título requeridos' });
+
+  try {
+    // Extract base64 from data URL
+    const base64 = imageData.replace(/^data:image\/\w+;base64,/, '');
+    const safeSlug = (slug || titulo).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    // Upload a Cloudinary
+    let imageUrl = null;
+    if (process.env.CLOUDINARY_API_KEY) {
+      try {
+        const cloudinary = require('cloudinary').v2;
+        const upload = await cloudinary.uploader.upload(`data:image/png;base64,${base64}`, {
+          public_id: `catolicosgpt/infografias/admin-${safeSlug}-${Date.now()}`,
+          overwrite: false,
+          quality: 'auto:best',
+          tags: ['catolicosgpt', 'infografia', 'admin-upload']
+        });
+        imageUrl = upload.secure_url;
+        console.log('[Admin Upload] Cloudinary OK:', imageUrl);
+      } catch (e) {
+        console.error('[Admin Upload] Cloudinary err:', e.message);
+      }
+    }
+
+    // Fallback local
+    if (!imageUrl) {
+      const fs = require('fs');
+      const imgDir = path.join(__dirname, 'public', 'infografias');
+      if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
+      const imgFile = `${safeSlug}-0.png`;
+      fs.writeFileSync(path.join(imgDir, imgFile), Buffer.from(base64, 'base64'));
+      imageUrl = `/infografias/${imgFile}`;
+    }
+
+    // Guardar en catálogo (estructura correcta: { version, total, infografias[] })
+    const { loadCatalog, saveCatalog } = require('./infografias-module');
+    const catalog = loadCatalog();
+    const id = `inf-${Date.now()}`;
+    const now = new Date();
+    const infografia = {
+      id,
+      slug: safeSlug,
+      tema: titulo,
+      titulo,
+      descripcion: descripcion || '',
+      keywords: keywords || '',
+      categoria: categoria || 'devocional',
+      tipo: tipo || 'santo',
+      altText: titulo,
+      fechaCreacion: now.toISOString(),
+      fechaISO: now.toISOString().slice(0,10),
+      publicado: true,
+      totalSlides: 1,
+      uploadedBy: 'admin',
+      imagenes: [{ url: imageUrl, slide: 1, model: 'admin-upload', formato: '9:16', sizeLabel: '1024x1536' }]
+    };
+    catalog.infografias = catalog.infografias || [];
+    catalog.infografias.unshift(infografia);
+    catalog.total = catalog.infografias.length;
+    saveCatalog(catalog);
+
+    res.json({ ok: true, infografia });
+  } catch (e) {
+    console.error('[Admin Upload]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
+// ── Sitemap.xml dinámico — incluye todas las infografías y blog posts ──
+app.get('/sitemap.xml', (req, res) => {
+  const baseUrl = 'https://catolicosgpt.com';
+  const today = new Date().toISOString().slice(0, 10);
+
+  const staticUrls = [
+    { loc: '/',            changefreq: 'daily',   priority: '1.0', lastmod: today },
+    { loc: '/infografias', changefreq: 'daily',   priority: '0.95',lastmod: today },
+    { loc: '/planes',      changefreq: 'monthly', priority: '0.7', lastmod: today },
+    { loc: '/blog',        changefreq: 'weekly',  priority: '0.85',lastmod: today },
+    { loc: '/lecturas',    changefreq: 'daily',   priority: '0.9', lastmod: today },
+    { loc: '/breviario',   changefreq: 'daily',   priority: '0.9', lastmod: today },
+    { loc: '/homilia',     changefreq: 'daily',   priority: '0.85',lastmod: today },
+  ];
+
+  // Cargar infografías del catálogo
+  let infografiasUrls = [];
+  try {
+    const { loadCatalog } = require('./infografias-module');
+    const cat = loadCatalog();
+    const items = (cat.infografias || []).filter(i => i.publicado !== false);
+    infografiasUrls = items.map(i => ({
+      loc: '/infografias/' + i.slug,
+      lastmod: (i.fechaISO || today),
+      changefreq: 'monthly',
+      priority: '0.8',
+      image: i.imagenes?.[0]?.url || null,
+      imageTitle: i.titulo || i.tema,
+      imageCaption: i.metaDescription || ''
+    }));
+  } catch(e) { console.error('[Sitemap] Error cargando infografías:', e.message); }
+
+  res.set('Content-Type', 'application/xml; charset=utf-8');
+  res.send(
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n' +
+    staticUrls.map(u =>
+      '  <url><loc>' + baseUrl + u.loc + '</loc><lastmod>' + u.lastmod + '</lastmod><changefreq>' + u.changefreq + '</changefreq><priority>' + u.priority + '</priority></url>'
+    ).join('\n') +
+    '\n' +
+    infografiasUrls.map(u => {
+      let xml = '  <url><loc>' + baseUrl + u.loc + '</loc><lastmod>' + u.lastmod + '</lastmod><changefreq>' + u.changefreq + '</changefreq><priority>' + u.priority + '</priority>';
+      if (u.image) {
+        xml += '<image:image><image:loc>' + u.image + '</image:loc><image:title>' + (u.imageTitle || '').replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</image:title>';
+        if (u.imageCaption) xml += '<image:caption>' + u.imageCaption.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</image:caption>';
+        xml += '</image:image>';
+      }
+      xml += '</url>';
+      return xml;
+    }).join('\n') +
+    '\n</urlset>'
+  );
 });
 
 // ── Cron: Generar infografías diarias ──
