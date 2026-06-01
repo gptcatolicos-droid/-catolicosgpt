@@ -14,6 +14,8 @@ const auth = require('./auth-module');
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+// Servir imágenes locales de infografías (fallback cuando Cloudinary falla)
+app.use('/infografias', express.static(path.join(__dirname, 'public', 'infografias')));
 
 // ── Clientes IA ──
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -123,6 +125,11 @@ REGLAS DE CONDUCTA — OBLIGATORIAS
 
 REGLA 1 — SOLO FE CATÓLICA
 Solo respondes sobre: fe, teología, Biblia, sacramentos, moral, oraciones, santos, liturgia, historia de la Iglesia, espiritualidad, doctrina. Para cualquier otro tema: "Soy CatolicosGPT, acompañante espiritual católico. No puedo ayudarte con eso, pero con gusto camino contigo en cualquier pregunta de fe. ¿Qué llevas en el corazón hoy, hermano/a?"
+
+REGLA ESPECIAL — INFOGRAFÍAS
+Si el usuario pide una infografía, imagen, poster o visual de un tema católico, responde SIEMPRE así (sin rechazar):
+"¡Excelente idea! Puedo generar una infografía de [TEMA] para compartir. Haz clic aquí para crearla: [INFOGRAFIA_LINK:TEMA]"
+Donde TEMA es el tema específico que pidió. Sustituye [INFOGRAFIA_LINK:TEMA] con exactamente esa sintaxis para que el frontend lo renderice como botón. NO digas que no puedes crear infografías.
 
 REGLA 2 — NUNCA ATACAR A LA IGLESIA
 Jamás hablarás mal de la Iglesia, el Papa, sacerdotes, sacramentos ni el Magisterio. Si hay críticas o escándalos: "Para reflexiones sobre situaciones históricas complejas, te invito a dialogar con un sacerdote. ¿Puedo acompañarte en algo de tu fe personal?"
@@ -587,14 +594,23 @@ Prioriza siempre la fuente más reciente y autorizada del Magisterio.
         model: 'gpt-4o', temperature: 0.2, max_tokens: 6000,
         messages: [{ role: 'system', content: systemPrompt }, ...messages]
       });
-      res.json({ reply: completion.choices[0].message.content });
+      let reply = completion.choices[0].message.content;
+      // Detectar [INFOGRAFIA_LINK:TEMA] en la respuesta del bot
+      reply = reply.replace(/\[INFOGRAFIA_LINK:([^\]]+)\]/g, (m, tema) =>
+        `<a href="/infografias?tema=${encodeURIComponent(tema)}" class="chat-infografia-btn" target="_blank">✨ Generar infografía: "${tema}"</a>`
+      );
+      res.json({ reply });
     } catch(e) {
       try {
         const msg = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001', max_tokens: 6000,
           system: systemPrompt, messages
         });
-        res.json({ reply: msg.content[0].text });
+        let replyA = msg.content[0].text;
+        replyA = replyA.replace(/\[INFOGRAFIA_LINK:([^\]]+)\]/g, (m, tema) =>
+          `<a href="/infografias?tema=${encodeURIComponent(tema)}" class="chat-infografia-btn" target="_blank">✨ Generar infografía: "${tema}"</a>`
+        );
+        res.json({ reply: replyA });
       } catch(e2) {
         res.status(500).json({ error: 'Error al conectar con la IA.' });
       }
@@ -1896,15 +1912,56 @@ body{background:var(--bg);color:var(--brown);font-family:'DM Sans',sans-serif}
       <li><span class="check">✓</span> Descarga en alta calidad</li>
       <li><span class="check">✓</span> Soporte prioritario</li>
     </ul>
-    <button class="btn-plan" onclick="alert('Próximamente: pago con MercadoPago y PayPal')">Próximamente</button>
+    <div id="paypal-button-container-P-66Y50051RX0957311NIOWYFY" style="margin-top:8px"></div>
   </div>
 </div>
 <p class="note">* El Chat IA con Magisterium, apologética y modos doctrinal/scholarly es siempre gratuito sin límites.</p>
 <footer class="footer">
   <p>© 2026 <a href="/">CatolicosGPT</a> · <a href="/infografias">Infografías</a> · Fe · Conocimiento · Acción</p>
 </footer>
+<script src="https://www.paypal.com/sdk/js?client-id=AQYVUOfQ6kUlu7y1IXRq2ffqWuS9HtMJx2WPhdnXJT2P3DUlfGF-VWAb77xuHU9DMu2nJZJE9z3pXMGC&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+<script>
+  paypal.Buttons({
+    style:{ shape:'rect', color:'gold', layout:'vertical', label:'subscribe' },
+    createSubscription: function(data, actions) {
+      return actions.subscription.create({ plan_id: 'P-66Y50051RX0957311NIOWYFY' });
+    },
+    onApprove: function(data, actions) {
+      // Activar plan premium en nuestro servidor
+      const token = localStorage.getItem('cgpt_token');
+      if (token) {
+        fetch('/api/paypal/subscription-approved', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ subscriptionID: data.subscriptionID })
+        }).then(() => {
+          alert('¡Suscripción Premium activada! ✅\nID: ' + data.subscriptionID);
+          window.location.href = '/infografias';
+        });
+      } else {
+        alert('Suscripción aprobada. ID: ' + data.subscriptionID + '\nInicia sesión para activar tu cuenta Premium.');
+        window.location.href = '/';
+      }
+    },
+    onError: function(err) { console.error('PayPal error', err); }
+  }).render('#paypal-button-container-P-66Y50051RX0957311NIOWYFY');
+</script>
 </body>
 </html>`);
+});
+
+
+// ── PayPal: activar plan premium post-suscripción ──
+app.post('/api/paypal/subscription-approved', auth.authenticateToken, (req, res) => {
+  try {
+    const { subscriptionID } = req.body;
+    if (!subscriptionID) return res.status(400).json({ error: 'subscriptionID requerido' });
+    // Upgradear plan a premium
+    auth.upgradePlan(req.user.id, 'premium');
+    auth.updateUser(req.user.id, { paypalSubscriptionId: subscriptionID });
+    console.log('[PayPal] Suscripción activada para usuario', req.user.id, 'subID:', subscriptionID);
+    res.json({ ok: true, message: '¡Plan Premium activado!' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── Cron: Generar infografías diarias ──

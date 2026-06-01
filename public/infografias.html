@@ -4,475 +4,279 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Infografías Católicas | CatolicosGPT — Descarga Gratis</title>
-<meta name="description" content="Descarga infografías católicas gratis: Santos, Encíclicas, Apologética, Devociones. Generadas con IA y actualizadas diariamente. CatolicosGPT.">
-<meta name="keywords" content="infografías católicas, santos infografía, doctrina católica, apologética, devociones, CatolicosGPT, fe católica, encíclicas">
-<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="description" content="Genera y descarga infografías católicas con IA. Santos, encíclicas, apologética y devociones. CatolicosGPT.">
+<meta name="robots" content="index, follow">
 <link rel="canonical" href="https://catolicosgpt.com/infografias">
-
-<!-- Open Graph -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="CatolicosGPT">
 <meta property="og:title" content="Infografías Católicas Gratis | CatolicosGPT">
-<meta property="og:description" content="Descarga infografías católicas para compartir en WhatsApp, Instagram y redes sociales. Santos, Encíclicas, Apologética.">
+<meta property="og:description" content="Genera infografías católicas para compartir en WhatsApp e Instagram. Santos, encíclicas, apologética.">
 <meta property="og:url" content="https://catolicosgpt.com/infografias">
-<meta property="og:image" content="https://catolicosgpt.com/logo.png">
-<meta property="og:locale" content="es_ES">
-
-<!-- Twitter Card -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Infografías Católicas | CatolicosGPT">
-<meta name="twitter:description" content="Infografías católicas generadas con IA. Actualizadas diariamente.">
-
-<!-- Schema.org -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "CollectionPage",
-  "name": "Infografías Católicas — CatolicosGPT",
-  "description": "Colección de infografías católicas sobre santos, encíclicas, apologética y devociones. Generadas con IA y actualizadas diariamente.",
-  "url": "https://catolicosgpt.com/infografias",
-  "publisher": {
-    "@type": "Organization",
-    "name": "CatolicosGPT",
-    "url": "https://catolicosgpt.com",
-    "logo": "https://catolicosgpt.com/logo.png"
-  },
-  "inLanguage": "es"
-}
-</script>
-
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #FAF7F0; --bg2: #F0E6D3; --bg3: #E8D4B8;
-  --ocre: #C9923A; --brown: #5C3D1E; --brown2: #3A2210;
-  --ink: #18100A; --ink3: #5C3D1E; --ink4: #8B6040;
-  --border: rgba(201,146,58,0.2);
-  --red: #8B1A1A;
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0A0705;--surface:#13100D;--surface2:#1C1712;--surface3:#252018;
+  --gold:#C9923A;--gold2:#E8B96A;--cream:#F5EDD8;
+  --text:#E8DDD0;--text2:#A89880;--text3:#6B5C4E;
+  --red:#8B1A1A;--border:rgba(201,146,58,0.15);--radius:14px;
 }
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:var(--bg); color:var(--ink); font-family:'DM Sans',sans-serif; }
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
 
-/* HEADER */
-.site-header {
-  background:var(--brown2);
-  padding:14px 24px;
-  display:flex; align-items:center; justify-content:space-between;
-  position:sticky; top:0; z-index:100;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-}
-.header-logo {
-  display:flex; align-items:center; gap:10px;
-  text-decoration:none;
-}
-.header-logo-icon {
-  width:36px; height:36px;
-  background:linear-gradient(135deg, var(--ocre), #8B5E1A);
-  border-radius:10px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:18px; color:#fff;
-}
-.header-logo-text {
-  font-family:'Playfair Display',serif;
-  font-size:20px; font-weight:700;
-  color:#F5EDD8;
-}
-.header-logo-text span { color:var(--ocre); }
-.header-nav { display:flex; gap:16px; align-items:center; }
-.header-nav a {
-  color:rgba(245,237,216,0.7); font-size:13px; font-weight:500;
-  text-decoration:none; transition:color .2s;
-}
-.header-nav a:hover { color:var(--ocre); }
-.btn-generate {
-  padding:9px 18px;
-  background:linear-gradient(135deg, var(--ocre), #A07028);
-  color:var(--brown2); font-size:13px; font-weight:700;
-  border:none; border-radius:8px; cursor:pointer;
-  text-decoration:none; display:inline-block;
-}
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(10,7,5,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--gold),#8B5E1A);border-radius:8px;display:grid;place-items:center;font-size:16px;color:#fff}
+.nav-logo-text{font-family:'Lora',serif;font-size:18px;font-weight:600;color:var(--cream)}
+.nav-logo-text span{color:var(--gold)}
+.nav-links{display:flex;gap:8px;align-items:center}
+.nav-link{color:var(--text2);font-size:13px;font-weight:500;text-decoration:none;padding:6px 12px;border-radius:8px;transition:all .2s}
+.nav-link:hover,.nav-link.active{color:var(--cream);background:rgba(255,255,255,0.07)}
+.nav-btn{padding:7px 16px;background:var(--gold);color:#000;font-size:13px;font-weight:600;border-radius:8px;text-decoration:none;transition:all .2s}
+.nav-btn:hover{background:var(--gold2)}
 
 /* HERO */
-.hero {
-  background:linear-gradient(135deg, var(--brown2) 0%, #2A1500 50%, var(--brown2) 100%);
-  padding:60px 24px 48px;
-  text-align:center;
-  position:relative; overflow:hidden;
-}
-.hero::before {
-  content:'';
-  position:absolute; inset:0;
-  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9923A' fill-opacity='0.05'%3E%3Cpath d='M30 0v60M0 30h60'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-}
-.hero-label {
-  font-size:11px; font-weight:700; text-transform:uppercase;
-  letter-spacing:.2em; color:var(--ocre); margin-bottom:16px;
-  position:relative;
-}
-.hero h1 {
-  font-family:'Playfair Display',serif;
-  font-size:clamp(28px,5vw,52px); font-weight:700;
-  color:#F5EDD8; line-height:1.15; margin-bottom:16px;
-  position:relative;
-}
-.hero h1 em { font-style:italic; color:var(--ocre); }
-.hero p {
-  font-family:'Lora',serif;
-  font-size:16px; color:rgba(245,237,216,0.7);
-  max-width:520px; margin:0 auto 32px; line-height:1.7;
-  position:relative;
-}
-.hero-stats {
-  display:flex; justify-content:center; gap:32px; flex-wrap:wrap;
-  position:relative;
-}
-.stat { text-align:center; }
-.stat-num { font-family:'Playfair Display',serif; font-size:28px; font-weight:700; color:var(--ocre); }
-.stat-label { font-size:11px; color:rgba(245,237,216,0.5); text-transform:uppercase; letter-spacing:.08em; }
+.hero{padding:80px 24px 60px;text-align:center;max-width:760px;margin:0 auto}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(201,146,58,0.1);border:1px solid rgba(201,146,58,0.3);border-radius:100px;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:24px}
+.hero h1{font-family:'Lora',serif;font-size:clamp(32px,5vw,56px);font-weight:600;line-height:1.15;color:var(--cream);margin-bottom:18px}
+.hero h1 em{font-style:italic;color:var(--gold)}
+.hero p{font-size:16px;color:var(--text2);line-height:1.7;max-width:520px;margin:0 auto 40px}
+.stats{display:flex;gap:40px;justify-content:center;flex-wrap:wrap}
+.stat-val{font-size:28px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+.stat-lab{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
 
-/* GENERATE CTA */
-.generate-cta {
-  background:var(--bg2); border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
-  padding:32px 24px; text-align:center;
-}
-.generate-cta h2 {
-  font-family:'Playfair Display',serif; font-size:22px;
-  color:var(--brown); margin-bottom:8px;
-}
-.generate-cta p { font-family:'Lora',serif; font-size:14px; color:var(--ink4); margin-bottom:20px; line-height:1.6; }
-.cta-buttons { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-.btn-primary {
-  padding:12px 24px;
-  background:linear-gradient(135deg, var(--ocre), #A07028);
-  color:var(--brown2); font-weight:700; font-size:14px;
-  border:none; border-radius:10px; cursor:pointer; text-decoration:none;
-}
-.btn-secondary {
-  padding:12px 24px;
-  background:transparent; color:var(--brown);
-  font-weight:600; font-size:14px;
-  border:1px solid var(--border); border-radius:10px;
-  cursor:pointer; text-decoration:none;
-}
+/* GENERATOR SECTION */
+.gen-section{max-width:900px;margin:0 auto;padding:0 24px 64px}
+.gen-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden}
+.gen-header{padding:28px 32px 0;display:flex;align-items:center;gap:12px}
+.gen-header h2{font-family:'Lora',serif;font-size:22px;color:var(--cream)}
+.gen-header p{font-size:13px;color:var(--text2);margin-top:4px}
+.gen-body{padding:24px 32px 32px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:640px){.gen-body{grid-template-columns:1fr}}
+.gen-full{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:8px}
+.form-label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.form-input,.form-select{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--cream);font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;appearance:none}
+.form-input:focus,.form-select:focus{border-color:var(--gold)}
+.form-input::placeholder{color:var(--text3)}
+.form-select{cursor:pointer}
+.gen-premium-box{grid-column:1/-1;background:rgba(201,146,58,0.05);border:1px solid rgba(201,146,58,0.15);border-radius:12px;padding:16px 20px}
+.gen-premium-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.gen-premium-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:500px){.gen-premium-grid{grid-template-columns:1fr}}
+.gen-status{font-size:12px;color:var(--text2);text-align:center;min-height:20px;font-style:italic;grid-column:1/-1}
+.gen-btn{grid-column:1/-1;padding:15px;background:linear-gradient(135deg,var(--gold),#A07028);color:#000;font-weight:700;font-size:15px;border:none;border-radius:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.gen-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(201,146,58,0.3)}
+.gen-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.gen-limit{font-size:12px;color:var(--text2);text-align:center;grid-column:1/-1}
+.gen-limit a{color:var(--gold);text-decoration:none}
 
-/* FILTROS */
-.filters-bar {
-  padding:20px 24px; display:flex; gap:8px; flex-wrap:wrap;
-  max-width:1200px; margin:0 auto;
-  align-items:center;
-}
-.filter-label { font-size:12px; color:var(--ink4); font-weight:600; margin-right:4px; }
-.filter-btn {
-  padding:7px 16px; border-radius:100px;
-  font-size:12px; font-weight:600; cursor:pointer;
-  border:1px solid var(--border); background:transparent;
-  color:var(--ink4); transition:all .2s; font-family:'DM Sans',sans-serif;
-}
-.filter-btn.active, .filter-btn:hover {
-  background:var(--ocre); color:var(--brown2); border-color:var(--ocre);
-}
+/* AUTH BUTTONS */
+.auth-gate{grid-column:1/-1;text-align:center;padding:20px 0 8px}
+.auth-gate p{font-size:14px;color:var(--text2);margin-bottom:16px}
+.auth-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn-login{padding:10px 20px;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:10px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;transition:all .2s}
+.btn-login:hover{border-color:var(--gold);color:var(--gold)}
+.btn-register{padding:10px 20px;background:var(--gold);color:#000;border:none;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;transition:all .2s}
+.btn-register:hover{background:var(--gold2)}
+
+/* FILTERS */
+.filters-section{max-width:900px;margin:0 auto;padding:0 24px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-label{font-size:12px;color:var(--text3);font-weight:600;margin-right:4px}
+.filter-chip{padding:6px 14px;border-radius:100px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.08);background:transparent;color:var(--text2);transition:all .2s;font-family:'Inter',sans-serif}
+.filter-chip.on,.filter-chip:hover{background:var(--gold);color:#000;border-color:var(--gold)}
 
 /* GRID */
-.grid-container {
-  max-width:1200px; margin:0 auto; padding:24px 24px 60px;
-}
-.infografias-grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));
-  gap:20px;
-}
+.grid-section{max-width:900px;margin:0 auto;padding:0 24px 80px}
+.infografias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid rgba(255,255,255,0.06);border-radius:14px;overflow:hidden;cursor:pointer;text-decoration:none;display:block;transition:all .25s}
+.card:hover{border-color:rgba(201,146,58,0.4);transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,0.4)}
+.card-img{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--surface2);display:block}
+.card-img-placeholder{width:100%;aspect-ratio:2/3;background:linear-gradient(135deg,var(--surface2),var(--surface3));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.card-img-placeholder .pi{font-size:28px}
+.card-img-placeholder .pt{font-size:11px;color:var(--text3);text-align:center;padding:0 12px}
+.card-body{padding:12px}
+.card-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:6px;display:block}
+.card-title{font-size:13px;font-weight:600;color:var(--cream);line-height:1.4;margin-bottom:4px}
+.card-date{font-size:11px;color:var(--text3)}
+.card-slides-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:var(--text2);font-size:10px;font-weight:600;padding:2px 7px;border-radius:100px}
+.card-wrap{position:relative}
 
-.infografia-card {
-  background:#fff; border-radius:14px; overflow:hidden;
-  border:1px solid var(--border); transition:all .25s;
-  cursor:pointer; text-decoration:none; display:block;
-  position:relative;
-}
-.infografia-card:hover {
-  transform:translateY(-3px);
-  box-shadow:0 12px 32px rgba(92,61,30,0.15);
-  border-color:var(--ocre);
-}
-.card-thumb {
-  width:100%; aspect-ratio:2/3; object-fit:cover;
-  background:var(--bg2);
-  display:block;
-}
-.card-thumb-placeholder {
-  width:100%; aspect-ratio:2/3;
-  background:linear-gradient(135deg, var(--brown2), #3A2210);
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:8px;
-}
-.card-thumb-placeholder span { font-size:32px; }
-.card-thumb-placeholder p {
-  font-family:'Lora',serif; font-size:13px;
-  color:rgba(245,237,216,0.6); text-align:center; padding:0 16px;
-}
-.card-body { padding:14px; }
-.card-badge {
-  display:inline-block; padding:3px 10px;
-  background:rgba(201,146,58,0.12); color:var(--ocre);
-  font-size:10px; font-weight:700; text-transform:uppercase;
-  letter-spacing:.08em; border-radius:100px;
-  margin-bottom:8px;
-}
-.card-title {
-  font-family:'Lora',serif; font-size:14px; font-weight:600;
-  color:var(--brown); line-height:1.4; margin-bottom:6px;
-}
-.card-date {
-  font-size:11px; color:var(--ink4);
-  display:flex; align-items:center; gap:4px;
-}
-.card-slides {
-  position:absolute; top:10px; right:10px;
-  background:rgba(0,0,0,0.7); color:#fff;
-  font-size:10px; font-weight:700; padding:3px 8px;
-  border-radius:100px;
-}
-.card-actions {
-  padding:10px 14px 14px;
-  display:flex; gap:8px;
-}
-.card-btn-download {
-  flex:1; padding:8px; text-align:center;
-  background:var(--ocre); color:var(--brown2);
-  font-size:12px; font-weight:700; border:none;
-  border-radius:8px; cursor:pointer; text-decoration:none;
-  display:block;
-}
-.card-btn-share {
-  padding:8px 12px;
-  background:rgba(201,146,58,0.1); color:var(--ocre);
-  font-size:12px; font-weight:600; border:1px solid var(--border);
-  border-radius:8px; cursor:pointer;
-}
-
-/* EMPTY STATE */
-.empty-state {
-  text-align:center; padding:80px 24px;
-  grid-column: 1 / -1;
-}
-.empty-icon { font-size:48px; margin-bottom:16px; }
-.empty-title {
-  font-family:'Playfair Display',serif; font-size:22px;
-  color:var(--brown); margin-bottom:8px;
-}
-.empty-sub { font-family:'Lora',serif; font-size:14px; color:var(--ink4); margin-bottom:24px; }
-
-/* MODAL AUTH */
-.modal-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,0.6);
-  z-index:1000; display:flex; align-items:center; justify-content:center;
-  padding:24px; opacity:0; pointer-events:none; transition:opacity .3s;
-}
-.modal-overlay.open { opacity:1; pointer-events:all; }
-.modal {
-  background:var(--bg); border-radius:20px;
-  padding:32px; width:100%; max-width:420px;
-  border:1px solid var(--border);
-  box-shadow:0 24px 64px rgba(0,0,0,0.3);
-  transform:translateY(20px); transition:transform .3s;
-}
-.modal-overlay.open .modal { transform:translateY(0); }
-.modal h2 {
-  font-family:'Playfair Display',serif; font-size:24px;
-  color:var(--brown); margin-bottom:6px;
-}
-.modal p { font-family:'Lora',serif; font-size:14px; color:var(--ink4); margin-bottom:24px; line-height:1.6; }
-.form-group { margin-bottom:16px; }
-.form-group label { display:block; font-size:12px; font-weight:600; color:var(--brown); margin-bottom:6px; }
-.form-group input {
-  width:100%; padding:11px 14px;
-  border:1px solid var(--border); border-radius:10px;
-  background:var(--bg2); color:var(--ink);
-  font-family:'Lora',serif; font-size:14px; outline:none;
-}
-.form-group input:focus { border-color:var(--ocre); }
-.form-error { color:var(--red); font-size:12px; margin-top:4px; }
-.btn-auth {
-  width:100%; padding:13px;
-  background:linear-gradient(135deg, var(--ocre), #A07028);
-  color:var(--brown2); font-weight:700; font-size:14px;
-  border:none; border-radius:10px; cursor:pointer;
-  margin-top:8px; transition:all .2s;
-}
-.modal-switch {
-  text-align:center; margin-top:16px;
-  font-size:13px; color:var(--ink4);
-}
-.modal-switch a { color:var(--ocre); cursor:pointer; font-weight:600; }
-.modal-close {
-  position:absolute; top:16px; right:16px;
-  background:none; border:none; cursor:pointer;
-  font-size:20px; color:var(--ink4);
-}
-
-/* TOAST */
-.toast {
-  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px);
-  background:var(--brown2); color:#F5EDD8;
-  padding:12px 24px; border-radius:10px;
-  font-size:13px; font-weight:500;
-  box-shadow:0 8px 24px rgba(0,0,0,0.3);
-  z-index:2000; transition:transform .3s;
-  border-left:3px solid var(--ocre);
-}
-.toast.show { transform:translateX(-50%) translateY(0); }
+/* EMPTY */
+.empty{text-align:center;padding:60px 24px;grid-column:1/-1}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-title{font-size:18px;font-weight:600;color:var(--cream);margin-bottom:8px}
+.empty-sub{font-size:14px;color:var(--text2);margin-bottom:20px}
+.empty-btn{display:inline-block;padding:10px 22px;background:var(--gold);color:#000;font-weight:600;font-size:13px;border-radius:10px;cursor:pointer;border:none;font-family:'Inter',sans-serif}
 
 /* LOAD MORE */
-.load-more-btn {
-  display:block; margin:32px auto 0;
-  padding:12px 32px;
-  background:transparent; color:var(--brown);
-  border:1px solid var(--border); border-radius:10px;
-  font-size:14px; font-weight:600; cursor:pointer;
-  transition:all .2s;
-}
-.load-more-btn:hover { background:var(--ocre); color:var(--brown2); border-color:var(--ocre); }
+.load-more{text-align:center;margin-top:32px}
+.load-more-btn{padding:11px 28px;background:transparent;color:var(--text2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;transition:all .2s}
+.load-more-btn:hover{border-color:var(--gold);color:var(--gold)}
 
-/* PLANS BAR */
-.plans-bar {
-  background:var(--brown2); padding:20px 24px;
-  display:flex; align-items:center; justify-content:center;
-  gap:32px; flex-wrap:wrap;
-}
-.plan-item { text-align:center; }
-.plan-name { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--ocre); margin-bottom:4px; }
-.plan-feature { font-size:13px; color:rgba(245,237,216,0.8); font-family:'Lora',serif; }
+/* MODAL AUTH */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:32px;width:100%;max-width:420px;position:relative;transform:translateY(16px);transition:transform .25s}
+.overlay.open .modal{transform:translateY(0)}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1}
+.modal h2{font-family:'Lora',serif;font-size:22px;color:var(--cream);margin-bottom:6px}
+.modal p{font-size:14px;color:var(--text2);margin-bottom:22px;line-height:1.6}
+.mform-group{margin-bottom:16px}
+.mform-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.mform-input{width:100%;padding:11px 14px;background:var(--surface2);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--cream);font-family:'Inter',sans-serif;font-size:14px;outline:none}
+.mform-input:focus{border-color:var(--gold)}
+.mform-error{color:#E06060;font-size:12px;margin-top:8px;min-height:18px}
+.mform-submit{width:100%;padding:13px;background:var(--gold);color:#000;font-weight:700;font-size:14px;border:none;border-radius:10px;cursor:pointer;margin-top:4px;font-family:'Inter',sans-serif}
+.mform-switch{text-align:center;margin-top:14px;font-size:13px;color:var(--text2)}
+.mform-switch a{color:var(--gold);cursor:pointer;font-weight:500}
 
-/* FOOTER */
-.site-footer {
-  background:var(--brown2); padding:32px 24px; text-align:center;
-  border-top:1px solid rgba(201,146,58,0.2);
-}
-.footer-text { font-family:'Lora',serif; font-size:13px; color:rgba(245,237,216,0.5); }
-.footer-text a { color:var(--ocre); text-decoration:none; }
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);color:var(--cream);padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:300;transition:transform .3s;border-left:3px solid var(--gold);white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
 
-@media(max-width:600px) {
-  .infografias-grid { grid-template-columns:repeat(2, 1fr); gap:12px; }
-  .hero h1 { font-size:28px; }
-  .hero-stats { gap:20px; }
-  .plans-bar { gap:16px; }
+/* RESULT BOX */
+.result-box{background:var(--surface);border:1px solid rgba(201,146,58,0.25);border-radius:16px;padding:20px 24px;margin-top:16px;grid-column:1/-1;display:none}
+.result-box.show{display:block}
+.result-img{width:100%;max-width:320px;height:auto;border-radius:10px;margin:0 auto 16px;display:block}
+.result-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.result-btn{padding:9px 18px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;border:none;font-family:'Inter',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:all .2s}
+.result-btn.primary{background:var(--gold);color:#000}
+.result-btn.secondary{background:transparent;color:var(--text);border:1px solid rgba(255,255,255,0.12)}
+.result-btn.secondary:hover{border-color:var(--gold);color:var(--gold)}
+
+@media(max-width:600px){
+  .nav-links .nav-link:not(.nav-btn){display:none}
+  .infografias-grid{grid-template-columns:repeat(2,1fr)}
+  .gen-body{padding:20px}
 }
 </style>
 </head>
 <body>
 
-<header class="site-header">
-  <a href="/" class="header-logo">
-    <div class="header-logo-icon">✝</div>
-    <div class="header-logo-text">Católicos<span>GPT</span></div>
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="nav-logo-icon">✝</div>
+    <div class="nav-logo-text">Católicos<span>GPT</span></div>
   </a>
-  <nav class="header-nav">
-    <a href="/">Chat IA</a>
-    <a href="/infografias" style="color:var(--ocre)">Infografías</a>
-    <a href="/planes">Planes</a>
-    <a href="#" class="btn-generate" onclick="openGenerateModal()">✨ Generar</a>
-  </nav>
-</header>
+  <div class="nav-links">
+    <a href="/" class="nav-link">Chat IA</a>
+    <a href="/infografias" class="nav-link active">Infografías</a>
+    <a href="/planes" class="nav-link">Planes</a>
+    <a href="#" class="nav-link nav-btn" onclick="openAuth('register');return false" id="nav-auth-btn">Crear cuenta</a>
+  </div>
+</nav>
 
+<!-- HERO -->
 <section class="hero">
-  <div class="hero-label">Biblioteca · Actualizada diariamente</div>
+  <div class="hero-tag">✨ Generadas con IA · Actualizadas diariamente</div>
   <h1>Infografías Católicas<br><em>para compartir tu fe</em></h1>
-  <p>Santos, encíclicas, apologética y devociones. Generadas con IA y actualizadas cada día. Descarga gratis y comparte en WhatsApp, Instagram y redes.</p>
-  <div class="hero-stats">
-    <div class="stat"><div class="stat-num" id="total-count">0</div><div class="stat-label">Infografías</div></div>
-    <div class="stat"><div class="stat-num">6</div><div class="stat-label">Categorías</div></div>
-    <div class="stat"><div class="stat-num">2</div><div class="stat-label">Nuevas hoy</div></div>
+  <p>Santos, encíclicas, apologética y devociones. Genera la tuya en segundos y compártela en WhatsApp, Instagram o tu parroquia.</p>
+  <div class="stats">
+    <div><div class="stat-val" id="total-stat">0</div><div class="stat-lab">Infografías</div></div>
+    <div><div class="stat-val">6</div><div class="stat-lab">Categorías</div></div>
+    <div><div class="stat-val">1</div><div class="stat-lab">Por día gratis</div></div>
   </div>
 </section>
 
-<div class="generate-cta">
-  <h2>🎨 Genera tu propia infografía con IA</h2>
-  <p>Escribe el tema que quieres — santo, devoción, doctrina — y CatolicosGPT genera la infografía automáticamente con tu estilo católico.</p>
-  <div class="cta-buttons">
-    <a href="#" class="btn-primary" onclick="openGenerateModal()">Generar infografía gratis</a>
-    <a href="/planes" class="btn-secondary">Ver planes →</a>
-  </div>
-</div>
-
-<div class="filters-bar">
-  <span class="filter-label">Filtrar:</span>
-  <button class="filter-btn active" onclick="filterBy('all', this)">Todas</button>
-  <button class="filter-btn" onclick="filterBy('santo', this)">Santos</button>
-  <button class="filter-btn" onclick="filterBy('devocional', this)">Devocionales</button>
-  <button class="filter-btn" onclick="filterBy('apologetica', this)">Apologética</button>
-  <button class="filter-btn" onclick="filterBy('enciclica', this)">Encíclicas</button>
-  <button class="filter-btn" onclick="filterBy('doctrina', this)">Doctrina</button>
-  <button class="filter-btn" onclick="filterBy('liturgia', this)">Liturgia</button>
-</div>
-
-<div class="grid-container">
-  <div class="infografias-grid" id="grid">
-    <div class="empty-state">
-      <div class="empty-icon">🙏</div>
-      <div class="empty-title">Cargando infografías...</div>
-      <div class="empty-sub">Un momento por favor</div>
-    </div>
-  </div>
-  <button class="load-more-btn" id="load-more-btn" style="display:none" onclick="loadMore()">Ver más infografías</button>
-</div>
-
-<div class="plans-bar">
-  <div class="plan-item"><div class="plan-name">Plan Gratis</div><div class="plan-feature">2 infografías / semana</div></div>
-  <div class="plan-item" style="color:var(--ocre)">→</div>
-  <div class="plan-item"><div class="plan-name" style="color:#F5EDD8">Plan Premium</div><div class="plan-feature" style="color:rgba(245,237,216,0.8)">Ilimitado · $4.99/mes</div></div>
-  <div class="plan-item" style="color:var(--ocre)">→</div>
-  <div class="plan-item"><div class="plan-name">Chat IA</div><div class="plan-feature">Siempre gratis</div></div>
-</div>
-
-<footer class="site-footer">
-  <div class="footer-text">
-    © 2026 <a href="/">CatolicosGPT</a> · IA Católica en Español ·
-    <a href="/infografias">Infografías</a> · <a href="/planes">Planes</a>
-  </div>
-</footer>
-
-<!-- Modal Auth -->
-<div class="modal-overlay" id="auth-modal">
-  <div class="modal" style="position:relative">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div id="modal-content"><!-- Renderizado por JS --></div>
-  </div>
-</div>
-
-<!-- Modal Generar -->
-<div class="modal-overlay" id="generate-modal">
-  <div class="modal" style="position:relative">
-    <button class="modal-close" onclick="document.getElementById('generate-modal').classList.remove('open')">✕</button>
-    <h2>✨ Generar Infografía</h2>
-    <p>Escribe el tema y CatolicosGPT crea la infografía automáticamente.</p>
-    <div class="form-group">
-      <label>Tema</label>
-      <input type="text" id="gen-tema" placeholder="Ej: San Francisco de Asís, Magnifica Humanitas...">
-    </div>
-    <div class="form-group">
-      <label>Formato</label>
-      <select id="gen-formato" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);color:var(--ink);font-size:14px">
-        <option value="9:16">9:16 — Instagram / WhatsApp</option>
-        <option value="1:1">1:1 — Square / Feed Instagram</option>
-        <option value="16:9">16:9 — Presentación / Retiro 🔒 Premium</option>
-      </select>
-    </div>
-    <div id="premium-branding" style="display:none;margin-bottom:16px;padding:12px;background:rgba(201,146,58,0.08);border:1px solid rgba(201,146,58,0.2);border-radius:10px">
-      <div style="font-size:11px;font-weight:700;color:var(--ocre);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">✨ Branding Premium</div>
-      <div style="margin-bottom:8px">
-        <label style="font-size:12px;font-weight:600;color:var(--brown);display:block;margin-bottom:4px">Tu nombre / Iglesia / Ministerio</label>
-        <input type="text" id="custom-nombre" placeholder="Ej: Parroquia San José, Grupo Jóvenes Fe..."
-          style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-size:13px">
-      </div>
+<!-- GENERATOR -->
+<section class="gen-section">
+  <div class="gen-card">
+    <div class="gen-header">
       <div>
-        <label style="font-size:12px;font-weight:600;color:var(--brown);display:block;margin-bottom:4px">Descripción de tu logo (opcional)</label>
-        <input type="text" id="custom-logo" placeholder="Ej: cruz dorada con paloma, escudo parroquial..."
-          style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--ink);font-size:13px">
+        <h2>✨ Genera tu infografía con IA</h2>
+        <p>Escribe el tema — santo, doctrina, encíclica — y CatolicosGPT la crea en segundos.</p>
       </div>
     </div>
-    <div id="gen-remaining" style="font-size:12px;color:var(--ink4);margin-bottom:16px;font-family:'Lora',serif;font-style:italic"></div>
-    <button class="btn-auth" id="gen-btn" onclick="submitGenerar()">Generar ahora</button>
-    <div id="gen-status" style="margin-top:12px;font-size:13px;color:var(--ink4);text-align:center;font-style:italic"></div>
+    <div class="gen-body" id="gen-body">
+      <!-- Auth gate (si no ha iniciado sesión) -->
+      <div class="auth-gate" id="auth-gate">
+        <p>Crea una cuenta gratis para generar tu primera infografía.</p>
+        <div class="auth-btns">
+          <button class="btn-login" onclick="openAuth('login')">Iniciar sesión</button>
+          <button class="btn-register" onclick="openAuth('register')">Registrarme gratis</button>
+        </div>
+      </div>
+
+      <!-- Form (si ha iniciado sesión) -->
+      <div class="form-group gen-full" id="gen-form" style="display:none">
+        <label class="form-label">Tema de la infografía</label>
+        <input type="text" id="gen-tema" class="form-input" placeholder="Ej: San Francisco de Asís, Rosario, Magnifica Humanitas...">
+      </div>
+
+      <div class="form-group" id="gen-formato-group" style="display:none">
+        <label class="form-label">Formato</label>
+        <select id="gen-formato" class="form-select">
+          <option value="9:16">9:16 — Instagram / WhatsApp</option>
+          <option value="1:1">1:1 — Square / Feed</option>
+          <option value="16:9">16:9 — Presentación 🔒</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="gen-tipo-group" style="display:none">
+        <label class="form-label">Tipo</label>
+        <select id="gen-tipo" class="form-select">
+          <option value="">Auto-detectar</option>
+          <option value="santo">Santo / Devocional</option>
+          <option value="serie">Serie 4 slides</option>
+          <option value="doctrinal">Doctrina / Encíclica</option>
+        </select>
+      </div>
+
+      <div class="gen-premium-box" id="gen-branding-box" style="display:none">
+        <div class="gen-premium-label">✨ Branding Premium</div>
+        <div class="gen-premium-grid">
+          <div class="form-group">
+            <label class="form-label">Tu nombre / Parroquia / Ministerio</label>
+            <input type="text" id="gen-custom-nombre" class="form-input" placeholder="Ej: Grupo Jóvenes Fe...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Logo (descripción)</label>
+            <input type="text" id="gen-custom-logo" class="form-input" placeholder="Ej: cruz dorada con paloma...">
+          </div>
+        </div>
+      </div>
+
+      <div class="gen-limit gen-full" id="gen-limit-info" style="display:none"></div>
+      <div class="gen-status gen-full" id="gen-status"></div>
+      <button class="gen-btn gen-full" id="gen-btn" style="display:none" onclick="submitGenerar()">
+        <span>✨</span> Generar infografía
+      </button>
+
+      <!-- Result -->
+      <div class="result-box gen-full" id="result-box">
+        <img id="result-img" class="result-img" alt="Infografía generada">
+        <div class="result-actions" id="result-actions"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FILTERS -->
+<div class="filters-section">
+  <span class="filter-label">Filtrar:</span>
+  <button class="filter-chip on" onclick="filterBy('all',this)">Todas</button>
+  <button class="filter-chip" onclick="filterBy('santo',this)">Santos</button>
+  <button class="filter-chip" onclick="filterBy('devocional',this)">Devocionales</button>
+  <button class="filter-chip" onclick="filterBy('apologetica',this)">Apologética</button>
+  <button class="filter-chip" onclick="filterBy('enciclica',this)">Encíclicas</button>
+  <button class="filter-chip" onclick="filterBy('doctrinal',this)">Doctrina</button>
+</div>
+
+<!-- GRID -->
+<section class="grid-section">
+  <div class="infografias-grid" id="grid">
+    <div class="empty"><div class="empty-icon">⏳</div><div class="empty-title">Cargando...</div></div>
+  </div>
+  <div class="load-more" id="load-more-wrap" style="display:none">
+    <button class="load-more-btn" onclick="loadMore()">Ver más infografías</button>
+  </div>
+</section>
+
+<!-- Auth Modal -->
+<div class="overlay" id="auth-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuth()">✕</button>
+    <div id="auth-modal-content"></div>
   </div>
 </div>
 
@@ -480,258 +284,269 @@ body { background:var(--bg); color:var(--ink); font-family:'DM Sans',sans-serif;
 
 <script>
 const API = '';
+let token = localStorage.getItem('cgpt_token');
+let user  = null;
 let currentFilter = 'all';
-let currentPage = 1;
-let totalPages = 1;
-let userToken = localStorage.getItem('cgpt_token');
-let userData = null;
+let currentPage   = 1;
+let totalPages    = 1;
 
-// ── Load infografías ──
-async function loadInfografias(reset = false) {
-  if (reset) { currentPage = 1; document.getElementById('grid').innerHTML = ''; }
+// ── Init ──
+async function init() {
+  loadGrid(true);
+  if (token) await fetchUser();
+  else showAuthGate();
+}
+
+async function fetchUser() {
   try {
-    const params = new URLSearchParams({ page: currentPage, limit: 20 });
-    if (currentFilter !== 'all') params.set('categoria', currentFilter);
-    const resp = await fetch(`/api/infografias?${params}`);
-    const data = await resp.json();
+    const r = await fetch('/api/auth/me', { headers:{ Authorization:'Bearer '+token } });
+    if (!r.ok) { token=null; localStorage.removeItem('cgpt_token'); showAuthGate(); return; }
+    user = (await r.json()).user;
+    showGenerator();
+    // Update nav
+    document.getElementById('nav-auth-btn').textContent = user.nombre?.split(' ')[0] || 'Mi cuenta';
+    document.getElementById('nav-auth-btn').onclick = () => { localStorage.removeItem('cgpt_token'); location.reload(); return false; };
+  } catch(e) { showAuthGate(); }
+}
 
-    document.getElementById('total-count').textContent = data.total || 0;
-    totalPages = data.totalPages || 1;
+function showAuthGate() {
+  document.getElementById('auth-gate').style.display='block';
+  ['gen-form','gen-formato-group','gen-tipo-group','gen-btn','gen-limit-info'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.style.display='none';
+  });
+}
 
-    const grid = document.getElementById('grid');
-    if (data.items.length === 0 && currentPage === 1) {
-      grid.innerHTML = `<div class="empty-state">
-        <div class="empty-icon">🎨</div>
-        <div class="empty-title">Sé el primero</div>
-        <div class="empty-sub">Aún no hay infografías en esta categoría. ¡Genera la primera!</div>
-        <button class="btn-primary" onclick="openGenerateModal()" style="margin-top:16px">Generar infografía</button>
-      </div>`;
+async function showGenerator() {
+  document.getElementById('auth-gate').style.display='none';
+  ['gen-form','gen-formato-group','gen-tipo-group','gen-btn'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.style.display='block';
+  });
+  // Branding premium
+  if (user?.plan === 'premium' || user?.plan === 'admin') {
+    document.getElementById('gen-branding-box').style.display='block';
+    if (user.customNombre) document.getElementById('gen-custom-nombre').value = user.customNombre;
+    if (user.customLogo)   document.getElementById('gen-custom-logo').value   = user.customLogo;
+  }
+  // Limite
+  const limEl = document.getElementById('gen-limit-info');
+  limEl.style.display='block';
+  if (user?.plan === 'admin' || user?.plan === 'premium') {
+    limEl.innerHTML = '✅ '+ucFirst(user.plan)+' — Infografías ilimitadas · Branding personalizado';
+    limEl.style.color='#4CAF79';
+  } else {
+    try {
+      const r  = await fetch('/api/infografias/check-limit',{headers:{Authorization:'Bearer '+token}});
+      const d  = await r.json();
+      const rem = d.remaining ?? '?';
+      limEl.innerHTML = '📊 '+rem+' generación(es) disponible(s) hoy · <a href="/planes">Premium ilimitado →</a>';
+      limEl.style.color = rem > 0 ? '#A89880' : '#E06060';
+    } catch(e){}
+  }
+}
+
+function ucFirst(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+// ── Generate ──
+async function submitGenerar() {
+  const tema   = document.getElementById('gen-tema').value.trim();
+  const formato= document.getElementById('gen-formato').value;
+  const tipo   = document.getElementById('gen-tipo').value;
+  const nombre = document.getElementById('gen-custom-nombre')?.value||'';
+  const logo   = document.getElementById('gen-custom-logo')?.value||'';
+  if (!tema){ showToast('Escribe un tema para generar'); document.getElementById('gen-tema').focus(); return; }
+
+  const btn = document.getElementById('gen-btn');
+  const st  = document.getElementById('gen-status');
+  btn.disabled=true; btn.innerHTML='<span>⏳</span> Generando...';
+  st.textContent='Creando tu infografía con IA (30-60 segundos)...';
+  document.getElementById('result-box').classList.remove('show');
+
+  try {
+    const r = await fetch('/api/infografias/generar',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({tema,formato,tipo:tipo||undefined,customNombre:nombre,customLogo:logo})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error||'Error al generar');
+
+    st.textContent='';
+    showResult(d.infografia);
+    loadGrid(true); // Reload grid
+    await showGenerator(); // Update limit count
+    showToast('¡Infografía generada! 🎉');
+  } catch(e) {
+    st.textContent='❌ '+e.message;
+    if (e.message.includes('upgrade') || e.message.includes('límite')) {
+      st.innerHTML='❌ '+e.message+' <a href="/planes" style="color:var(--gold)">Ver Premium →</a>';
+    }
+  } finally {
+    btn.disabled=false; btn.innerHTML='<span>✨</span> Generar infografía';
+  }
+}
+
+function showResult(inf) {
+  const box = document.getElementById('result-box');
+  const img = document.getElementById('result-img');
+  const act = document.getElementById('result-actions');
+  const primerImg = inf.imagenes?.[0]?.url || '';
+  if (primerImg) {
+    img.src = primerImg;
+    img.alt = inf.altText || inf.titulo || 'Infografía';
+    img.style.display='block';
+  } else {
+    img.style.display='none';
+  }
+  act.innerHTML = `
+    <a href="${primerImg}" download="${inf.slug}.png" class="result-btn primary" target="_blank">⬇️ Descargar PNG</a>
+    <a href="/infografias/${inf.slug}" class="result-btn secondary" target="_blank">🔗 Ver página</a>
+    <button class="result-btn secondary" onclick="shareUrl('/infografias/${inf.slug}','${(inf.titulo||'').replace(/'/g,'\\'')}')">📤 Compartir</button>
+  `;
+  box.classList.add('show');
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ── Grid ──
+async function loadGrid(reset=false) {
+  if (reset) { currentPage=1; }
+  try {
+    const p = new URLSearchParams({page:currentPage,limit:20});
+    if (currentFilter!=='all') p.set('categoria',currentFilter);
+    const r = await fetch('/api/infografias?'+p);
+    const d = await r.json();
+    document.getElementById('total-stat').textContent = d.total||0;
+    totalPages = d.totalPages||1;
+    const g = document.getElementById('grid');
+    if (reset) g.innerHTML='';
+    if (!d.items?.length && currentPage===1) {
+      g.innerHTML=`<div class="empty"><div class="empty-icon">🎨</div><div class="empty-title">Sé el primero</div><div class="empty-sub">Genera la primera infografía de esta categoría.</div><button class="empty-btn" onclick="document.getElementById('gen-tema').focus();document.getElementById('gen-tema').scrollIntoView({behavior:'smooth'})">Generar ahora</button></div>`;
       return;
     }
-
-    data.items.forEach(inf => {
-      const card = buildCard(inf);
-      grid.insertAdjacentHTML('beforeend', card);
-    });
-
-    document.getElementById('load-more-btn').style.display =
-      currentPage < totalPages ? 'block' : 'none';
-  } catch(e) {
-    console.error(e);
-  }
+    d.items.forEach(inf => g.insertAdjacentHTML('beforeend', buildCard(inf)));
+    document.getElementById('load-more-wrap').style.display = currentPage<totalPages ? 'block' : 'none';
+  } catch(e){ console.error(e); }
 }
 
 function buildCard(inf) {
   const img = inf.imagenes?.[0]?.url;
-  const fecha = new Date(inf.fechaCreacion).toLocaleDateString('es-ES', { day:'numeric', month:'short', year:'numeric' });
-  const slides = inf.totalSlides > 1 ? `<span class="card-slides">${inf.totalSlides} slides</span>` : '';
+  const fecha = new Date(inf.fechaCreacion).toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+  const slides = inf.totalSlides>1 ? `<span class="card-slides-badge">${inf.totalSlides} slides</span>` : '';
   const thumb = img
-    ? `<img class="card-thumb" src="${img}" alt="${inf.altText || inf.titulo}" loading="lazy" width="240">`
-    : `<div class="card-thumb-placeholder"><span>✝</span><p>${inf.titulo?.slice(0,40)}</p></div>`;
-
-  return `<a class="infografia-card" href="/infografias/${inf.slug}">
-    <div style="position:relative">
-      ${thumb}
-      ${slides}
-    </div>
+    ? `<img class="card-img" src="${img}" alt="${(inf.altText||inf.titulo||'').replace(/"/g,'')}" loading="lazy">`
+    : `<div class="card-img-placeholder"><div class="pi">✝</div><div class="pt">${(inf.titulo||inf.tema||'').slice(0,40)}</div></div>`;
+  return `<a class="card" href="/infografias/${inf.slug}">
+    <div class="card-wrap">${thumb}${slides}</div>
     <div class="card-body">
-      <div class="card-badge">${inf.categoria || inf.tipo}</div>
-      <div class="card-title">${inf.titulo?.slice(0,60) || inf.tema?.slice(0,60)}</div>
-      <div class="card-date">📅 ${fecha}</div>
-    </div>
-    <div class="card-actions">
-      <a href="/infografias/${inf.slug}" class="card-btn-download" onclick="event.stopPropagation()">Ver y descargar</a>
-      <button class="card-btn-share" onclick="event.preventDefault();event.stopPropagation();shareInfografia('${inf.slug}','${(inf.titulo||'').replace(/'/g,'')}')" title="Compartir">📤</button>
+      <span class="card-badge">${inf.categoria||inf.tipo||'católico'}</span>
+      <div class="card-title">${(inf.titulo||inf.tema||'').slice(0,55)}</div>
+      <div class="card-date">${fecha}</div>
     </div>
   </a>`;
 }
 
-function loadMore() {
-  currentPage++;
-  loadInfografias(false);
+function loadMore() { currentPage++; loadGrid(false); }
+function filterBy(cat,btn) {
+  currentFilter=cat;
+  document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  loadGrid(true);
 }
 
-function filterBy(cat, btn) {
-  currentFilter = cat;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  loadInfografias(true);
+// ── Auth Modal ──
+function openAuth(mode='login') {
+  renderAuth(mode);
+  document.getElementById('auth-overlay').classList.add('open');
 }
-
-// ── Auth ──
-function openAuthModal(mode = 'login') {
-  renderAuthForm(mode);
-  document.getElementById('auth-modal').classList.add('open');
-}
-function closeModal() {
-  document.getElementById('auth-modal').classList.remove('open');
-}
-
-function renderAuthForm(mode) {
-  const el = document.getElementById('modal-content');
-  if (mode === 'login') {
-    el.innerHTML = `
-      <h2>Bienvenido de vuelta</h2>
-      <p>Inicia sesión para generar tus infografías católicas.</p>
-      <div class="form-group"><label>Email</label><input type="email" id="auth-email" placeholder="tu@email.com"></div>
-      <div class="form-group"><label>Contraseña</label><input type="password" id="auth-pass" placeholder="••••••••"></div>
-      <div class="form-error" id="auth-error"></div>
-      <button class="btn-auth" onclick="submitLogin()">Iniciar sesión</button>
-      <div class="modal-switch">¿No tienes cuenta? <a onclick="renderAuthForm('register')">Regístrate gratis</a></div>`;
+function closeAuth() { document.getElementById('auth-overlay').classList.remove('open'); }
+function renderAuth(mode) {
+  const c = document.getElementById('auth-modal-content');
+  if (mode==='login') {
+    c.innerHTML=`<h2>Bienvenido de vuelta</h2><p>Inicia sesión para generar infografías.</p>
+    <div class="mform-group"><label class="mform-label">Email</label><input id="m-email" type="email" class="mform-input" placeholder="tu@email.com"></div>
+    <div class="mform-group"><label class="mform-label">Contraseña</label><input id="m-pass" type="password" class="mform-input" placeholder="••••••••"></div>
+    <div class="mform-error" id="m-err"></div>
+    <button class="mform-submit" onclick="doLogin()">Iniciar sesión</button>
+    <div class="mform-switch">¿No tienes cuenta? <a onclick="renderAuth('register')">Regístrate gratis</a></div>`;
   } else {
-    el.innerHTML = `
-      <h2>Crear cuenta gratis</h2>
-      <p>Regístrate para generar 2 infografías por semana totalmente gratis.</p>
-      <div class="form-group"><label>Nombre</label><input type="text" id="reg-nombre" placeholder="Tu nombre"></div>
-      <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="tu@email.com"></div>
-      <div class="form-group"><label>Contraseña (mínimo 8 caracteres)</label><input type="password" id="reg-pass" placeholder="••••••••"></div>
-      <div class="form-error" id="auth-error"></div>
-      <button class="btn-auth" onclick="submitRegister()">Crear cuenta gratis</button>
-      <div class="modal-switch">¿Ya tienes cuenta? <a onclick="renderAuthForm('login')">Inicia sesión</a></div>`;
+    c.innerHTML=`<h2>Crear cuenta gratis</h2><p>1 infografía por día sin costo.</p>
+    <div class="mform-group"><label class="mform-label">Nombre</label><input id="m-nombre" type="text" class="mform-input" placeholder="Tu nombre"></div>
+    <div class="mform-group"><label class="mform-label">Email</label><input id="m-email" type="email" class="mform-input" placeholder="tu@email.com"></div>
+    <div class="mform-group"><label class="mform-label">Contraseña (mín. 8 caracteres)</label><input id="m-pass" type="password" class="mform-input" placeholder="••••••••"></div>
+    <div class="mform-error" id="m-err"></div>
+    <button class="mform-submit" onclick="doRegister()">Crear cuenta gratis</button>
+    <div class="mform-switch">¿Ya tienes cuenta? <a onclick="renderAuth('login')">Inicia sesión</a></div>`;
   }
 }
 
-async function submitLogin() {
-  const email = document.getElementById('auth-email').value.trim();
-  const pass = document.getElementById('auth-pass').value;
-  document.getElementById('auth-error').textContent = '';
+async function doLogin() {
+  const email=document.getElementById('m-email').value.trim();
+  const pass=document.getElementById('m-pass').value;
+  document.getElementById('m-err').textContent='';
   try {
-    const r = await fetch('/api/auth/login', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ email, password: pass })
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Error al iniciar sesión');
-    localStorage.setItem('cgpt_token', d.token);
-    userToken = d.token; userData = d.user;
-    closeModal();
-    showToast('¡Bienvenido, ' + d.user.nombre + '! 🙏');
-    checkUserStatus();
-  } catch(e) { document.getElementById('auth-error').textContent = e.message; }
+    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Error al iniciar sesión');
+    token=d.token; localStorage.setItem('cgpt_token',token); user=d.user;
+    closeAuth(); showGenerator();
+    document.getElementById('nav-auth-btn').textContent=user.nombre?.split(' ')[0]||'Mi cuenta';
+    showToast('¡Bienvenido, '+user.nombre+'! 🙏');
+  } catch(e){document.getElementById('m-err').textContent=e.message;}
 }
 
-async function submitRegister() {
-  const nombre = document.getElementById('reg-nombre').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const pass = document.getElementById('reg-pass').value;
-  document.getElementById('auth-error').textContent = '';
+async function doRegister() {
+  const nombre=document.getElementById('m-nombre').value.trim();
+  const email=document.getElementById('m-email').value.trim();
+  const pass=document.getElementById('m-pass').value;
+  document.getElementById('m-err').textContent='';
   try {
-    const r = await fetch('/api/auth/register', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ nombre, email, password: pass })
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Error al registrarse');
-    localStorage.setItem('cgpt_token', d.token);
-    userToken = d.token; userData = d.user;
-    closeModal();
-    showToast('¡Cuenta creada! Tienes 2 infografías gratis esta semana 🎉');
-    checkUserStatus();
-  } catch(e) { document.getElementById('auth-error').textContent = e.message; }
+    const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre,email,password:pass})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Error al registrarse');
+    token=d.token; localStorage.setItem('cgpt_token',token); user=d.user;
+    closeAuth(); showGenerator();
+    document.getElementById('nav-auth-btn').textContent=user.nombre?.split(' ')[0]||'Mi cuenta';
+    showToast('¡Cuenta creada! Tienes 1 infografía gratis hoy 🎉');
+  } catch(e){document.getElementById('m-err').textContent=e.message;}
 }
 
-// ── Generate ──
-function openGenerateModal() {
-  if (!userToken) { openAuthModal('register'); return; }
-  checkUserStatus();
-  document.getElementById('generate-modal').classList.add('open');
+// ── Utils ──
+function shareUrl(path, titulo) {
+  const url = 'https://catolicosgpt.com'+path;
+  if (navigator.share) navigator.share({title:titulo+' — CatolicosGPT', url});
+  else { navigator.clipboard.writeText(url); showToast('Link copiado 📋'); }
 }
 
-async function checkUserStatus() {
-  if (!userToken) return;
-  try {
-    const r = await fetch('/api/auth/me', { headers:{ Authorization: 'Bearer ' + userToken } });
-    if (!r.ok) { localStorage.removeItem('cgpt_token'); userToken = null; return; }
-    userData = (await r.json()).user;
-    const remEl = document.getElementById('gen-remaining');
-    const brandEl = document.getElementById('premium-branding');
-
-    // Mostrar branding premium solo si tiene plan premium/admin
-    if (brandEl) brandEl.style.display = (userData.plan === 'premium' || userData.plan === 'admin') ? 'block' : 'none';
-
-    // Prellenar campos con valores guardados
-    if (userData.customNombre) document.getElementById('custom-nombre').value = userData.customNombre;
-    if (userData.customLogo)   document.getElementById('custom-logo').value   = userData.customLogo;
-
-    if (remEl) {
-      if (userData.plan === 'admin' || userData.plan === 'premium') {
-        remEl.innerHTML = '<span style="color:#27AE60">✅ ' + (userData.plan === 'admin' ? 'Admin' : 'Premium') + ' — Infografías ilimitadas · Branding personalizado</span>';
-      } else {
-        try {
-          const rem = await fetch('/api/infografias/check-limit', { headers:{ Authorization: 'Bearer ' + userToken } });
-          const rd = await rem.json();
-          const remaining = rd.remaining !== undefined ? rd.remaining : '?';
-          remEl.innerHTML = '📊 ' + remaining + ' infografía(s) disponibles hoy · <a href="/planes" style="color:var(--ocre);font-weight:600">Obtener Premium →</a>';
-        } catch(e) {}
-      }
-    }
-  } catch(e) {}
-}
-
-async function submitGenerar() {
-  const tema = document.getElementById('gen-tema').value.trim();
-  const formato = document.getElementById('gen-formato').value;
-  if (!tema) { showToast('Escribe un tema primero'); return; }
-
-  const btn = document.getElementById('gen-btn');
-  const status = document.getElementById('gen-status');
-  btn.disabled = true;
-  btn.textContent = 'Generando...';
-  status.textContent = '⏳ Creando tu infografía con IA (30-60 segundos)...';
-
-  try {
-    const customNombre = document.getElementById('custom-nombre')?.value || '';
-    const customLogo   = document.getElementById('custom-logo')?.value   || '';
-    const r = await fetch('/api/infografias/generar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + userToken },
-      body: JSON.stringify({ tema, formato, customNombre, customLogo })
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Error al generar');
-
-    document.getElementById('generate-modal').classList.remove('open');
-    showToast('¡Infografía generada! 🎉');
-
-    // Redirect to the new infographic
-    setTimeout(() => window.location.href = '/infografias/' + d.slug, 1000);
-  } catch(e) {
-    status.textContent = '❌ ' + e.message;
-    btn.disabled = false;
-    btn.textContent = 'Generar ahora';
-  }
-}
-
-// ── Share ──
-function shareInfografia(slug, titulo) {
-  const url = `https://catolicosgpt.com/infografias/${slug}`;
-  if (navigator.share) {
-    navigator.share({ title: titulo + ' — CatolicosGPT', url });
-  } else {
-    navigator.clipboard.writeText(url);
-    showToast('Link copiado al portapapeles 📋');
-  }
-}
-
-// ── Toast ──
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3500);
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
 }
 
-// ── Init ──
-loadInfografias(true);
-checkUserStatus();
+// Close overlays on backdrop click
+document.getElementById('auth-overlay').addEventListener('click',e=>{if(e.target.id==='auth-overlay')closeAuth();});
 
-// Close modal on overlay click
-document.getElementById('auth-modal').addEventListener('click', e => {
-  if (e.target.id === 'auth-modal') closeModal();
-});
-document.getElementById('generate-modal').addEventListener('click', e => {
-  if (e.target.id === 'generate-modal') document.getElementById('generate-modal').classList.remove('open');
-});
+// Expose for external calls (from chat)
+window.openInfografiaGenerator = (tema) => {
+  document.getElementById('gen-tema').value = tema || '';
+  document.getElementById('gen-tema').scrollIntoView({behavior:'smooth'});
+  document.getElementById('gen-tema').focus();
+};
+
+init();
+
+// Detectar ?tema= en URL (desde chat IA)
+const urlTema = new URLSearchParams(window.location.search).get('tema');
+if (urlTema) {
+  // Esperar a que el DOM esté listo con el generator
+  setTimeout(() => {
+    const input = document.getElementById('gen-tema');
+    if (input) {
+      input.value = decodeURIComponent(urlTema);
+      input.scrollIntoView({ behavior: 'smooth' });
+      input.focus();
+    }
+  }, 800);
+}
 </script>
 </body>
 </html>

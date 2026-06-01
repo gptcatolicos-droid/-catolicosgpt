@@ -152,24 +152,50 @@ For serie:
 }
 
 // ── Upload a Cloudinary ──
+async function saveImageLocally(imageData, slug, index) {
+  // Fallback: guardar imagen en disco y servirla via endpoint
+  const imgDir  = path.join(__dirname, 'public', 'infografias');
+  const imgFile = `${slug}-${index}.png`;
+  const imgPath = path.join(imgDir, imgFile);
+  try {
+    if (!require('fs').existsSync(imgDir)) require('fs').mkdirSync(imgDir, { recursive: true });
+    if (imageData && imageData.length > 100) {
+      require('fs').writeFileSync(imgPath, Buffer.from(imageData, 'base64'));
+      return `/infografias/${imgFile}`;
+    }
+  } catch(e) { console.error('[LocalSave]', e.message); }
+  return null;
+}
+
 async function uploadToCloudinary(imageData, slug, index = 0) {
-  if (!process.env.CLOUDINARY_API_KEY) {
-    console.warn('[Cloudinary] Sin credenciales — guardando URL temporal');
-    return null;
+  if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.warn('[Cloudinary] Sin credenciales — usando almacenamiento local');
+    return saveImageLocally(imageData, slug, index);
   }
   try {
     const publicId = `catolicosgpt/infografias/${slug}-${index}-${Date.now()}`;
-    const source = imageData.startsWith('http')
-      ? imageData
-      : `data:image/png;base64,${imageData}`;
+    let source;
+    if (typeof imageData === 'string' && imageData.startsWith('http')) {
+      source = imageData; // URL directa (DALL-E 3)
+    } else if (typeof imageData === 'string' && imageData.length > 100) {
+      source = `data:image/png;base64,${imageData}`; // base64 (gpt-image-1)
+    } else {
+      throw new Error('imageData inválido: ' + (typeof imageData) + ' len=' + (imageData ? imageData.length : 0));
+    }
+    console.log('[Cloudinary] Subiendo imagen slug=' + slug + ' index=' + index + ' sourceType=' + (imageData.startsWith('http') ? 'URL' : 'base64'));
     const result = await cloudinary.uploader.upload(source, {
       public_id: publicId, overwrite: false,
       quality: 'auto:best', fetch_format: 'auto',
       tags: ['catolicosgpt','infografia']
     });
+    console.log('[Cloudinary] ✅ OK:', result.secure_url);
     return result.secure_url;
   } catch(e) {
-    console.error('[Cloudinary Upload]', e.message);
+    console.error('[Cloudinary Upload] ❌', e.message);
+    // Fallback a almacenamiento local si el imageData es base64
+    if (typeof imageData === 'string' && !imageData.startsWith('http')) {
+      return saveImageLocally(imageData, slug, index);
+    }
     return null;
   }
 }
@@ -182,9 +208,12 @@ async function generarImagen(prompt, openai, formato = '9:16') {
   try {
     const r = await openai.images.generate({
       model: 'gpt-image-1', prompt, n: 1,
-      size: sizes.gpti, quality: 'medium'
+      size: sizes.gpti, quality: 'medium',
+      response_format: 'b64_json'
     });
-    return { data: r.data[0].b64_json, type: 'base64', model: 'gpt-image-1' };
+    const b64 = r.data[0].b64_json;
+    if (!b64) throw new Error('gpt-image-1: b64_json vacío en respuesta');
+    return { data: b64, type: 'base64', model: 'gpt-image-1' };
   } catch(e) {
     console.log('[Image] gpt-image-1 →', e.message.slice(0,60), '| usando DALL-E 3');
   }

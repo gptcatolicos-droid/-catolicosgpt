@@ -503,3 +503,23 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); }
   .bubble { font-size: 14px; }
   .view-body { padding: 14px; }
 }
+
+/* Botón de infografía generado desde el chat */
+.chat-infografia-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #C9923A, #A07028);
+  color: #18100A;
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: 10px;
+  text-decoration: none;
+  margin: 8px 0;
+  transition: all .2s;
+}
+.chat-infografia-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(201,146,58,0.35);
+}
