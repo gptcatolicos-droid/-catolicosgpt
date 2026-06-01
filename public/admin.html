@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · CatolicosGPT</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.admin-shell { max-width: 1200px; margin: 0 auto; padding: 20px clamp(18px, 4vw, 40px); }
+.admin-grid { display: grid; grid-template-columns: 380px 1fr; gap: 30px; align-items: start; }
+@media (max-width: 900px) { .admin-grid { grid-template-columns: 1fr; } }
+
+.admin-card { background: var(--cream-2); border: 1px solid var(--hairline-2); border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+.admin-card h3 { font-family: var(--font-display); font-size: 22px; color: var(--espresso); margin-bottom: 6px; font-weight: 700; }
+.admin-card p { font-size: 13px; color: var(--ink-2); margin-bottom: 18px; }
+
+.field-label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.input, .textarea, .select {
+  width: 100%; padding: 11px 14px; background: var(--cream-3); border: 1.5px solid var(--hairline-2);
+  border-radius: var(--r-md); font-family: var(--font-ui); font-size: 14px; color: var(--ink); outline: none;
+  transition: .18s var(--ease);
+}
+.textarea { resize: vertical; min-height: 80px; }
+.input:focus, .textarea:focus, .select:focus { border-color: var(--gold); background: var(--cream-2); }
+
+.field { margin-bottom: 16px; }
+.field-row { display: flex; gap: 8px; align-items: flex-end; }
+.field-row .input { flex: 1; }
+
+.btn { padding: 10px 18px; border-radius: var(--r-md); font-family: var(--font-ui); font-weight: 600; font-size: 14px; cursor: pointer; transition: .18s var(--ease); border: none; }
+.btn-gold { background: var(--grad-gold); color: #3a2a0c; box-shadow: var(--shadow-sm); }
+.btn-gold:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--hairline-2); }
+.btn-ghost:hover { border-color: var(--gold); color: var(--espresso); }
+.btn-mini { padding: 6px 12px; font-size: 12px; }
+.btn-ai { background: var(--cream-3); color: var(--gold-deep); border: 1px solid var(--hairline-2); font-weight: 600; }
+.btn-ai:hover { background: var(--cream-2); border-color: var(--gold); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.status { font-size: 13px; padding: 12px 16px; border-radius: var(--r-md); margin: 10px 0; display: none; }
+.status.show { display: block; }
+.status.ok { background: rgba(76,175,121,.1); color: #2D6F4A; border-left: 3px solid #4CAF79; }
+.status.err { background: rgba(185,28,28,.08); color: #991B1B; border-left: 3px solid #B91C1C; }
+.status.info { background: rgba(188,138,54,.08); color: var(--gold-deep); border-left: 3px solid var(--gold); }
+
+.upload-zone { border: 2px dashed var(--hairline-2); border-radius: var(--r-md); padding: 30px 20px; text-align: center; cursor: pointer; transition: .15s; background: var(--cream-3); }
+.upload-zone:hover, .upload-zone.dragging { border-color: var(--gold); background: var(--cream-2); }
+.upload-zone img { max-width: 100%; max-height: 200px; border-radius: var(--r-sm); }
+.upload-zone .ph { color: var(--ink-3); font-size: 14px; }
+
+.list-item { display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid var(--hairline); align-items: center; }
+.list-item:last-child { border-bottom: none; }
+.list-item img { width: 50px; height: 75px; object-fit: cover; border-radius: var(--r-sm); background: var(--cream-3); flex-shrink: 0; }
+.list-item .li-info { flex: 1; min-width: 0; }
+.list-item .li-title { font-weight: 600; color: var(--espresso); font-size: 14px; }
+.list-item .li-meta { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: var(--cream-2); border: 1px solid var(--hairline-2); border-radius: var(--r-md); padding: 16px; }
+.stat-card .val { font-family: var(--font-display); font-weight: 700; font-size: 28px; color: var(--gold-deep); }
+.stat-card .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-3); margin-top: 4px; }
+
+.login-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.login-card { max-width: 380px; width: 100%; background: var(--cream-2); border: 1px solid var(--hairline-2); border-radius: var(--r-xl); padding: 36px; box-shadow: var(--shadow-md); }
+.login-card h1 { font-family: var(--font-display); font-size: 28px; color: var(--espresso); margin-bottom: 6px; text-align: center; }
+.login-card p { text-align: center; color: var(--ink-2); margin-bottom: 24px; font-size: 14px; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--hairline); }
+.tab { padding: 10px 18px; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--ink-3); border-bottom: 2px solid transparent; transition: .15s; }
+.tab.active { color: var(--gold-deep); border-bottom-color: var(--gold); }
+.tab:hover { color: var(--ink-2); }
+
+.tag { display: inline-flex; background: var(--cream-3); border: 1px solid var(--hairline-2); padding: 4px 10px; border-radius: 99px; font-size: 12px; color: var(--ink-2); margin: 2px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="login-shell">
+  <div class="login-card">
+    <div class="brand" style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:18px">
+      <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5"><circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/></svg></div>
+      <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
+    </div>
+    <h1>Panel Admin</h1>
+    <p>Acceso solo para administradores</p>
+    <div class="field"><label class="field-label">Email</label><input id="login-email" type="email" class="input" placeholder="danipalacio@gmail.com"></div>
+    <div class="field"><label class="field-label">Contraseña</label><input id="login-pass" type="password" class="input" placeholder="•••••••••"></div>
+    <div id="login-error" class="status err"></div>
+    <button class="btn btn-gold" style="width:100%" onclick="doLogin()">Iniciar sesión</button>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel" style="display:none">
+  <!-- NAV -->
+  <header class="nav">
+    <div class="brand">
+      <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5"><circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/></svg></div>
+      <span class="brand-word">Católicos<span class="gpt">GPT</span> <span style="font-size:13px;color:var(--gold-deep);font-family:var(--font-ui)">Admin</span></span>
+    </div>
+    <nav class="nav-links">
+      <a class="nav-link" href="/" style="text-decoration:none">Chat IA</a>
+      <a class="nav-link" href="/infografias" style="text-decoration:none">Infografías</a>
+      <a class="nav-link active" href="/admin" style="text-decoration:none">Admin</a>
+      <a class="nav-user" href="#" onclick="logout();return false" style="text-decoration:none">
+        <span class="av" id="admin-av">A</span><span id="admin-name">Salir</span>
+      </a>
+    </nav>
+  </header>
+
+  <div class="admin-shell">
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('infografias',this)">Infografías</div>
+      <div class="tab" onclick="switchTab('usuarios',this)">Usuarios</div>
+      <div class="tab" onclick="switchTab('config',this)">Configuración</div>
+    </div>
+
+    <!-- TAB: INFOGRAFÍAS -->
+    <div id="tab-infografias" class="tab-content">
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card"><div class="val" id="stat-total">0</div><div class="lbl">Total infografías</div></div>
+        <div class="stat-card"><div class="val" id="stat-week">0</div><div class="lbl">Esta semana</div></div>
+        <div class="stat-card"><div class="val" id="stat-users">0</div><div class="lbl">Usuarios</div></div>
+        <div class="stat-card"><div class="val" id="stat-premium">0</div><div class="lbl">Premium</div></div>
+      </div>
+
+      <div class="admin-grid">
+        <!-- FORMULARIO -->
+        <div class="admin-card">
+          <h3>✨ Subir infografía</h3>
+          <p>Sube una imagen manualmente con SEO optimizado por IA.</p>
+
+          <div class="field">
+            <label class="field-label">Imagen (PNG/JPG)</label>
+            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+              <input type="file" id="file-input" accept="image/png,image/jpeg" style="display:none" onchange="handleFile(event)">
+              <div id="upload-placeholder" class="ph">📤 Arrastra o haz clic para subir<br><span style="font-size:12px">Formato 9:16 recomendado · Máx 4MB</span></div>
+              <img id="upload-preview" style="display:none">
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Título</label>
+            <input class="input" id="f-titulo" placeholder="Ej: San José Obrero">
+          </div>
+
+          <div class="field">
+            <label class="field-label">Slug (URL)</label>
+            <div class="field-row">
+              <input class="input" id="f-slug" placeholder="san-jose-obrero">
+              <button class="btn btn-ghost btn-mini" onclick="autoSlug()">Auto</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Descripción SEO</label>
+            <div class="field-row" style="align-items:stretch">
+              <textarea class="textarea" id="f-descripcion" placeholder="Descripción meta para Google (155-160 caracteres)..."></textarea>
+            </div>
+            <button class="btn btn-ai btn-mini" style="margin-top:8px;width:100%" onclick="generateSEO('descripcion')">
+              <span id="ai-desc-label">✨ Generar con IA desde el título</span>
+            </button>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Keywords SEO (separadas por comas)</label>
+            <textarea class="textarea" id="f-keywords" style="min-height:60px" placeholder="san jose, santo, patrono iglesia, devocional..."></textarea>
+            <button class="btn btn-ai btn-mini" style="margin-top:8px;width:100%" onclick="generateSEO('keywords')">
+              <span id="ai-kw-label">✨ Generar con IA desde el título</span>
+            </button>
+          </div>
+
+          <div class="field grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label class="field-label">Categoría</label>
+              <select class="select" id="f-categoria">
+                <option value="santo">Santos</option>
+                <option value="devocional">Devocional</option>
+                <option value="apologetica">Apologética</option>
+                <option value="enciclica">Encíclica</option>
+                <option value="doctrinal">Doctrina</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Tipo</label>
+              <select class="select" id="f-tipo">
+                <option value="santo">Santo</option>
+                <option value="versiculo">Versículo</option>
+                <option value="oracion">Oración</option>
+                <option value="educativa">Educativa</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="status" id="upload-status"></div>
+
+          <button class="btn btn-gold" style="width:100%;margin-top:8px" onclick="submitUpload()" id="submit-btn">
+            📤 Subir infografía
+          </button>
+        </div>
+
+        <!-- LISTA -->
+        <div class="admin-card">
+          <h3>📚 Últimas infografías</h3>
+          <p>Gestiona las infografías existentes en el catálogo.</p>
+          <div id="admin-list">
+            <div style="text-align:center;padding:30px;color:var(--ink-3)">Cargando...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: USUARIOS -->
+    <div id="tab-usuarios" class="tab-content" style="display:none">
+      <div class="admin-card">
+        <h3>👥 Usuarios</h3>
+        <p>Gestiona los usuarios y planes.</p>
+        <div id="users-list">
+          <div style="text-align:center;padding:30px;color:var(--ink-3)">Cargando...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CONFIG -->
+    <div id="tab-config" class="tab-content" style="display:none">
+      <div class="admin-card">
+        <h3>⚙️ Configuración de planes</h3>
+        <p>Configura los límites de infografías por plan.</p>
+        <div class="field grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <label class="field-label">Free — Infografías</label>
+            <input class="input" id="c-free-count" type="number">
+            <select class="select" id="c-free-periodo" style="margin-top:6px">
+              <option value="daily">Diario</option>
+              <option value="weekly">Semanal</option>
+              <option value="monthly">Mensual</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Premium — Infografías</label>
+            <input class="input" id="c-premium-count" type="number" placeholder="-1 = ilimitado">
+            <select class="select" id="c-premium-periodo" style="margin-top:6px">
+              <option value="unlimited">Ilimitado</option>
+              <option value="daily">Diario</option>
+              <option value="monthly">Mensual</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-gold" style="margin-top:14px" onclick="saveConfig()">Guardar configuración</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let token = localStorage.getItem('cgpt_token');
+let uploadedImage = null;
+
+async function init() {
+  if (!token) return showLogin();
+  try {
+    const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) return showLogin();
+    const { user } = await r.json();
+    if (user.plan !== 'admin') {
+      document.getElementById('login-error').classList.add('show');
+      document.getElementById('login-error').textContent = 'Acceso denegado: solo administradores.';
+      return showLogin();
+    }
+    showAdmin(user);
+  } catch (e) { showLogin(); }
+}
+
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-panel').style.display = 'none';
+}
+
+function showAdmin(user) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+  document.getElementById('admin-name').textContent = user.nombre?.split(' ')[0] || 'Admin';
+  document.getElementById('admin-av').textContent = (user.nombre || 'A')[0].toUpperCase();
+  loadStats();
+  loadList();
+  loadConfig();
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-error');
+  err.classList.remove('show');
+  try {
+    const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    if (d.user.plan !== 'admin') throw new Error('Solo administradores');
+    token = d.token;
+    localStorage.setItem('cgpt_token', token);
+    showAdmin(d.user);
+  } catch (e) {
+    err.textContent = e.message;
+    err.classList.add('show');
+  }
+}
+
+function logout() { if (confirm('¿Cerrar sesión?')) { localStorage.removeItem('cgpt_token'); location.reload(); } }
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+  document.getElementById('tab-' + name).style.display = 'block';
+  if (name === 'usuarios') loadUsers();
+}
+
+// ── Upload image ──
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 4 * 1024 * 1024) { setStatus('upload-status', 'err', 'Imagen demasiado grande (máx 4MB)'); return; }
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    uploadedImage = ev.target.result;
+    document.getElementById('upload-preview').src = uploadedImage;
+    document.getElementById('upload-preview').style.display = 'block';
+    document.getElementById('upload-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function autoSlug() {
+  const titulo = document.getElementById('f-titulo').value;
+  if (!titulo) return;
+  const slug = titulo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  document.getElementById('f-slug').value = slug;
+}
+
+// ── SEO IA ──
+async function generateSEO(field) {
+  const titulo = document.getElementById('f-titulo').value.trim();
+  if (!titulo) { setStatus('upload-status', 'err', 'Escribe el título primero'); return; }
+  const labelId = field === 'descripcion' ? 'ai-desc-label' : 'ai-kw-label';
+  const labelEl = document.getElementById(labelId);
+  const orig = labelEl.textContent;
+  labelEl.innerHTML = '⏳ Generando…';
+  try {
+    const r = await fetch('/api/admin/seo-generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ titulo, field })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    document.getElementById(field === 'descripcion' ? 'f-descripcion' : 'f-keywords').value = d.result;
+    setStatus('upload-status', 'ok', '✨ ' + (field === 'descripcion' ? 'Descripción' : 'Keywords') + ' generada con IA');
+  } catch (e) {
+    setStatus('upload-status', 'err', '❌ ' + e.message);
+  } finally {
+    labelEl.textContent = orig;
+  }
+}
+
+// ── Submit upload ──
+async function submitUpload() {
+  const titulo = document.getElementById('f-titulo').value.trim();
+  const slug = document.getElementById('f-slug').value.trim() || titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const descripcion = document.getElementById('f-descripcion').value.trim();
+  const keywords = document.getElementById('f-keywords').value.trim();
+  const categoria = document.getElementById('f-categoria').value;
+  const tipo = document.getElementById('f-tipo').value;
+
+  if (!uploadedImage) { setStatus('upload-status', 'err', 'Sube una imagen'); return; }
+  if (!titulo) { setStatus('upload-status', 'err', 'Falta el título'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Subiendo...';
+  setStatus('upload-status', 'info', 'Subiendo imagen a Cloudinary...');
+
+  try {
+    const r = await fetch('/api/admin/infografias/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ imageData: uploadedImage, titulo, slug, descripcion, keywords, categoria, tipo })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    setStatus('upload-status', 'ok', '✅ Infografía subida: ' + d.infografia.slug);
+    // Reset form
+    document.getElementById('f-titulo').value = '';
+    document.getElementById('f-slug').value = '';
+    document.getElementById('f-descripcion').value = '';
+    document.getElementById('f-keywords').value = '';
+    document.getElementById('upload-preview').style.display = 'none';
+    document.getElementById('upload-placeholder').style.display = 'block';
+    uploadedImage = null;
+    loadList();
+    loadStats();
+  } catch (e) {
+    setStatus('upload-status', 'err', '❌ ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📤 Subir infografía';
+  }
+}
+
+function setStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = 'status show ' + type;
+  el.textContent = msg;
+  if (type === 'ok') setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ── Lista de infografías ──
+async function loadList() {
+  try {
+    const r = await fetch('/api/infografias?limit=10');
+    const d = await r.json();
+    const list = document.getElementById('admin-list');
+    if (!d.items?.length) { list.innerHTML = '<div style="text-align:center;color:var(--ink-3);padding:20px">Sin infografías aún</div>'; return; }
+    list.innerHTML = d.items.map(inf => {
+      const img = inf.imagenes?.[0]?.url || '';
+      const fecha = new Date(inf.fechaCreacion).toLocaleDateString('es-ES');
+      return '<div class="list-item">' +
+        (img ? '<img src="' + img + '">' : '<div style="width:50px;height:75px;background:var(--cream-3);border-radius:6px"></div>') +
+        '<div class="li-info">' +
+          '<div class="li-title">' + (inf.titulo || inf.tema || '').slice(0, 50) + '</div>' +
+          '<div class="li-meta">' + fecha + ' · ' + (inf.categoria || inf.tipo) + ' · ' + inf.slug + '</div>' +
+        '</div>' +
+        '<button class="btn btn-ghost btn-mini" onclick="deleteInfografia(\'' + inf.id + '\',\'' + (inf.titulo || '').replace(/'/g, '') + '\')">Eliminar</button>' +
+        '</div>';
+    }).join('');
+  } catch (e) { console.error(e); }
+}
+
+async function deleteInfografia(id, titulo) {
+  if (!confirm('¿Eliminar "' + titulo + '"?')) return;
+  try {
+    const r = await fetch('/api/admin/infografias/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) throw new Error('Error al eliminar');
+    loadList(); loadStats();
+  } catch (e) { alert(e.message); }
+}
+
+// ── Stats ──
+async function loadStats() {
+  try {
+    const r = await fetch('/api/admin/stats', { headers: { Authorization: 'Bearer ' + token } });
+    const d = await r.json();
+    document.getElementById('stat-total').textContent = d.total || 0;
+    document.getElementById('stat-week').textContent = d.thisWeek || 0;
+    document.getElementById('stat-users').textContent = d.users || 0;
+    document.getElementById('stat-premium').textContent = d.premium || 0;
+  } catch (e) {}
+}
+
+// ── Users ──
+async function loadUsers() {
+  try {
+    const r = await fetch('/api/admin/users', { headers: { Authorization: 'Bearer ' + token } });
+    const d = await r.json();
+    const list = document.getElementById('users-list');
+    if (!d.users?.length) { list.innerHTML = '<div style="text-align:center;color:var(--ink-3);padding:20px">Sin usuarios</div>'; return; }
+    list.innerHTML = d.users.map(u =>
+      '<div class="list-item">' +
+        '<div style="width:50px;height:50px;background:var(--grad-gold);color:#3a2a0c;border-radius:50%;display:grid;place-items:center;font-weight:700">' + (u.nombre || 'U')[0].toUpperCase() + '</div>' +
+        '<div class="li-info"><div class="li-title">' + (u.nombre || 'Sin nombre') + '</div><div class="li-meta">' + u.email + ' · <span class="tag">' + u.plan + '</span></div></div>' +
+        '<select class="select" style="width:auto;padding:6px" onchange="changePlan(\'' + u.id + '\',this.value)">' +
+        ['free','premium','admin'].map(p => '<option value="' + p + '"' + (p === u.plan ? ' selected' : '') + '>' + p + '</option>').join('') +
+        '</select>' +
+      '</div>'
+    ).join('');
+  } catch (e) { console.error(e); }
+}
+
+async function changePlan(userId, plan) {
+  try {
+    await fetch('/api/admin/users/' + userId + '/plan', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ plan }) });
+    loadUsers();
+  } catch (e) {}
+}
+
+// ── Config ──
+async function loadConfig() {
+  try {
+    const r = await fetch('/api/admin/plan-config', { headers: { Authorization: 'Bearer ' + token } });
+    const d = await r.json();
+    if (d.free) {
+      document.getElementById('c-free-count').value = d.free.infografiasCount;
+      document.getElementById('c-free-periodo').value = d.free.periodo;
+    }
+    if (d.premium) {
+      document.getElementById('c-premium-count').value = d.premium.infografiasCount;
+      document.getElementById('c-premium-periodo').value = d.premium.periodo;
+    }
+  } catch (e) {}
+}
+
+async function saveConfig() {
+  try {
+    await fetch('/api/admin/plan-config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({
+        free: { infografiasCount: parseInt(document.getElementById('c-free-count').value), periodo: document.getElementById('c-free-periodo').value },
+        premium: { infografiasCount: parseInt(document.getElementById('c-premium-count').value), periodo: document.getElementById('c-premium-periodo').value }
+      })
+    });
+    alert('✅ Configuración guardada');
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+init();
+</script>
+</body>
+</html>

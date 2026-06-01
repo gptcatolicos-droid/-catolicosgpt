@@ -98,6 +98,7 @@ function closeSb() {
 // ── Chat ──
 async function send() {
   const cin = document.getElementById('cin');
+  if (!cin) { console.error('[send] textarea #cin no existe en el DOM'); return; }
   const val = cin.value.trim();
   if (!val || isLoading) return;
 
@@ -108,8 +109,8 @@ async function send() {
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('chat-area').style.display = 'flex';
   document.getElementById('chat-area').style.flexDirection = 'column';
-  document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-  document.getElementById('input-area').style.display = '';
+  document.querySelectorAll('.main-view, .view-section').forEach(v => v.style.display = 'none');
+  const ia = document.getElementById('input-area'); if (ia) ia.style.display = '';
 
   chatHistory.push({ role: 'user', content: val });
 
@@ -135,11 +136,19 @@ async function send() {
       </svg>
     </div>
     <div class="bubble bubble-bot" id="bot-bubble-${Date.now()}"><span class="typing-cursor">▋</span></div>`;
+  // Inyectar badge del modo si no es 'auto'
+  const _modoActivo = window.chatMode || 'auto';
+  if (_modoActivo !== 'auto') {
+    const _badge = document.createElement('div');
+    _badge.style.cssText = 'margin: -4px 0 6px 54px;font-size:10px';
+    _badge.innerHTML = '<span class="modo-badge modo-' + _modoActivo + '">' + (_modoActivo === 'magisterial' ? 'MAGISTERIAL' : 'SCHOLARLY') + '</span>';
+    botRow.appendChild(_badge);
+  }
   inner.appendChild(botRow);
   inner.scrollTop = inner.scrollHeight;
   const bubble = botRow.querySelector('.bubble-bot');
 
-  document.getElementById('send-btn').style.display = 'none';
+  const sBtn = document.getElementById('send-btn'); if (sBtn) sBtn.style.display = 'none';
 
   currentStream = new AbortController();
 
@@ -147,7 +156,7 @@ async function send() {
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory, stream: true }),
+      body: JSON.stringify({ messages: chatHistory, stream: true, mode: window.chatMode || 'auto' }),
       signal: currentStream.signal
     });
 
@@ -319,8 +328,8 @@ function newChat() {
   document.getElementById('chat-inner').innerHTML = '';
   document.getElementById('chat-area').style.display = 'none';
   document.getElementById('welcome').style.display = 'flex';
-  document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-  document.getElementById('input-area').style.display = '';
+  document.querySelectorAll('.main-view, .view-section').forEach(v => v.style.display = 'none');
+  const ia = document.getElementById('input-area'); if (ia) ia.style.display = '';
 }
 
 function saveConversation(title) {
@@ -374,7 +383,7 @@ function loadConversation(i) {
 function openView(id) {
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('chat-area').style.display = 'none';
-  document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('.main-view, .view-section').forEach(v => v.style.display = 'none');
   document.getElementById('input-area').style.display = 'none';
 
   const view = document.getElementById('view-' + id);
@@ -419,8 +428,8 @@ function setChatMode(modo) {
 }
 
 function closeView() {
-  document.querySelectorAll('.main-view').forEach(v => v.style.display = 'none');
-  document.getElementById('input-area').style.display = '';
+  document.querySelectorAll('.main-view, .view-section').forEach(v => v.style.display = 'none');
+  const ia = document.getElementById('input-area'); if (ia) ia.style.display = '';
   if (chatHistory.length > 0) {
     document.getElementById('chat-area').style.display = 'flex';
     document.getElementById('welcome').style.display = 'none';
