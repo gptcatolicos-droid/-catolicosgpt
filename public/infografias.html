@@ -397,10 +397,12 @@ function showResult(inf) {
   } else {
     img.style.display='none';
   }
+  const slug = inf.slug || '';
+  const titulo = (inf.titulo || inf.tema || '').replace(/'/g, '');
   act.innerHTML = `
-    <a href="${primerImg}" download="${inf.slug}.png" class="result-btn primary" target="_blank">⬇️ Descargar PNG</a>
-    <a href="/infografias/${inf.slug}" class="result-btn secondary" target="_blank">🔗 Ver página</a>
-    <button class="result-btn secondary" onclick="shareUrl('/infografias/${inf.slug}','${(inf.titulo||'').replace(/'/g,'\\'')}')">📤 Compartir</button>
+    <a href="${primerImg}" download="${slug}.png" class="result-btn primary" target="_blank">⬇️ Descargar PNG</a>
+    <a href="/infografias/${slug}" class="result-btn secondary" target="_blank">🔗 Ver página</a>
+    <button class="result-btn secondary" onclick="shareUrl('/infografias/${slug}','${titulo}')">📤 Compartir</button>
   `;
   box.classList.add('show');
   box.scrollIntoView({behavior:'smooth',block:'nearest'});

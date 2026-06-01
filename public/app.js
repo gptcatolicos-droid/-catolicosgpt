@@ -178,7 +178,50 @@ async function send() {
           if (d.sources) sources = d.sources;
           if (d.modo) modoMag = d.modo;
           if (d.done) {
-            bubble.innerHTML = '';
+            // Si el bot pidió generar una infografía, hacerlo inline
+            if (d.infografiaRequest) {
+              const tema = d.infografiaRequest;
+              // Reemplazar [INFOGRAFIA_LINK:TEMA] en el texto por texto limpio
+              fullText = fullText.replace(/\[INFOGRAFIA_LINK:[^\]]+\]/g, '');
+              bubble.innerHTML = parseMarkdown(fullText) + '<div id="inf-gen-inline" style="margin-top:16px;padding:14px;background:rgba(201,146,58,0.08);border:1px solid rgba(201,146,58,0.2);border-radius:12px;font-size:13px;color:var(--gold)">⏳ Generando tu infografía de <strong>' + tema + '</strong> con IA... (30-60 segundos)</div>';
+              inner.scrollTop = inner.scrollHeight;
+              // Intentar generar si hay token
+              const tk = localStorage.getItem('cgpt_token');
+              if (tk) {
+                fetch('/api/infografias/generar', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tk },
+                  body: JSON.stringify({ tema, formato: '9:16' })
+                }).then(r => r.json()).then(data => {
+                  const el = document.getElementById('inf-gen-inline');
+                  if (el && data.ok && data.infografia) {
+                    const inf = data.infografia;
+                    const img = inf.imagenes?.[0]?.url || '';
+                    const tit = inf.titulo || tema;
+                    el.innerHTML = img
+                      ? '<div style="font-weight:600;margin-bottom:10px">✅ Infografía: <em>' + tit + '</em></div>' +
+                        '<img src="' + img + '" style="width:100%;max-width:260px;border-radius:10px;display:block;margin:0 auto 12px">' +
+                        '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">' +
+                          '<a href="' + img + '" download="' + inf.slug + '.png" style="padding:8px 16px;background:var(--gold);color:#000;font-weight:700;border-radius:8px;text-decoration:none;font-size:12px">⬇️ Descargar PNG</a>' +
+                          '<a href="/infografias/' + inf.slug + '" target="_blank" style="padding:8px 16px;background:transparent;color:var(--gold);border:1px solid var(--gold);border-radius:8px;text-decoration:none;font-size:12px">🔗 Ver página</a>' +
+                        '</div>'
+                      : '<div>✅ Generada. <a href="/infografias/' + inf.slug + '" style="color:var(--gold)">Ver aquí →</a></div>';
+                  } else if (el) {
+                    el.innerHTML = data.error?.includes('límite') || data.upgrade
+                      ? '<a href="/planes" style="color:var(--gold)">Límite diario alcanzado. Obtener Premium →</a>'
+                      : '<a href="/infografias?tema=' + encodeURIComponent(tema) + '" style="color:var(--gold)">Error. Intentar desde aquí →</a>';
+                  }
+                }).catch(() => {
+                  const el = document.getElementById('inf-gen-inline');
+                  if (el) el.innerHTML = '<a href="/infografias?tema=' + encodeURIComponent(tema) + '" style="color:var(--gold)">Error. Generar manualmente →</a>';
+                });
+              } else {
+                // No hay token → mostrar botón de login
+                const el = document.getElementById('inf-gen-inline');
+                if (el) el.innerHTML = 'Para generar necesitas una cuenta. <a href="/infografias?tema=' + encodeURIComponent(tema) + '" style="color:var(--gold)">Crear cuenta gratis →</a>';
+              }
+            }
+            bubble.innerHTML = bubble.innerHTML || '';
 
             // ── Panel de fuentes verificables v3 ──
             if (sources && sources.length > 0) {

@@ -127,9 +127,16 @@ REGLA 1 — SOLO FE CATÓLICA
 Solo respondes sobre: fe, teología, Biblia, sacramentos, moral, oraciones, santos, liturgia, historia de la Iglesia, espiritualidad, doctrina. Para cualquier otro tema: "Soy CatolicosGPT, acompañante espiritual católico. No puedo ayudarte con eso, pero con gusto camino contigo en cualquier pregunta de fe. ¿Qué llevas en el corazón hoy, hermano/a?"
 
 REGLA ESPECIAL — INFOGRAFÍAS
-Si el usuario pide una infografía, imagen, poster o visual de un tema católico, responde SIEMPRE así (sin rechazar):
-"¡Excelente idea! Puedo generar una infografía de [TEMA] para compartir. Haz clic aquí para crearla: [INFOGRAFIA_LINK:TEMA]"
-Donde TEMA es el tema específico que pidió. Sustituye [INFOGRAFIA_LINK:TEMA] con exactamente esa sintaxis para que el frontend lo renderice como botón. NO digas que no puedes crear infografías.
+Si el usuario pide una infografía, imagen, poster o visual de un tema católico, responde SIEMPRE generando la infografía automáticamente usando este formato EXACTO:
+
+"¡Excelente idea! Puedo generar una infografía de [NOMBRE_REAL_DEL_TEMA] para compartir. [INFOGRAFIA_LINK:NOMBRE_REAL_DEL_TEMA]"
+
+REGLAS CRÍTICAS:
+1. NUNCA escribas "[TEMA]" literalmente — sustituye siempre con el nombre real del tema que pidió el usuario
+2. Si piden "San José" → escribe [INFOGRAFIA_LINK:San José]
+3. Si piden "el Rosario" → escribe [INFOGRAFIA_LINK:El Rosario]
+4. La sintaxis [INFOGRAFIA_LINK:X] activa la generación automática en el chat
+5. NUNCA digas que no puedes crear imágenes o infografías
 
 REGLA 2 — NUNCA ATACAR A LA IGLESIA
 Jamás hablarás mal de la Iglesia, el Papa, sacerdotes, sacramentos ni el Magisterio. Si hay críticas o escándalos: "Para reflexiones sobre situaciones históricas complejas, te invito a dialogar con un sacerdote. ¿Puedo acompañarte en algo de tu fe personal?"
@@ -562,7 +569,14 @@ Prioriza siempre la fuente más reciente y autorizada del Magisterio.
         res.write(`data: ${JSON.stringify({ magisterium: magChatText, sources: fuentesPayload.fuentes, modo })}\n\n`);
       }
 
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      // Detectar [INFOGRAFIA_LINK:TEMA] en el fullReply del stream
+      const infografiaMatch = fullReply.match(/\[INFOGRAFIA_LINK:([^\]]+)\]/);
+      if (infografiaMatch) {
+        const temaInfografia = infografiaMatch[1];
+        res.write(`data: ${JSON.stringify({ done: true, infografiaRequest: temaInfografia })}\n\n`);
+      } else {
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      }
       res.end();
 
     } catch(e) {
@@ -1921,7 +1935,12 @@ body{background:var(--bg);color:var(--brown);font-family:'DM Sans',sans-serif}
 </footer>
 <script src="https://www.paypal.com/sdk/js?client-id=AQYVUOfQ6kUlu7y1IXRq2ffqWuS9HtMJx2WPhdnXJT2P3DUlfGF-VWAb77xuHU9DMu2nJZJE9z3pXMGC&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
 <script>
-  paypal.Buttons({
+  function initPayPalButton() {
+    if (typeof paypal === 'undefined') {
+      setTimeout(initPayPalButton, 200);
+      return;
+    }
+    paypal.Buttons({
     style:{ shape:'rect', color:'gold', layout:'vertical', label:'subscribe' },
     createSubscription: function(data, actions) {
       return actions.subscription.create({ plan_id: 'P-66Y50051RX0957311NIOWYFY' });
@@ -1945,6 +1964,8 @@ body{background:var(--bg);color:var(--brown);font-family:'DM Sans',sans-serif}
     },
     onError: function(err) { console.error('PayPal error', err); }
   }).render('#paypal-button-container-P-66Y50051RX0957311NIOWYFY');
+  }
+  initPayPalButton();
 </script>
 </body>
 </html>`);
