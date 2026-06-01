@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "updatedAt": "2026-05-31T00:00:00Z",
+  "planes": {
+    "free": {
+      "nombre": "Gratis",
+      "precio": 0,
+      "infografiasCount": 1,
+      "periodo": "daily",
+      "branding": "catolicosgpt",
+      "formatos": ["9:16", "1:1"],
+      "descripcion": "1 infografía por día"
+    },
+    "premium": {
+      "nombre": "Premium",
+      "precio": 4.99,
+      "infografiasCount": -1,
+      "periodo": "unlimited",
+      "branding": "custom",
+      "formatos": ["9:16", "1:1", "16:9"],
+      "descripcion": "Infografías ilimitadas con branding propio"
+    },
+    "admin": {
+      "nombre": "Admin",
+      "precio": 0,
+      "infografiasCount": -1,
+      "periodo": "unlimited",
+      "branding": "catolicosgpt",
+      "formatos": ["9:16", "1:1", "16:9"],
+      "descripcion": "Acceso total"
+    }
+  }
+}

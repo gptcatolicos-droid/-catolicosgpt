@@ -6,6 +6,11 @@ const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
+
+// ── v4 Módulos ──
+const { generarInfografia, detectarTipo, getInfografias, getInfografiaBySlug, deleteInfografia } = require('./infografias-module');
+const auth = require('./auth-module');
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -363,13 +368,67 @@ scheduleDailyAt(0, 1, () => {
 // RUTAS API
 // ════════════════════════════════════════
 
-// ── Chat principal con Magisterium en paralelo ──
+// ════════════════════════════════════════════════════════════════
+// CATOLICOSGPT v3 — ARQUITECTURA MAGISTERIUM COMPLETA
+// Chat + Search + Modos + Fuentes verificables
+// ════════════════════════════════════════════════════════════════
+
+// ── Helper: detectar modo Magisterium según tipo de consulta ──
+function detectarModoMagisterium(texto) {
+  const t = texto.toLowerCase();
+  // Modo Scholarly: preguntas sobre Padres, historia, teología académica
+  const scholarly = ['aquino','agustín','augustine','padres de la iglesia','doctor de la iglesia',
+    'historia de la iglesia','concilio','patrística','escolástica','tomás de aquino',
+    'san agustín','dante','anselmo','boecio','orígenes','tertuliano'];
+  if (scholarly.some(w => t.includes(w))) return 'scholarly';
+  // Modo Magisterial: doctrina oficial, encíclicas, catecismo
+  const magisterial = ['catecismo','encíclica','papa','concilio vaticano','dogma','canon',
+    'código de derecho','magisterio','doctrina','enseñanza oficial','infalible'];
+  if (magisterial.some(w => t.includes(w))) return 'magisterial';
+  return 'auto'; // Default: auto para casos pastorales y generales
+}
+
+// ── Helper: llamada a la API de Búsqueda de Magisterium ──
+async function buscarEnMagisterium(query, numResults = 5, modo = 'auto') {
+  try {
+    const resp = await fetch('https://api.magisterium.com/v1/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059'}`
+      },
+      body: JSON.stringify({ query, num_results: numResults, mode: modo }),
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!resp.ok) throw new Error(`Search HTTP ${resp.status}`);
+    const data = await resp.json();
+    return data.results || data.data || [];
+  } catch(e) {
+    console.error('[Magisterium Search]', e.message);
+    return [];
+  }
+}
+
+// ── Helper: formatear fuentes de búsqueda para el contexto ──
+function formatearFuentesBusqueda(resultados) {
+  if (!resultados || resultados.length === 0) return '';
+  return resultados.map((r, i) => {
+    const doc = r.document || r.source || r.title || 'Documento';
+    const texto = (r.text || r.content || r.excerpt || '').slice(0, 400);
+    const ref = r.reference || r.citation || '';
+    const refStr = ref ? ' - ' + ref : '';
+    return '[Fuente ' + (i+1) + '] ' + doc + refStr + '\n"' + texto + '"';
+  }).join('\n\n');
+}
+
+// ── Chat principal v3 — Chat + Search + Modos ──
 app.post('/api/chat', async (req, res) => {
   const { messages, stream: wantStream } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Messages requeridos' });
 
   const lastUserMsg = messages.filter(m => m.role === 'user').pop()?.content || '';
   let systemPrompt = getSystemPrompt();
+  const modo = detectarModoMagisterium(lastUserMsg);
 
   // Detectar si pregunta sobre la encíclica Magnifica Humanitas
   const encWords = ['magnifica humanitas', 'enciclica', 'encíclica', 'leon xiv ia', 'inteligencia artificial papa', 'doctrina social ia'];
@@ -419,42 +478,46 @@ Si el usuario acepta, genera el contenido en formato HTML con el diseño de Cato
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
-    // ── ARQUITECTURA MEJORADA: Magisterium como RAG, luego GPT-4o ──
-    // 1. Consultar Magisterium en paralelo mientras preparamos el contexto
-    const magPromise = magisterium.chat.completions.create({
-      model: 'magisterium-1', max_tokens: 800, stream: false,
-      messages: [{ role: 'user', content: lastUserMsg }]
-    }).then(r => r.choices[0]?.message?.content || '').catch(e => {
-      console.error('[Magisterium] Error:', e.message);
-      return '';
-    });
+    // ════════════════════════════════════════════════════════════════
+    // ARQUITECTURA v3 — Chat + Search de Magisterium en paralelo
+    // ════════════════════════════════════════════════════════════════
 
-    // 2. Esperar Magisterium y usar su respuesta como contexto enriquecido
-    let magContextText = '';
-    try {
-      magContextText = await Promise.race([
-        magPromise,
-        new Promise(resolve => setTimeout(() => resolve(''), 4000)) // timeout 4s
-      ]);
-    } catch(e) { magContextText = ''; }
+    // 1. PARALELO: Magisterium Chat (modo detectado) + Magisterium Search
+    const [magChatText, magSearchResults] = await Promise.all([
+      // Chat de Magisterium con modo correcto
+      magisterium.chat.completions.create({
+        model: 'magisterium-1',
+        max_tokens: 800,
+        stream: false,
+        messages: [{ role: 'user', content: lastUserMsg }],
+        ...(modo !== 'auto' ? { mode: modo } : {})
+      }).then(r => r.choices[0]?.message?.content || '').catch(e => {
+        console.error('[Magisterium Chat]', e.message); return '';
+      }),
+      // Search API: fragmentos de documentos reales
+      buscarEnMagisterium(lastUserMsg, 5, modo)
+    ]);
 
-    // 3. Inyectar la respuesta de Magisterium como contexto en el systemPrompt
+    // 2. CONSTRUIR CONTEXTO ENRIQUECIDO
     let enrichedSystemPrompt = systemPrompt;
-    if (magContextText && magContextText.length > 50) {
+    const fuentesBusqueda = formatearFuentesBusqueda(magSearchResults);
+
+    if (magChatText.length > 50 || fuentesBusqueda.length > 50) {
       enrichedSystemPrompt += `
 
 ════════════════════════════════════════════════════
-FUENTE PRIMARIA — MAGISTERIUM.COM (RESPUESTA EN TIEMPO REAL)
+FUENTES PRIMARIAS — MAGISTERIUM.COM (MODO: ${modo.toUpperCase()})
 ════════════════════════════════════════════════════
-La API de Magisterium.com, especializada en el Magisterio de la Iglesia Católica, 
-responde lo siguiente sobre esta consulta. USA ESTA INFORMACIÓN COMO FUENTE PRIMARIA
-y complementa con tu conocimiento teológico:
 
-${magContextText}
+${magChatText.length > 50 ? `RESPUESTA MAGISTERIUM:
+${magChatText}
 
-════════════════════════════════════════════════════
-INSTRUCCIÓN: Integra esta información del Magisterio en tu respuesta de forma fluida,
-citando correctamente cuando corresponda. No la copies literalmente; sintetiza y amplía.
+` : ''}${fuentesBusqueda.length > 50 ? `FRAGMENTOS DE DOCUMENTOS ORIGINALES:
+${fuentesBusqueda}` : ''}
+
+INSTRUCCIÓN: Usa estas fuentes primarias como base de tu respuesta.
+Cita los documentos con su referencia exacta. Integra de forma fluida y pastoral.
+Prioriza siempre la fuente más reciente y autorizada del Magisterio.
 ════════════════════════════════════════════════════`;
     }
 
@@ -477,9 +540,19 @@ citando correctamente cuando corresponda. No la copies literalmente; sintetiza y
         if (chunk.choices[0]?.finish_reason === 'stop') break;
       }
 
-      // Enviar el badge de Magisterium al frontend si hubo respuesta útil
-      if (magContextText && magContextText.length > 50) {
-        res.write(`data: ${JSON.stringify({ magisterium: magContextText })}\n\n`);
+      // Enviar fuentes al frontend para mostrar panel de fuentes
+      const fuentesPayload = {
+        magisteriumChat: magChatText.length > 50 ? magChatText : null,
+        fuentes: magSearchResults.length > 0 ? magSearchResults.slice(0, 5).map(r => ({
+          titulo: r.document || r.source || r.title || 'Documento',
+          referencia: r.reference || r.citation || '',
+          fragmento: (r.text || r.content || r.excerpt || '').slice(0, 300),
+          url: r.url || null,
+          modo
+        })) : null
+      };
+      if (fuentesPayload.magisteriumChat || fuentesPayload.fuentes) {
+        res.write(`data: ${JSON.stringify({ magisterium: magChatText, sources: fuentesPayload.fuentes, modo })}\n\n`);
       }
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
@@ -1211,6 +1284,671 @@ app.get('/api/santo-del-dia', async (req, res) => {
   }
 });
 
+
+
+// ════════════════════════════════════════════════════════════════
+// NUEVOS ENDPOINTS v3 — MAGISTERIUM COMPLETO
+// ════════════════════════════════════════════════════════════════
+
+// ── Búsqueda directa en Magisterium (para el frontend) ──
+app.post('/api/buscar', async (req, res) => {
+  const { query, num_results = 10, modo = 'auto' } = req.body;
+  if (!query) return res.status(400).json({ error: 'Query requerida' });
+  try {
+    const resultados = await buscarEnMagisterium(query, num_results, modo);
+    res.json({ ok: true, resultados, modo, total: resultados.length });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── Lecturas del día desde Magisterium (Holy Widgets) ──
+app.get('/api/lecturas-magisterium', async (req, res) => {
+  try {
+    const resp = await fetch('https://api.magisterium.com/v1/widgets/daily-readings', {
+      headers: {
+        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059'}`,
+        'Accept': 'application/json'
+      },
+      signal: AbortSignal.timeout(6000)
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      return res.json({ ok: true, fuente: 'magisterium', data });
+    }
+    throw new Error(`HTTP ${resp.status}`);
+  } catch(e) {
+    console.error('[Lecturas Magisterium]', e.message);
+    // Fallback a las lecturas scrapeadas
+    try {
+      const lecturas = await generarLecturasDia();
+      res.json({ ok: true, fuente: 'scraping', data: lecturas });
+    } catch(e2) {
+      res.json({ ok: false, error: e2.message });
+    }
+  }
+});
+
+// ── Santo del día desde Magisterium (Holy Widgets) ──
+app.get('/api/santo-magisterium', async (req, res) => {
+  try {
+    const resp = await fetch('https://api.magisterium.com/v1/widgets/saint-of-the-day', {
+      headers: {
+        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059'}`,
+        'Accept': 'application/json'
+      },
+      signal: AbortSignal.timeout(6000)
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      return res.json({ ok: true, fuente: 'magisterium', santo: data });
+    }
+    throw new Error(`HTTP ${resp.status}`);
+  } catch(e) {
+    console.error('[Santo Magisterium]', e.message);
+    // Fallback al endpoint existente
+    const now = new Date();
+    const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    res.json({ ok: false, fuente: 'fallback', fecha: `${now.getDate()} de ${MESES[now.getMonth()]}` });
+  }
+});
+
+// ── Oración del día desde Magisterium ──
+app.get('/api/oracion-magisterium', async (req, res) => {
+  try {
+    const resp = await fetch('https://api.magisterium.com/v1/widgets/prayer-of-the-day', {
+      headers: {
+        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059'}`,
+        'Accept': 'application/json'
+      },
+      signal: AbortSignal.timeout(6000)
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      return res.json({ ok: true, fuente: 'magisterium', oracion: data });
+    }
+    throw new Error(`HTTP ${resp.status}`);
+  } catch(e) {
+    console.error('[Oración Magisterium]', e.message);
+    res.json({ ok: false, fuente: 'fallback' });
+  }
+});
+
+// ── Búsqueda en la biblioteca de fuentes ──
+app.get('/api/biblioteca', async (req, res) => {
+  const { q, tipo } = req.query;
+  if (!q) return res.status(400).json({ error: 'Parámetro q requerido' });
+  try {
+    const resultados = await buscarEnMagisterium(q, 10, tipo || 'auto');
+    res.json({ ok: true, query: q, resultados });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── Modo Apologética: busca con modo magisterial ──
+app.post('/api/apologetica', async (req, res) => {
+  const { pregunta } = req.body;
+  if (!pregunta) return res.status(400).json({ error: 'Pregunta requerida' });
+  try {
+    const [chatResp, searchResp] = await Promise.all([
+      magisterium.chat.completions.create({
+        model: 'magisterium-1', max_tokens: 1000, stream: false,
+        messages: [{ role: 'user', content: `Necesito la respuesta oficial del Magisterio de la Iglesia Católica a esta pregunta apologética: ${pregunta}` }],
+        mode: 'magisterial'
+      }).then(r => r.choices[0]?.message?.content || '').catch(() => ''),
+      buscarEnMagisterium(pregunta, 5, 'magisterial')
+    ]);
+    res.json({ ok: true, respuesta: chatResp, fuentes: searchResp, modo: 'magisterial' });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── Modo Scholarly: para preguntas teológicas y académicas ──
+app.post('/api/scholarly', async (req, res) => {
+  const { pregunta } = req.body;
+  if (!pregunta) return res.status(400).json({ error: 'Pregunta requerida' });
+  try {
+    const [chatResp, searchResp] = await Promise.all([
+      magisterium.chat.completions.create({
+        model: 'magisterium-1', max_tokens: 1200, stream: false,
+        messages: [{ role: 'user', content: pregunta }],
+        mode: 'scholarly'
+      }).then(r => r.choices[0]?.message?.content || '').catch(() => ''),
+      buscarEnMagisterium(pregunta, 8, 'scholarly')
+    ]);
+    res.json({ ok: true, respuesta: chatResp, fuentes: searchResp, modo: 'scholarly' });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+
+// ════════════════════════════════════════════════════════════════
+// AUTH ENDPOINTS v4
+// ════════════════════════════════════════════════════════════════
+
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const result = await auth.register(req.body);
+    res.json(result);
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const result = await auth.login(req.body);
+    res.json(result);
+  } catch(e) { res.status(401).json({ error: e.message }); }
+});
+
+app.get('/api/auth/me', auth.authenticateToken, (req, res) => {
+  const user = auth.getUserById(req.user.id);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  const { passwordHash, ...safe } = user;
+  res.json({ user: safe });
+});
+
+// ════════════════════════════════════════════════════════════════
+// INFOGRAFÍAS ENDPOINTS v4
+// ════════════════════════════════════════════════════════════════
+
+// ── Verificar límite ──
+app.get('/api/infografias/check-limit', auth.authenticateToken, (req, res) => {
+  const check  = auth.checkInfografiaLimit(req.user.id);
+  const config = auth.loadPlanConfig();
+  const user   = auth.getUserById(req.user.id);
+  const plan   = config.planes[user?.plan || 'free'] || config.planes.free;
+  res.json({ ...check, planNombre: plan.nombre, periodo: plan.periodo, limite: plan.infografiasCount });
+});
+
+// ── Generar infografía ──
+app.post('/api/infografias/generar', auth.authenticateToken, async (req, res) => {
+  const { tema, formato = '9:16', customNombre: bodyCustomNombre, customLogo: bodyCustomLogo } = req.body;
+  if (!tema) return res.status(400).json({ error: 'Tema requerido' });
+
+  // Verificar límite
+  const check = auth.checkInfografiaLimit(req.user.id);
+  if (!check.allowed) return res.status(429).json({ error: check.reason, upgrade: true });
+
+  // Datos del usuario para branding
+  const userFull    = auth.getUserById(req.user.id);
+  const userPlan    = userFull?.plan || 'free';
+  const customNombre= userFull?.customNombre || null;
+  const customLogo  = userFull?.customLogo   || null;
+
+  try {
+    const infografia = await generarInfografia({
+      tema, formato, userId: req.user.id,
+      userPlan,
+      customNombre: bodyCustomNombre || customNombre,
+      customLogo: bodyCustomLogo || customLogo, openai
+    });
+    auth.consumeInfografiaCredit(req.user.id);
+    res.json({ ok: true, slug: infografia.slug, infografia });
+  } catch(e) {
+    console.error('[Generar Infografia]', e.message);
+    res.status(500).json({ error: 'Error al generar: ' + e.message });
+  }
+});
+
+// ── Listar infografías ──
+app.get('/api/infografias', (req, res) => {
+  const { categoria, page = 1, limit = 20 } = req.query;
+  const result = getInfografias({ categoria, page: parseInt(page), limit: parseInt(limit) });
+  res.json(result);
+});
+
+// ── Infografía por slug ──
+app.get('/api/infografias/:slug', (req, res) => {
+  const inf = getInfografiaBySlug(req.params.slug);
+  if (!inf) return res.status(404).json({ error: 'Infografía no encontrada' });
+  res.json(inf);
+});
+
+// ── Repositorio público ──
+app.get('/infografias', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'infografias.html'));
+});
+
+// ── Página individual de infografía (SEO) ──
+app.get('/infografias/:slug', async (req, res) => {
+  const inf = getInfografiaBySlug(req.params.slug);
+  if (!inf) return res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
+
+  const primerImg = inf.imagenes?.[0]?.url || '';
+  const titulo = inf.titulo || inf.tema;
+  const desc = inf.metaDescription || `Infografía católica sobre ${titulo} — CatolicosGPT`;
+  const keywords = inf.keywords || `${titulo}, infografía católica, CatolicosGPT`;
+
+  const slidesHtml = inf.imagenes.map((img, i) => `
+    <div class="slide-item">
+      <img src="${img.url}" alt="${inf.altText || titulo} — Slide ${i+1}" 
+           loading="${i === 0 ? 'eager' : 'lazy'}" width="600">
+      ${inf.totalSlides > 1 ? `<p class="slide-num">Slide ${i+1} de ${inf.totalSlides}</p>` : ''}
+    </div>`).join('');
+
+  const schema = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ImageObject",
+    "name": titulo + " — Infografía Católica",
+    "description": desc,
+    "contentUrl": primerImg,
+    "thumbnailUrl": primerImg,
+    "url": `https://catolicosgpt.com/infografias/${inf.slug}`,
+    "datePublished": inf.fechaISO,
+    "author": { "@type": "Organization", "name": "CatolicosGPT", "url": "https://catolicosgpt.com" },
+    "keywords": keywords,
+    "inLanguage": "es",
+    "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "acquireLicensePage": "https://catolicosgpt.com/planes"
+  });
+
+  const breadcrumb = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://catolicosgpt.com" },
+      { "@type": "ListItem", "position": 2, "name": "Infografías", "item": "https://catolicosgpt.com/infografias" },
+      { "@type": "ListItem", "position": 3, "name": titulo }
+    ]
+  });
+
+  res.send(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${titulo} — Infografía Católica | CatolicosGPT</title>
+<meta name="description" content="${desc}">
+<meta name="keywords" content="${keywords}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://catolicosgpt.com/infografias/${inf.slug}">
+<meta property="og:title" content="${titulo} — CatolicosGPT">
+<meta property="og:description" content="${desc}">
+<meta property="og:image" content="${primerImg}">
+<meta property="og:image:width" content="1024">
+<meta property="og:image:height" content="1792">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://catolicosgpt.com/infografias/${inf.slug}">
+<meta property="og:site_name" content="CatolicosGPT">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${titulo} — CatolicosGPT">
+<meta name="twitter:description" content="${desc}">
+<meta name="twitter:image" content="${primerImg}">
+<script type="application/ld+json">${schema}</script>
+<script type="application/ld+json">${breadcrumb}</script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;1,400&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--ocre:#C9923A;--brown:#5C3D1E;--brown2:#3A2210;--bg:#FAF7F0;--bg2:#F0E6D3;--border:rgba(201,146,58,0.2)}
+body{background:var(--bg);color:var(--brown);font-family:'DM Sans',sans-serif}
+.header{background:var(--brown2);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.header a{color:#F5EDD8;text-decoration:none;font-size:20px;font-family:'Playfair Display',serif;font-weight:700}
+.header a span{color:var(--ocre)}
+.header nav a{color:rgba(245,237,216,0.7);font-size:13px;margin-left:20px;text-decoration:none}
+.breadcrumb{padding:12px 24px;font-size:12px;color:#8B6040;max-width:800px;margin:0 auto}
+.breadcrumb a{color:var(--ocre);text-decoration:none}
+.content{max-width:800px;margin:0 auto;padding:24px}
+.badge{display:inline-block;padding:4px 12px;background:rgba(201,146,58,0.12);color:var(--ocre);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-radius:100px;margin-bottom:12px}
+h1{font-family:'Playfair Display',serif;font-size:clamp(24px,4vw,36px);font-weight:700;color:var(--brown);margin-bottom:8px;line-height:1.2}
+.meta{font-size:12px;color:#8B6040;margin-bottom:32px;font-family:'Lora',serif}
+.slides{display:flex;flex-direction:column;gap:24px;margin-bottom:40px}
+.slide-item{text-align:center}
+.slide-item img{max-width:100%;height:auto;border-radius:12px;box-shadow:0 8px 32px rgba(92,61,30,0.2)}
+.slide-num{font-size:12px;color:#8B6040;margin-top:8px;font-family:'Lora',serif;font-style:italic}
+.actions{display:flex;gap:12px;margin-bottom:40px;flex-wrap:wrap}
+.btn-download{flex:1;min-width:160px;padding:13px 24px;background:linear-gradient(135deg,var(--ocre),#A07028);color:var(--brown2);font-weight:700;font-size:14px;border:none;border-radius:10px;cursor:pointer;text-decoration:none;text-align:center}
+.btn-share{padding:13px 24px;background:transparent;color:var(--brown);font-weight:600;font-size:14px;border:1px solid var(--border);border-radius:10px;cursor:pointer}
+.cta-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center;margin-bottom:40px}
+.cta-box h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--brown);margin-bottom:8px}
+.cta-box p{font-family:'Lora',serif;font-size:14px;color:#8B6040;margin-bottom:16px;line-height:1.6}
+.btn-cta{display:inline-block;padding:12px 24px;background:linear-gradient(135deg,var(--ocre),#A07028);color:var(--brown2);font-weight:700;font-size:14px;border:none;border-radius:10px;cursor:pointer;text-decoration:none}
+.related h2{font-family:'Playfair Display',serif;font-size:20px;color:var(--brown);margin-bottom:16px}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.related-item{border-radius:10px;overflow:hidden;border:1px solid var(--border);text-decoration:none;display:block;transition:transform .2s}
+.related-item:hover{transform:translateY(-2px)}
+.related-item img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--bg2)}
+.related-item .ri-title{padding:8px 10px;font-size:12px;font-weight:600;color:var(--brown);font-family:'Lora',serif}
+.footer{background:var(--brown2);padding:24px;text-align:center;margin-top:60px}
+.footer p{font-size:13px;color:rgba(245,237,216,0.5)}
+.footer a{color:var(--ocre);text-decoration:none}
+@media(max-width:600px){.actions{flex-direction:column}}
+</style>
+</head>
+<body>
+<header class="header">
+  <a href="/">✝ Católicos<span>GPT</span></a>
+  <nav>
+    <a href="/">Chat IA</a>
+    <a href="/infografias">Infografías</a>
+    <a href="/planes">Planes</a>
+  </nav>
+</header>
+
+<div class="breadcrumb">
+  <a href="/">Inicio</a> › <a href="/infografias">Infografías</a> › ${titulo}
+</div>
+
+<div class="content">
+  <div class="badge">${inf.categoria || inf.tipo}</div>
+  <h1>${titulo}</h1>
+  <div class="meta">📅 ${new Date(inf.fechaCreacion).toLocaleDateString('es-ES', {day:'numeric',month:'long',year:'numeric'})} · ${inf.totalSlides > 1 ? inf.totalSlides + ' slides' : '1 infografía'} · CatolicosGPT</div>
+
+  <div class="slides">
+    ${slidesHtml}
+  </div>
+
+  <div class="actions">
+    <a href="${primerImg}" download="${inf.slug}.png" class="btn-download" target="_blank">⬇️ Descargar PNG</a>
+    <button class="btn-share" onclick="shareThis()">📤 Compartir</button>
+    <button class="btn-share" onclick="copyLink()">🔗 Copiar link</button>
+  </div>
+
+  <div class="cta-box">
+    <h3>🎨 Genera tu propia infografía con IA</h3>
+    <p>Escribe cualquier tema católico — santo, devoción, doctrina — y CatolicosGPT crea la infografía automáticamente.</p>
+    <a href="/infografias" class="btn-cta">Generar infografía gratis</a>
+  </div>
+
+  <div class="related" id="related"></div>
+</div>
+
+<footer class="footer">
+  <p>© 2026 <a href="/">CatolicosGPT</a> · <a href="/infografias">Infografías</a> · <a href="/planes">Planes</a></p>
+</footer>
+
+<script>
+function shareThis() {
+  if (navigator.share) navigator.share({ title: '${titulo} — CatolicosGPT', url: window.location.href });
+  else copyLink();
+}
+function copyLink() {
+  navigator.clipboard.writeText(window.location.href);
+  alert('Link copiado: ' + window.location.href);
+}
+
+// Load related
+fetch('/api/infografias?limit=4')
+  .then(r => r.json())
+  .then(d => {
+    const items = d.items?.filter(i => i.slug !== '${inf.slug}').slice(0,4) || [];
+    if (!items.length) return;
+    const rel = document.getElementById('related');
+    rel.innerHTML = '<h2>Más infografías</h2><div class="related-grid">' +
+      items.map(i => '<a class="related-item" href="/infografias/' + i.slug + '">' +
+        (i.imagenes?.[0]?.url ? '<img src="' + i.imagenes[0].url + '" alt="' + (i.titulo||'').replace(/"/g,'') + '" loading="lazy">' : '<div style="background:var(--bg2);aspect-ratio:2/3"></div>') +
+        '<div class="ri-title">' + (i.titulo||i.tema||'').slice(0,50) + '</div></a>').join('') + '</div>';
+  });
+</script>
+</body>
+</html>`);
+});
+
+// ════════════════════════════════════════════════════════════════
+// ADMIN ENDPOINTS v4
+// ════════════════════════════════════════════════════════════════
+
+app.get('/api/admin/users', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const data = auth.loadUsers();
+  const users = data.users.map(u => { const {passwordHash:_, ...s} = u; return s; });
+  res.json({ users, total: users.length });
+});
+
+app.put('/api/admin/users/:id/plan', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  try {
+    const user = auth.upgradePlan(req.params.id, req.body.plan);
+    const {passwordHash:_, ...s} = user;
+    res.json({ ok: true, user: s });
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
+
+app.put('/api/admin/users/:id/toggle', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const user = auth.getUserById(req.params.id);
+  if (!user) return res.status(404).json({ error: 'No encontrado' });
+  const updated = auth.updateUser(req.params.id, { activo: !user.activo });
+  const {passwordHash:_, ...s} = updated;
+  res.json({ ok: true, user: s });
+});
+
+app.post('/api/admin/coupons', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  try {
+    const coupon = auth.createCoupon(req.body);
+    res.json({ ok: true, coupon });
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
+
+app.get('/api/admin/coupons', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const { coupons } = require('./auth-module').validateCoupon ? { coupons: [] } : { coupons: [] };
+  const fs = require('fs');
+  try {
+    const data = JSON.parse(fs.readFileSync('./data/coupons.json', 'utf-8'));
+    res.json({ coupons: data.coupons || [] });
+  } catch(e) { res.json({ coupons: [] }); }
+});
+
+app.post('/api/admin/infografias/generar', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
+  const { tema, formato = '9:16', customNombre, customLogo } = req.body;
+  if (!tema) return res.status(400).json({ error: 'Tema requerido' });
+  try {
+    const inf = await generarInfografia({
+      tema, formato, userId: 'admin',
+      userPlan: 'admin', customNombre, customLogo, openai
+    });
+    res.json({ ok: true, infografia: inf });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ── Admin: configurar límites de planes ──
+app.get('/api/admin/plan-config', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  res.json({ ok: true, config: auth.loadPlanConfig() });
+});
+
+app.put('/api/admin/plan-config', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  try {
+    const config = auth.loadPlanConfig();
+    const { plan, infografiasCount, periodo, precio } = req.body;
+    if (!config.planes[plan]) return res.status(400).json({ error: 'Plan inválido' });
+    if (infografiasCount !== undefined) config.planes[plan].infografiasCount = parseInt(infografiasCount);
+    if (periodo !== undefined)          config.planes[plan].periodo = periodo;
+    if (precio !== undefined)           config.planes[plan].precio = parseFloat(precio);
+    config.planes[plan].descripcion = infografiasCount === -1 ? 'Ilimitadas'
+      : `${infografiasCount} infografía(s) por ${periodo === 'daily' ? 'día' : periodo === 'weekly' ? 'semana' : 'mes'}`;
+    auth.savePlanConfig(config);
+    res.json({ ok: true, config });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Admin: actualizar perfil de usuario (plan, branding) ──
+app.put('/api/admin/users/:id/update', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  try {
+    const allowed = ['plan','activo','customNombre','customLogo','nota'];
+    const updates = {};
+    for (const key of allowed) if (req.body[key] !== undefined) updates[key] = req.body[key];
+    if (updates.plan) auth.upgradePlan(req.params.id, updates.plan);
+    else if (Object.keys(updates).length) auth.updateUser(req.params.id, updates);
+    const user = auth.getUserById(req.params.id);
+    const { passwordHash: _, ...safe } = user;
+    res.json({ ok: true, user: safe });
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── Usuario: actualizar su propio perfil de branding (premium) ──
+app.put('/api/auth/profile', auth.authenticateToken, (req, res) => {
+  try {
+    const user = auth.getUserById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    // Solo premium y admin pueden personalizar branding
+    if (user.plan === 'free' && (req.body.customNombre || req.body.customLogo)) {
+      return res.status(403).json({ error: 'El branding personalizado requiere el plan Premium', upgrade: true });
+    }
+    const updates = {};
+    if (req.body.customNombre !== undefined) updates.customNombre = req.body.customNombre;
+    if (req.body.customLogo !== undefined)   updates.customLogo   = req.body.customLogo;
+    auth.updateUser(req.user.id, updates);
+    const updated = auth.getUserById(req.user.id);
+    const { passwordHash: _, ...safe } = updated;
+    res.json({ ok: true, user: safe });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── /api/auth/me — incluir plan config ──
+app.delete('/api/admin/infografias/:id', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  deleteInfografia(req.params.id);
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/stats', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const { users } = auth.loadUsers();
+  const { infografias } = require('./infografias-module').loadCatalog();
+  res.json({
+    totalUsers: users.length,
+    freeUsers: users.filter(u => u.plan === 'free').length,
+    premiumUsers: users.filter(u => u.plan === 'premium').length,
+    totalInfografias: infografias.length,
+    hoy: infografias.filter(i => i.fechaISO === new Date().toISOString().slice(0,10)).length
+  });
+});
+
+// ── Página Planes ──
+app.get('/planes', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planes y Precios | CatolicosGPT</title>
+<meta name="description" content="CatolicosGPT — El asistente de IA católico más avanzado en español. Plan gratuito y Premium ilimitado.">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lora:ital@0;1&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--ocre:#C9923A;--brown:#5C3D1E;--brown2:#3A2210;--bg:#FAF7F0;--bg2:#F0E6D3;--border:rgba(201,146,58,0.2)}
+body{background:var(--bg);color:var(--brown);font-family:'DM Sans',sans-serif}
+.header{background:var(--brown2);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.header a{color:#F5EDD8;text-decoration:none;font-size:20px;font-family:'Playfair Display',serif;font-weight:700}
+.header a span{color:var(--ocre)}
+.header nav a{color:rgba(245,237,216,0.7);font-size:13px;margin-left:20px;text-decoration:none}
+.hero{text-align:center;padding:60px 24px 40px;background:linear-gradient(180deg,var(--brown2),#2A1500)}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(28px,5vw,48px);color:#F5EDD8;margin-bottom:12px}
+.hero p{font-family:'Lora',serif;font-size:16px;color:rgba(245,237,216,0.7);max-width:520px;margin:0 auto}
+.plans{max-width:900px;margin:0 auto;padding:48px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}
+.plan-card{background:#fff;border:2px solid var(--border);border-radius:20px;padding:32px;position:relative;transition:all .2s}
+.plan-card.featured{border-color:var(--ocre);box-shadow:0 8px 32px rgba(201,146,58,0.2)}
+.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--ocre);color:var(--brown2);font-size:11px;font-weight:700;padding:4px 16px;border-radius:100px;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+.plan-name{font-family:'Playfair Display',serif;font-size:24px;color:var(--brown);margin-bottom:8px}
+.plan-price{font-size:36px;font-weight:700;color:var(--ocre);margin-bottom:4px}
+.plan-price small{font-size:14px;color:#8B6040}
+.plan-desc{font-family:'Lora',serif;font-size:13px;color:#8B6040;margin-bottom:24px;font-style:italic}
+.plan-features{list-style:none;margin-bottom:28px}
+.plan-features li{padding:8px 0;font-size:14px;color:var(--brown);border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:8px}
+.plan-features li:last-child{border:none}
+.check{color:#27AE60;font-size:16px}
+.cross{color:#ccc}
+.btn-plan{width:100%;padding:14px;background:linear-gradient(135deg,var(--ocre),#A07028);color:var(--brown2);font-weight:700;font-size:15px;border:none;border-radius:12px;cursor:pointer}
+.btn-plan.secondary{background:transparent;color:var(--brown);border:1px solid var(--border)}
+.note{text-align:center;padding:0 24px 48px;font-family:'Lora',serif;font-size:13px;color:#8B6040;font-style:italic}
+.footer{background:var(--brown2);padding:24px;text-align:center}
+.footer p{font-size:13px;color:rgba(245,237,216,0.5)}
+.footer a{color:var(--ocre);text-decoration:none}
+</style>
+</head>
+<body>
+<header class="header">
+  <a href="/">✝ Católicos<span>GPT</span></a>
+  <nav><a href="/">Chat IA</a><a href="/infografias">Infografías</a><a href="/planes" style="color:var(--ocre)">Planes</a></nav>
+</header>
+<div class="hero">
+  <h1>Simple y transparente</h1>
+  <p>El Chat de IA siempre es gratis. Las infografías tienen un plan freemium.</p>
+</div>
+<div class="plans">
+  <div class="plan-card">
+    <div class="plan-name">Gratis</div>
+    <div class="plan-price">$0 <small>/ siempre</small></div>
+    <div class="plan-desc">Para empezar a explorar</div>
+    <ul class="plan-features">
+      <li><span class="check">✓</span> Chat IA ilimitado</li>
+      <li><span class="check">✓</span> Consultas al Magisterio</li>
+      <li><span class="check">✓</span> 2 infografías / semana</li>
+      <li><span class="check">✓</span> Ver repositorio de infografías</li>
+      <li><span class="check">✓</span> Descargar infografías existentes</li>
+      <li><span class="cross">○</span> Infografías ilimitadas</li>
+      <li><span class="cross">○</span> Series de 4 slides</li>
+      <li><span class="cross">○</span> Formato 16:9 presentaciones</li>
+    </ul>
+    <button class="btn-plan secondary" onclick="window.location='/'">Usar gratis</button>
+  </div>
+  <div class="plan-card featured">
+    <div class="plan-badge">⭐ Más popular</div>
+    <div class="plan-name">Premium</div>
+    <div class="plan-price">$4.99 <small>/ mes</small></div>
+    <div class="plan-desc">Para evangelizadores y catequistas</div>
+    <ul class="plan-features">
+      <li><span class="check">✓</span> Chat IA ilimitado</li>
+      <li><span class="check">✓</span> Consultas al Magisterio</li>
+      <li><span class="check">✓</span> <strong>Infografías ilimitadas</strong></li>
+      <li><span class="check">✓</span> Series de 4 slides</li>
+      <li><span class="check">✓</span> Formato 9:16 y 16:9</li>
+      <li><span class="check">✓</span> 3 estilos de diseño</li>
+      <li><span class="check">✓</span> Descarga en alta calidad</li>
+      <li><span class="check">✓</span> Soporte prioritario</li>
+    </ul>
+    <button class="btn-plan" onclick="alert('Próximamente: pago con MercadoPago y PayPal')">Próximamente</button>
+  </div>
+</div>
+<p class="note">* El Chat IA con Magisterium, apologética y modos doctrinal/scholarly es siempre gratuito sin límites.</p>
+<footer class="footer">
+  <p>© 2026 <a href="/">CatolicosGPT</a> · <a href="/infografias">Infografías</a> · Fe · Conocimiento · Acción</p>
+</footer>
+</body>
+</html>`);
+});
+
+// ── Cron: Generar infografías diarias ──
+async function generarInfografiasDelDia() {
+  console.log('[Cron] Iniciando generación diaria de infografías...');
+  try {
+    // 1. Santo del día
+    const ahora = new Date();
+    const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const fechaHoy = `${ahora.getDate()} de ${MESES[ahora.getMonth()]}`;
+
+    const santoDia = await openai.chat.completions.create({
+      model: 'gpt-4o', max_tokens: 200, temperature: 0.3,
+      messages: [{ role: 'user', content: `¿Qué santo o santa se celebra el ${fechaHoy} en el calendario litúrgico? Solo el nombre.` }]
+    }).then(r => r.choices[0].message.content.trim()).catch(() => 'Santo del día');
+
+    await generarInfografia({ tema: santoDia, tipo: 'santo', formato: '9:16', userId: 'cron-diario', userPlan: 'admin', openai });
+    console.log('[Cron] ✅ Infografía santo:', santoDia);
+
+    // 2. Tema apologético aleatorio
+    const temas = [
+      'La Inmaculada Concepción — dogma y fundamento bíblico',
+      'El Purgatorio — doctrina y Escritura',
+      'El Primado de Pedro — base del papado',
+      'La Tradición y la Sagrada Escritura',
+      'La presencia real de Cristo en la Eucaristía',
+      'María Corredentora — su papel en la salvación',
+      'Los sacramentos como canales de gracia',
+      'La Comunión de los Santos',
+      'La indisolubilidad del matrimonio cristiano',
+      'La fe y las obras — doctrina católica completa'
+    ];
+    const temaHoy = temas[ahora.getDate() % temas.length];
+
+    await generarInfografia({ tema: temaHoy, tipo: 'serie', formato: '9:16', userId: 'cron-diario', userPlan: 'admin', openai });
+    console.log('[Cron] ✅ Infografía apologética:', temaHoy);
+
+  } catch(e) {
+    console.error('[Cron] Error generación diaria:', e.message);
+  }
+}
+
+// Programar cron a las 6am
+scheduleDailyAt(6, 0, generarInfografiasDelDia);
 
 // ── Catch-all — sirve index.html ──
 app.get('*', (req, res) => {

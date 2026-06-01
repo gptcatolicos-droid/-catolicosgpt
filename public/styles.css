@@ -262,7 +262,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); }
 }
 .cita-biblia:hover { background: rgba(30,107,58,.14); }
 
-/* Magisterium badge */
+/* Magisterium badge (fallback) */
 .mag-badge {
   background: rgba(30,80,160,.05); border: 1px solid rgba(30,80,160,.15);
   border-radius: 8px; padding: 8px 12px; margin-bottom: 12px;
@@ -273,6 +273,74 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); }
   letter-spacing: .08em; color: #185FA5; margin-bottom: 5px;
 }
 .mag-badge-text { font-family: 'Lora', serif; font-size: 13px; color: var(--ink3); line-height: 1.6; }
+
+/* ── PANEL DE FUENTES VERIFICABLES v3 ── */
+.sources-panel {
+  background: rgba(201,146,58,.05);
+  border: 1px solid rgba(201,146,58,.18);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-family: 'Inter', sans-serif;
+}
+.sources-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.sources-icon { font-size: 14px; }
+.sources-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ocre);
+  flex: 1;
+}
+.sources-modo {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+.sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.source-item {
+  padding: 8px 10px;
+  background: rgba(255,255,255,.5);
+  border-radius: 8px;
+  border-left: 3px solid var(--ocre);
+}
+.source-doc {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--brown);
+  margin-bottom: 3px;
+}
+.source-doc em { font-style: normal; color: var(--ocre); }
+.source-frag {
+  font-family: 'Lora', serif;
+  font-size: 12px;
+  color: var(--ink3);
+  line-height: 1.5;
+  font-style: italic;
+  margin-bottom: 4px;
+}
+.source-link {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ocre);
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 2px;
+}
+.source-link:hover { text-decoration: underline; }
 
 /* Typing cursor */
 .typing-cursor {

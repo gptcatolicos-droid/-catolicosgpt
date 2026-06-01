@@ -155,6 +155,8 @@ async function send() {
     const decoder = new TextDecoder();
     let fullText = '';
     let magText = '';
+    let sources = null;
+    let modoMag = 'auto';
     let buffer = '';
 
     while (true) {
@@ -173,15 +175,39 @@ async function send() {
             inner.scrollTop = inner.scrollHeight;
           }
           if (d.magisterium) magText = d.magisterium;
+          if (d.sources) sources = d.sources;
+          if (d.modo) modoMag = d.modo;
           if (d.done) {
             bubble.innerHTML = '';
-            // Mostrar Magisterium si hay
-            if (magText) {
+
+            // ── Panel de fuentes verificables v3 ──
+            if (sources && sources.length > 0) {
+              const modoLabel = { auto: 'Auto', magisterial: 'Magisterial', scholarly: 'Scholarly' }[modoMag] || 'Auto';
+              const modoColor = modoMag === 'scholarly' ? '#7B68EE' : modoMag === 'magisterial' ? 'var(--ocre)' : 'var(--brown)';
+              let fuentesHtml = `<div class="sources-panel">
+                <div class="sources-header">
+                  <span class="sources-icon">📚</span>
+                  <span class="sources-title">Fuentes del Magisterio</span>
+                  <span class="sources-modo" style="background:${modoColor}20;color:${modoColor};border:1px solid ${modoColor}40">${modoLabel}</span>
+                </div>
+                <div class="sources-list">`;
+              sources.forEach(s => {
+                fuentesHtml += `<div class="source-item">
+                  <div class="source-doc">${s.titulo || 'Documento'}${s.referencia ? ' · <em>' + s.referencia + '</em>' : ''}</div>
+                  ${s.fragmento ? `<div class="source-frag">"${s.fragmento.slice(0,200)}..."</div>` : ''}
+                  ${s.url ? `<a href="${s.url}" target="_blank" class="source-link">Ver documento ↗</a>` : ''}
+                </div>`;
+              });
+              fuentesHtml += `</div></div>`;
+              bubble.innerHTML += fuentesHtml;
+            } else if (magText && magText.length > 50) {
+              // Fallback al badge simple si no hay sources estructuradas
               bubble.innerHTML += `<div class="mag-badge">
-                <div class="mag-badge-title">Fuentes del Magisterio</div>
+                <div class="mag-badge-title">📚 Fuentes del Magisterio</div>
                 <div class="mag-badge-text">${parseMarkdown(magText)}</div>
               </div>`;
             }
+
             bubble.innerHTML += parseMarkdown(fullText);
             chatHistory.push({ role: 'assistant', content: fullText });
             addActions(bubble, fullText);
@@ -317,6 +343,36 @@ function openView(id) {
   if (id === 'homilia') initHomilia();
   if (id === 'enciclica') initEnciclica();
   if (id === 'santo') initSanto();
+  if (id === 'buscar') initBuscar();
+  if (id === 'apologetica') initApologetica();
+}
+
+// ── Modo del chat ──
+let currentChatMode = 'auto';
+function setChatMode(modo) {
+  currentChatMode = modo;
+  const labels = { auto: 'Auto', magisterial: '📜 Magisterial', scholarly: '📚 Scholarly' };
+  const badge = document.getElementById('modo-badge');
+  if (badge) {
+    badge.textContent = labels[modo] || 'Auto';
+    badge.style.display = modo === 'auto' ? 'none' : 'inline-block';
+  }
+  // Abrir chat con mensaje contextual
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chat-area').style.display = 'flex';
+  document.getElementById('input-area').style.display = 'flex';
+  const inner = document.querySelector('.chat-inner');
+  if (inner) {
+    const modeMsg = document.createElement('div');
+    modeMsg.className = 'msg bot';
+    const modeLabels = {
+      magisterial: 'Modo Magisterial activado 📜 — Responderé usando únicamente las fuentes oficiales del Magisterio de la Iglesia. ¿Qué quieres consultar?',
+      scholarly: 'Modo Scholarly activado 📚 — Tengo acceso a Santo Tomás de Aquino, San Agustín, los Padres de la Iglesia, la Biblia y 2,300 obras teológicas. ¿Qué quieres explorar?'
+    };
+    modeMsg.innerHTML = `<div class="bubble">${modeLabels[modo]}</div>`;
+    inner.appendChild(modeMsg);
+    inner.scrollTop = inner.scrollHeight;
+  }
 }
 
 function closeView() {
@@ -1026,6 +1082,109 @@ async function loadSantoDelDia() {
     }
   } catch(e) {
     console.log('No se pudo cargar el santo del día para el sidebar');
+  }
+}
+
+// ── FUNCIONES v3 — BÚSQUEDA Y APOLOGÉTICA ──
+
+function initBuscar() {
+  const results = document.getElementById('buscar-results');
+  if (results && !results.innerHTML.trim()) {
+    results.innerHTML = `<div style="text-align:center;padding:30px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">
+      Busca en los 25,000 documentos del Magisterio de la Iglesia.<br>
+      <span style="font-size:12px">Biblia · Catecismo · Encíclicas · Padres de la Iglesia · Concilios</span>
+    </div>`;
+  }
+}
+
+async function ejecutarBusqueda() {
+  const query = document.getElementById('buscar-input').value.trim();
+  const modo = document.getElementById('buscar-modo').value;
+  const results = document.getElementById('buscar-results');
+  if (!query || !results) return;
+
+  const modoTexto = modo === 'scholarly' ? '2,300 obras teológicas' : '25,000 documentos';
+  results.innerHTML = `<div style="text-align:center;padding:20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">Buscando en ${modoTexto}...</div>`;
+
+  try {
+    const resp = await fetch('/api/buscar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, num_results: 10, modo })
+    });
+    const data = await resp.json();
+
+    if (!data.ok || !data.resultados || data.resultados.length === 0) {
+      results.innerHTML = `<div style="padding:16px;background:var(--bg2);border-radius:10px;border-left:3px solid var(--ocre)">
+        <div style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ocre);margin-bottom:8px;font-weight:600">Sin resultados directos</div>
+        <div style="font-family:'Lora',serif;font-size:13px;line-height:1.6;color:var(--ink4)">
+          Prueba en el chat con IA para una respuesta más completa.
+        </div>
+      </div>`;
+      return;
+    }
+
+    const modoLabel = { auto: 'Auto', magisterial: 'Magisterio Oficial', scholarly: 'Scholarly' }[modo] || modo;
+    let html = `<div style="font-family:'Inter',sans-serif;font-size:10px;color:var(--ink4);margin-bottom:12px">${data.total} resultado(s) · Modo: ${modoLabel}</div>`;
+
+    data.resultados.forEach(r => {
+      const titulo = r.document || r.source || r.title || 'Documento';
+      const ref = r.reference || r.citation || '';
+      const frag = (r.text || r.content || r.excerpt || '').slice(0, 350);
+      const url = r.url || null;
+      html += `<div style="margin-bottom:12px;padding:14px;background:var(--bg2);border-radius:10px;border-left:3px solid var(--ocre)">
+        <div style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--brown);margin-bottom:4px">
+          ${titulo}${ref ? ' <em style="color:var(--ocre);font-weight:400">· ' + ref + '</em>' : ''}
+        </div>
+        ${frag ? '<div style="font-family:Lora,serif;font-size:13px;color:var(--ink);line-height:1.6;font-style:italic;margin-bottom:6px">"' + frag + (frag.length >= 350 ? '...' : '') + '"</div>' : ''}
+        ${url ? '<a href="' + url + '" target="_blank" style="font-size:11px;color:var(--ocre);font-weight:600;text-decoration:none">Ver documento ↗</a>' : ''}
+      </div>`;
+    });
+    results.innerHTML = html;
+  } catch(e) {
+    results.innerHTML = `<div style="padding:16px;text-align:center;color:var(--ink4)">Error al buscar. Intenta de nuevo.</div>`;
+  }
+}
+
+function initApologetica() {}
+
+async function ejecutarApologetica() {
+  const pregunta = document.getElementById('apol-input').value.trim();
+  const results = document.getElementById('apol-results');
+  if (!pregunta || !results) return;
+
+  results.innerHTML = `<div style="text-align:center;padding:20px;font-family:'Lora',serif;color:var(--ink4);font-style:italic">Consultando el Magisterio oficial...</div>`;
+
+  try {
+    const resp = await fetch('/api/apologetica', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pregunta })
+    });
+    const data = await resp.json();
+
+    let html = '';
+    if (data.respuesta) {
+      html += `<div style="background:linear-gradient(135deg,rgba(201,146,58,.08),rgba(92,61,30,.05));border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;color:var(--ocre);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Respuesta del Magisterio Oficial</div>
+        <div style="font-family:'Lora',serif;font-size:14px;line-height:1.8;color:var(--ink)">${data.respuesta.replace(/\n/g,'<br>')}</div>
+      </div>`;
+    }
+    if (data.fuentes && data.fuentes.length > 0) {
+      html += `<div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;color:var(--brown);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Documentos citados</div>`;
+      data.fuentes.forEach(f => {
+        const titulo = f.document || f.source || f.title || 'Documento';
+        const ref = f.reference || f.citation || '';
+        const frag = (f.text || f.content || f.excerpt || '').slice(0, 250);
+        html += `<div style="margin-bottom:10px;padding:12px;background:var(--bg2);border-radius:8px;border-left:3px solid var(--ocre)">
+          <div style="font-size:12px;font-weight:600;color:var(--brown);font-family:'Inter',sans-serif;margin-bottom:4px">${titulo}${ref ? ' · <em style="color:var(--ocre)">' + ref + '</em>' : ''}</div>
+          ${frag ? '<div style="font-family:Lora,serif;font-size:12px;color:var(--ink4);font-style:italic;line-height:1.5">"' + frag + '..."</div>' : ''}
+        </div>`;
+      });
+    }
+    results.innerHTML = html || `<div style="padding:16px;text-align:center;color:var(--ink4)">No se encontraron resultados. Prueba en el chat.</div>`;
+  } catch(e) {
+    results.innerHTML = `<div style="padding:16px;text-align:center;color:var(--ink4)">Error. Intenta de nuevo.</div>`;
   }
 }
 

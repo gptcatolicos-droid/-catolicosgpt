@@ -341,7 +341,77 @@
           <div class="sb-row-sub" id="santo-fecha">Cargando...</div>
         </div>
       </div>
+
+      <!-- Biblioteca Magisterium v3 -->
+      <div class="sb-label">Biblioteca · 25,000 docs</div>
+
+      <div class="sb-row" onclick="openView('buscar');closeSb()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="6.5" cy="6.5" r="4" stroke="#C9923A" stroke-width="1.3"/>
+          <path d="M10 10l3 3" stroke="#C9923A" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div class="sb-row-title">Buscar en el Magisterio</div>
+          <div class="sb-row-sub">25,000 documentos · Fuentes verificables</div>
+        </div>
+      </div>
+
+      <div class="sb-row" onclick="setChatMode('magisterial');closeSb()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <path d="M7.5 1L9 5.5h5L10 8.5l1.5 5L7.5 11 3.5 13.5 5 8.5 1 5.5h5z" stroke="#C9923A" stroke-width="1.2" fill="rgba(201,146,58,.1)"/>
+        </svg>
+        <div>
+          <div class="sb-row-title">Modo Magisterial</div>
+          <div class="sb-row-sub">Solo doctrina oficial · Enseñanza de la Iglesia</div>
+        </div>
+      </div>
+
+      <div class="sb-row" onclick="setChatMode('scholarly');closeSb()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <path d="M2 12L7.5 2l5.5 10H2z" stroke="#7A5230" stroke-width="1.3" fill="rgba(122,82,48,.08)"/>
+          <path d="M5 9h5M7.5 6v3" stroke="#C9923A" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div class="sb-row-title">Modo Scholarly</div>
+          <div class="sb-row-sub">Aquino · Agustín · Padres · Biblias</div>
+        </div>
+      </div>
+
+      <div class="sb-row" onclick="openView('apologetica');closeSb()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <path d="M7.5 1v8M7.5 11v2" stroke="#8B1A1A" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="7.5" cy="7.5" r="6.5" stroke="#8B1A1A" stroke-width="1.2"/>
+        </svg>
+        <div>
+          <div class="sb-row-title">Apologética</div>
+          <div class="sb-row-sub">Respuestas con fuentes del Magisterio</div>
+        </div>
+      </div>
     </div>
+
+      <!-- v4: Infografías y Planes -->
+      <div class="sb-label">Herramientas</div>
+
+      <div class="sb-row" onclick="window.open('/infografias','_blank');closeSb()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <rect x="1" y="1" width="13" height="13" rx="2" stroke="#C9923A" stroke-width="1.3" fill="rgba(201,146,58,.08)"/>
+          <path d="M4 4h7M4 7h5M4 10h6" stroke="#C9923A" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div class="sb-row-title">Infografías IA</div>
+          <div class="sb-row-sub">Repositorio · Generador · SEO</div>
+        </div>
+      </div>
+
+      <div class="sb-row" onclick="window.open('/planes','_blank');closeSb()">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <path d="M7.5 1L9 5h4.5L10 8l1.5 5L7.5 11 3.5 13 5 8 1.5 5H6z" stroke="#C9923A" stroke-width="1.2" fill="rgba(201,146,58,.08)"/>
+        </svg>
+        <div>
+          <div class="sb-row-title">Planes y Precios</div>
+          <div class="sb-row-sub">Gratis · Premium $4.99/mes</div>
+        </div>
+      </div>
 
     <a class="sb-donate" href="#" onclick="openDonate();closeSb();return false;">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -462,6 +532,51 @@
         <div class="view-body">
           <div class="view-date" id="santo-view-fecha"></div>
           <div id="santo-content" class="view-content-area"></div>
+        </div>
+      </div>
+
+      <!-- VISTA BÚSQUEDA EN MAGISTERIUM -->
+      <div id="view-buscar" class="main-view" style="display:none">
+        <div class="view-header">
+          <button class="view-back" onclick="closeView()">← Volver</button>
+          <span class="view-title">🔍 Buscar en el Magisterio</span>
+        </div>
+        <div class="view-body">
+          <div style="padding:16px">
+            <div style="display:flex;gap:8px;margin-bottom:16px">
+              <input id="buscar-input" type="text" placeholder="¿Qué quieres encontrar en los 25,000 documentos?"
+                style="flex:1;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--ink);font-family:'Lora',serif;font-size:13px;outline:none"
+                onkeydown="if(event.key==='Enter')ejecutarBusqueda()">
+              <select id="buscar-modo" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--ink);font-size:12px;cursor:pointer">
+                <option value="auto">Auto</option>
+                <option value="magisterial">Magisterial</option>
+                <option value="scholarly">Scholarly</option>
+              </select>
+              <button onclick="ejecutarBusqueda()" style="padding:10px 16px;background:var(--ocre);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px">Buscar</button>
+            </div>
+            <div id="buscar-results" class="view-content-area"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA APOLOGÉTICA -->
+      <div id="view-apologetica" class="main-view" style="display:none">
+        <div class="view-header">
+          <button class="view-back" onclick="closeView()">← Volver</button>
+          <span class="view-title">⚔️ Apologética</span>
+        </div>
+        <div class="view-body">
+          <div style="padding:16px">
+            <div style="font-family:'Lora',serif;font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:16px;padding:12px;background:var(--bg2);border-radius:10px;border-left:3px solid var(--ocre)">
+              Respuestas basadas únicamente en fuentes oficiales del Magisterio para defender y explicar la fe católica.
+            </div>
+            <textarea id="apol-input" placeholder="Escribe la pregunta o el desafío que quieres responder desde el Magisterio..."
+              style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--ink);font-family:'Lora',serif;font-size:13px;outline:none;resize:vertical;min-height:90px;margin-bottom:10px"></textarea>
+            <button onclick="ejecutarApologetica()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--ocre),#8B5E1A);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px">
+              Buscar respuesta en el Magisterio
+            </button>
+            <div id="apol-results" style="margin-top:16px"></div>
+          </div>
         </div>
       </div>
 

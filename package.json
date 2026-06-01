@@ -8,10 +8,13 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "openai": "^4.28.0",
     "@anthropic-ai/sdk": "^0.39.0",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "openai": "^4.28.0",
     "slugify": "^1.6.6"
   },
   "engines": {
