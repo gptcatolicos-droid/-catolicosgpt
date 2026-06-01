@@ -1631,7 +1631,15 @@ h1{font-family:'Playfair Display',serif;font-size:clamp(24px,4vw,36px);font-weig
 .slide-item{text-align:center}
 .slide-item img{max-width:100%;height:auto;border-radius:12px;box-shadow:0 8px 32px rgba(92,61,30,0.2)}
 .slide-num{font-size:12px;color:#8B6040;margin-top:8px;font-family:'Lora',serif;font-style:italic}
-.actions{display:flex;gap:12px;margin-bottom:40px;flex-wrap:wrap}
+.actions{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.share-row{display:flex;gap:8px;align-items:center;margin-bottom:32px;flex-wrap:wrap;padding:12px;background:rgba(201,146,58,0.05);border:1px solid var(--border);border-radius:10px}
+.share-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ocre);margin-right:4px}
+.share-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;font-weight:600;color:var(--brown);background:#fff;border:1px solid var(--border);border-radius:99px;cursor:pointer;text-decoration:none;transition:.18s}
+.share-pill:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.share-pill.share-wa:hover{background:#25D366;color:#fff;border-color:#25D366}
+.share-pill.share-x:hover{background:#000;color:#fff;border-color:#000}
+.share-pill.share-fb:hover{background:#1877F2;color:#fff;border-color:#1877F2}
+.share-pill.share-ig:hover{background:linear-gradient(45deg,#F58529,#DD2A7B,#8134AF);color:#fff;border-color:#DD2A7B}
 .btn-download{flex:1;min-width:160px;padding:13px 24px;background:linear-gradient(135deg,var(--ocre),#A07028);color:var(--brown2);font-weight:700;font-size:14px;border:none;border-radius:10px;cursor:pointer;text-decoration:none;text-align:center}
 .btn-share{padding:13px 24px;background:transparent;color:var(--brown);font-weight:600;font-size:14px;border:1px solid var(--border);border-radius:10px;cursor:pointer}
 .cta-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center;margin-bottom:40px}
@@ -1675,8 +1683,23 @@ h1{font-family:'Playfair Display',serif;font-size:clamp(24px,4vw,36px);font-weig
 
   <div class="actions">
     <a href="${primerImg}" download="${inf.slug}.png" class="btn-download" target="_blank">⬇️ Descargar PNG</a>
-    <button class="btn-share" onclick="shareThis()">📤 Compartir</button>
-    <button class="btn-share" onclick="copyLink()">🔗 Copiar link</button>
+  </div>
+
+  <div class="share-row">
+    <span class="share-lbl">Compartir:</span>
+    <a href="https://wa.me/?text=${encodeURIComponent(titulo + ' · CatolicosGPT')}%20https://catolicosgpt.com/infografias/${inf.slug}" target="_blank" rel="noopener" class="share-pill share-wa" title="WhatsApp">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24z"/></svg> WhatsApp
+    </a>
+    <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(titulo + ' · CatolicosGPT')}&url=https://catolicosgpt.com/infografias/${inf.slug}" target="_blank" rel="noopener" class="share-pill share-x" title="X (Twitter)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> X
+    </a>
+    <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fcatolicosgpt.com%2Finfografias%2F${inf.slug}" target="_blank" rel="noopener" class="share-pill share-fb" title="Facebook">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> Facebook
+    </a>
+    <button class="share-pill share-ig" onclick="copyForIG()" title="Instagram">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg> Instagram
+    </button>
+    <button class="share-pill" onclick="copyLink()" title="Copiar enlace">🔗 Copiar link</button>
   </div>
 
   <div class="cta-box">
@@ -1699,7 +1722,12 @@ function shareThis() {
 }
 function copyLink() {
   navigator.clipboard.writeText(window.location.href);
-  alert('Link copiado: ' + window.location.href);
+  alert('🔗 Link copiado: ' + window.location.href);
+}
+function copyForIG() {
+  navigator.clipboard.writeText(window.location.href);
+  alert('📋 Link copiado.\n\nAbre Instagram, crea una story o post, y pega el link.');
+  if(/Android|iPhone|iPad/i.test(navigator.userAgent)) setTimeout(()=>{window.location.href='instagram://library'},800);
 }
 
 // Load related
@@ -2026,43 +2054,61 @@ app.post('/api/admin/seo-generate', auth.authenticateToken, auth.requireAdmin, a
 
 // ── Admin: subir infografía manual (imagen + meta + SEO) ──
 app.post('/api/admin/infografias/upload', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
-  const { imageData, titulo, slug, descripcion, keywords, categoria, tipo } = req.body;
-  if (!imageData || !titulo) return res.status(400).json({ error: 'Imagen y título requeridos' });
+  // Acepta `images` (array para carruseles) o `imageData` (single, legacy)
+  const { images, imageData, titulo, slug, descripcion, keywords, categoria, tipo, esCarrusel } = req.body;
+  const imgArray = Array.isArray(images) && images.length ? images : (imageData ? [imageData] : []);
+
+  if (!imgArray.length || !titulo) return res.status(400).json({ error: 'Imágenes y título requeridos' });
 
   try {
-    // Extract base64 from data URL
-    const base64 = imageData.replace(/^data:image\/\w+;base64,/, '');
     const safeSlug = (slug || titulo).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const cloudinary = require('cloudinary').v2;
+    const fs = require('fs');
+    const imgDir = path.join(__dirname, 'public', 'infografias');
+    if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
 
-    // Upload a Cloudinary
-    let imageUrl = null;
-    if (process.env.CLOUDINARY_API_KEY) {
-      try {
-        const cloudinary = require('cloudinary').v2;
-        const upload = await cloudinary.uploader.upload(`data:image/png;base64,${base64}`, {
-          public_id: `catolicosgpt/infografias/admin-${safeSlug}-${Date.now()}`,
-          overwrite: false,
-          quality: 'auto:best',
-          tags: ['catolicosgpt', 'infografia', 'admin-upload']
-        });
-        imageUrl = upload.secure_url;
-        console.log('[Admin Upload] Cloudinary OK:', imageUrl);
-      } catch (e) {
-        console.error('[Admin Upload] Cloudinary err:', e.message);
+    // Subir cada imagen (carrusel) — en serie para evitar rate limits
+    const imagenes = [];
+    for (let i = 0; i < imgArray.length; i++) {
+      const dataUrl = imgArray[i];
+      const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+      let imageUrl = null;
+
+      // Try Cloudinary first
+      if (process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+        try {
+          const upload = await cloudinary.uploader.upload(dataUrl, {
+            public_id: `catolicosgpt/infografias/admin-${safeSlug}-${i}-${Date.now()}`,
+            overwrite: false,
+            quality: 'auto:best',
+            fetch_format: 'auto',
+            tags: ['catolicosgpt', 'infografia', 'admin-upload', esCarrusel ? 'carrusel' : 'single']
+          });
+          imageUrl = upload.secure_url;
+          console.log(`[Admin Upload] Cloudinary OK slide ${i+1}/${imgArray.length}: ${imageUrl}`);
+        } catch (e) {
+          console.error(`[Admin Upload] Cloudinary err slide ${i+1}:`, e.message);
+        }
       }
+
+      // Fallback local
+      if (!imageUrl) {
+        const imgFile = `${safeSlug}-${i}.png`;
+        fs.writeFileSync(path.join(imgDir, imgFile), Buffer.from(base64, 'base64'));
+        imageUrl = `/infografias/${imgFile}`;
+        console.log(`[Admin Upload] Saved locally slide ${i+1}: ${imageUrl}`);
+      }
+
+      imagenes.push({
+        url: imageUrl,
+        slide: i + 1,
+        model: 'admin-upload',
+        formato: '1:1',
+        sizeLabel: '1024x1024'
+      });
     }
 
-    // Fallback local
-    if (!imageUrl) {
-      const fs = require('fs');
-      const imgDir = path.join(__dirname, 'public', 'infografias');
-      if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
-      const imgFile = `${safeSlug}-0.png`;
-      fs.writeFileSync(path.join(imgDir, imgFile), Buffer.from(base64, 'base64'));
-      imageUrl = `/infografias/${imgFile}`;
-    }
-
-    // Guardar en catálogo (estructura correcta: { version, total, infografias[] })
+    // Guardar en catálogo
     const { loadCatalog, saveCatalog } = require('./infografias-module');
     const catalog = loadCatalog();
     const id = `inf-${Date.now()}`;
@@ -2078,18 +2124,19 @@ app.post('/api/admin/infografias/upload', auth.authenticateToken, auth.requireAd
       tipo: tipo || 'santo',
       altText: titulo,
       fechaCreacion: now.toISOString(),
-      fechaISO: now.toISOString().slice(0,10),
+      fechaISO: now.toISOString().slice(0, 10),
       publicado: true,
-      totalSlides: 1,
+      totalSlides: imagenes.length,
+      esCarrusel: imagenes.length > 1,
       uploadedBy: 'admin',
-      imagenes: [{ url: imageUrl, slide: 1, model: 'admin-upload', formato: '9:16', sizeLabel: '1024x1536' }]
+      imagenes
     };
     catalog.infografias = catalog.infografias || [];
     catalog.infografias.unshift(infografia);
     catalog.total = catalog.infografias.length;
     saveCatalog(catalog);
 
-    res.json({ ok: true, infografia });
+    res.json({ ok: true, infografia, slides: imagenes.length });
   } catch (e) {
     console.error('[Admin Upload]', e);
     res.status(500).json({ error: e.message });

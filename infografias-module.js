@@ -38,7 +38,7 @@ function detectarTipo(tema, contenido = '') {
 // ── Tamaños de imagen por formato ──
 const SIZES = {
   '9:16': { gpti: '1024x1536', dalle3: '1024x1792', label: 'Instagram Stories / WhatsApp' },
-  '1:1':  { gpti: '1024x1024', dalle3: '1024x1024', label: 'Square / Feed' },
+  '1:1':  { gpti: '1024x1024', dalle3: '1024x1024', label: 'Square / Infografía rica' },
   '16:9': { gpti: '1536x1024', dalle3: '1792x1024', label: 'Presentación / Retiro' }
 };
 
@@ -90,32 +90,164 @@ BRANDING (CATOLICOSGPT — MANDATORY, all elements must appear):
 - FOOTER: "www.catolicosgpt.com" centered small white text`;
 }
 
-// ── PROMPT: Santo / Devocional (post único) ──
+// ── PROMPT: Infografía rica multi-sección (estilo ChatGPT/profesional) ──
 function buildPromptSantoDevocional(params, userPlan, customNombre, customLogo, estilo = 'clasico') {
-  const { categoria, titulo, subtitulo, visual, puntos } = params;
-  const branding = getBrandingBlock(userPlan, customNombre, customLogo);
-  const styleBlock = getStyleInstructions(estilo);
-  return `Create a professional Catholic devotional poster in portrait 2:3 format for a Catholic AI platform.
-${branding}
-${styleBlock}
+  const {
+    titulo, subtitulo, intro, citaBiblica, virtudes = [], misiones = [],
+    patronato = [], oracion, sabiasQue, citaFamosa, llamadaFinal, llamadaSec,
+    visualPrincipal
+  } = params;
 
-GOLD RIBBON BANNER (below logo/header): Horizontal metallic gold gradient scroll with dark brown serif text: "${categoria}"
+  // Defaults seguros para campos opcionales
+  const safeVirtudes = virtudes.slice(0, 5);
+  const safeMisiones = misiones.slice(0, 4);
+  const safePatronato = patronato.slice(0, 4);
 
-TITLE BLOCK:
-Large elegant serif font: "${titulo}"
-${subtitulo ? `Gold italic subtitle: "${subtitulo}"` : ''}
+  // Tema visual según estilo elegido
+  const themes = {
+    clasico: {
+      palette: 'Cream parchment background #F5EDD8 with deep emerald green panels #1B3A2F, ochre gold #BC8A36 accents, dark espresso brown #3B2415 text. Floral lily decorations.',
+      bg: 'Aged cream parchment paper with subtle texture',
+      typography: 'Elegant classical serif (Cormorant Garamond / Cinzel) titles with golden capitals. Refined body text.',
+      illustration: 'Classical oil painting style — warm Renaissance art with golden halos, soft chiaroscuro lighting, reverent atmosphere. Catholic religious painting tradition.',
+      mood: 'Sacred, timeless, like an illuminated manuscript or vintage holy card. Liturgical elegance.'
+    },
+    cinematic: {
+      palette: 'Deep matte black background #0d0a07 with dramatic golden light #BC8A36 to #E2BE6E gradients, cream #F2E4C3 text, dark vignettes.',
+      bg: 'Dark cinematic black-brown with golden volumetric light beams from above',
+      typography: 'Bold serif titles (Cinzel) with text shadows, gold metallic highlights. Cinematic movie-poster typography.',
+      illustration: 'Photorealistic cinematic Catholic art with dramatic chiaroscuro — strong golden light from one direction, deep shadows, atmospheric vintage film grain. Like a religious epic film poster.',
+      mood: 'Cinematic, reverent, dramatic. Golden light rays piercing darkness. Deep emotional power.'
+    },
+    infantil: {
+      palette: 'Soft warm cream and sky-blue background, vibrant friendly colors — red #FF6B6B, yellow #FFD93C, green #7BC74D, blue #4DA6FF, purple #9B6BD6.',
+      bg: 'Light cream-blue gradient with cartoon clouds, hearts, stars and soft decorative elements',
+      typography: 'Rounded friendly bold sans-serif (Quicksand-like) in colorful words. Kid-friendly large readable text.',
+      illustration: 'Cute cartoon children-book style — round friendly faces, big expressive eyes, colorful illustrations. Like a modern catechism book for kids.',
+      mood: 'Joyful, warm, encouraging. Like a beautiful children\'s catechism. Cheerful and approachable.'
+    }
+  };
+  const T = themes[estilo] || themes.clasico;
 
-CENTRAL IMAGE (40-50% of poster):
-${visual}
-Style: Photorealistic classical Catholic painting OR cinematic photograph. Warm dramatic golden-amber lighting. Chiaroscuro. Professional art quality.
+  const virtudesText = safeVirtudes.map(v =>
+    `  - ${v.nombre} (icon: ${v.icono || 'cross'}): "${v.desc}"`
+  ).join('\n');
 
-BULLET POINTS (lower section):
-${puntos.map(p => `✓ ${p}`).join('\n')}
+  const misionesText = safeMisiones.map((m, i) =>
+    `  ${i+1}. ${m.titulo}: small illustrated scene of "${m.escena}" with caption "${m.desc}"`
+  ).join('\n');
 
-COLOR PALETTE: Dark warm brown-black background, gold #C9923A accents, cream #F5EDD8 text, dark vignette.
-TYPOGRAPHY: Bold Trajan/Cinzel-style serif titles. Gold highlighted words. Clean readable sans-serif for bullets.
-STYLE: Cinematic Catholic movie poster. Dramatic light rays. Deep shadows. Golden bokeh. Vintage film grain. Professional quality.
-CRITICAL: All text must be clearly readable with high contrast.`;
+  const patronatoText = safePatronato.map(p => `  - ${p}`).join('\n');
+
+  return `Create a professional, RICH, MULTI-SECTION Catholic infographic poster in 1:1 square format. This is a DENSE EDUCATIONAL POSTER like a high-end Catholic catechism page — NOT a single image with title.
+
+═══════════════════════════════════════════════════
+GLOBAL DESIGN
+═══════════════════════════════════════════════════
+${T.palette}
+Background: ${T.bg}
+Typography: ${T.typography}
+Illustration style: ${T.illustration}
+Mood: ${T.mood}
+
+═══════════════════════════════════════════════════
+HEADER (top of poster, full width)
+═══════════════════════════════════════════════════
+TOP-LEFT: Logo "CatólicosGPT" — small ornate cross/Bible emblem in gold + text "CatólicosGPT" where "Católicos" is dark/cream and "GPT" is gold accent. Small but visible.
+
+═══════════════════════════════════════════════════
+SECTION 1 — TITLE BLOCK (top-left, large)
+═══════════════════════════════════════════════════
+Huge bold serif title: "${titulo}"
+Smaller refined subtitle below: "${subtitulo || ''}"
+
+═══════════════════════════════════════════════════
+SECTION 2 — CENTRAL ILLUSTRATION (top-center, large)
+═══════════════════════════════════════════════════
+${visualPrincipal || 'Beautiful religious illustration of the subject.'}
+This is the visual focus. Position prominently. Include a golden halo if it's a saint. Include symbolic flowers (white lilies for purity if relevant). Frame artistically.
+
+═══════════════════════════════════════════════════
+SECTION 3 — "¿QUIÉN FUE / QUÉ ES?" PANEL (top-right)
+═══════════════════════════════════════════════════
+Header in gold: "¿QUIÉN FUE ${titulo}?" (or "¿QUÉ ES?" if doctrine)
+Body text (Spanish): "${intro}"
+
+═══════════════════════════════════════════════════
+SECTION 4 — "SUS VIRTUDES" GRID (middle-right)
+═══════════════════════════════════════════════════
+Header in gold ornamented: "SUS VIRTUDES"
+Display 5 virtues as a HORIZONTAL ROW or 2-column grid, each with:
+- Round icon in gold-filled circle (icons described below)
+- Bold name in uppercase serif
+- Short description below
+
+VIRTUDES (render each clearly with its icon):
+${virtudesText}
+
+═══════════════════════════════════════════════════
+SECTION 5 — "SU MISIÓN EN EL PLAN DE DIOS" (center band)
+═══════════════════════════════════════════════════
+Header in gold: "SU MISIÓN EN EL PLAN DE DIOS"
+Row of 4 small framed illustration thumbnails, each with a caption underneath:
+${misionesText}
+Each thumbnail is a tiny scene illustrated in the same style as the main painting. Connect them as a narrative sequence.
+
+═══════════════════════════════════════════════════
+SECTION 6 — CITA BÍBLICA (decorative quote, lower-left)
+═══════════════════════════════════════════════════
+Beautiful quote-box with large opening quotation mark in gold:
+"${citaBiblica?.texto || ''}"
+Attribution: "— ${citaBiblica?.ref || ''}"
+
+═══════════════════════════════════════════════════
+SECTION 7 — "PATRONO DE / APLICACIONES" (lower-left)
+═══════════════════════════════════════════════════
+Header: "PATRONO DE"
+Small icon list of patronages, each with a tiny relevant icon:
+${patronatoText}
+
+═══════════════════════════════════════════════════
+SECTION 8 — "ORACIÓN A ${titulo}" (lower-center)
+═══════════════════════════════════════════════════
+Decorative scroll/panel with header: "ORACIÓN A ${titulo}"
+Body italic prayer text:
+"${oracion || ''}"
+
+═══════════════════════════════════════════════════
+SECTION 9 — "¿SABÍAS QUÉ?" (lower-right)
+═══════════════════════════════════════════════════
+Header in accent color: "¿SABÍAS QUÉ?"
+Body: "${sabiasQue || ''}"
+
+═══════════════════════════════════════════════════
+SECTION 10 — FAMOUS QUOTE BAR (across bottom area)
+═══════════════════════════════════════════════════
+Large italic quote in elegant typography:
+"${citaFamosa?.texto || ''}"
+Below in smaller text: "${citaFamosa?.atribucion || ''}"
+
+═══════════════════════════════════════════════════
+SECTION 11 — FOOTER BAR (bottom full-width)
+═══════════════════════════════════════════════════
+Footer band with two calls to action side by side:
+Left (with heart icon): "${llamadaFinal || ''}"
+Right (with cross icon): "${llamadaSec || ''}"
+
+═══════════════════════════════════════════════════
+CRITICAL REQUIREMENTS
+═══════════════════════════════════════════════════
+- ALL TEXT IN PERFECT SPANISH — no typos, no English words
+- All text must be CLEARLY READABLE with proper kerning
+- Use a CLEAN GRID layout — sections should be visually distinct with subtle dividers
+- The poster must feel DENSE and EDUCATIONAL, like a Catholic catechism page
+- Sections should be balanced and harmonious, not cramped
+- Generate icons accurately: ${safeVirtudes.map(v=>v.icono).join(', ')}
+- Use real symbolic Catholic iconography (lilies, halos, crosses, doves, scrolls)
+- The composition is 1024x1024 SQUARE FORMAT — design for that aspect ratio
+- This is a PREMIUM EDITORIAL POSTER, not a simple greeting card
+
+OUTPUT: A complete, dense, multi-section Catholic infographic poster ready for sharing in WhatsApp, Instagram or print, in the ${estilo} style.`;
 }
 
 // ── PROMPT: Serie educativa (4 slides) ──
@@ -156,25 +288,56 @@ STYLE: Cinematic Catholic movie poster. Professional viral social media format.`
 
 // ── Construir parámetros desde GPT-4o ──
 async function buildInfografiaParams(tema, tipo, openai) {
-  const typeInstructions = {
-    santo:      'saint name, feast date, 3 key points about life/example, visual description (classical painting with halo), ribbon label',
-    devocional: 'devotion name, category label (e.g. "Todo sobre"), 3 points about history/promises/prayers, visual description',
-    serie:      '4 chapters with titles, 3-5 points each, one key quote per chapter, tagline for bottom bar, visual per slide',
-    doctrinal:  'doctrine topic, category label, 3 key points, visual description'
-  };
-
   const r = await openai.chat.completions.create({
-    model: 'gpt-4o', max_tokens: 1800, temperature: 0.3,
-    messages: [{ role: 'user', content: `Build a Catholic infographic for CatolicosGPT about: "${tema}"
-Type: ${tipo}
-Extract: ${typeInstructions[tipo]||typeInstructions.doctrinal}
-Respond ONLY valid JSON in Spanish. No markdown, no backticks.
+    model: 'gpt-4o',
+    max_tokens: 2500,
+    temperature: 0.4,
+    messages: [{
+      role: 'system',
+      content: 'Eres un experto en catequesis y diseño de infografías católicas. Generas contenido RICO y completo en español para infografías visuales tipo poster educativo.'
+    }, {
+      role: 'user',
+      content: `Genera el contenido COMPLETO para una infografía católica visual sobre: "${tema}"
+Tipo: ${tipo}
 
-For santo/devocional/doctrinal:
-{"categoria":"ribbon label","titulo":"main title 2-3 lines","subtitulo":"date or subtitle (optional)","visual":"3-4 sentence visual description for AI image generation","puntos":["point 1","point 2","point 3"],"slug":"url-slug","altText":"SEO alt text","metaDescription":"150 char description"}
+Quiero contenido MUY RICO con múltiples secciones, como las infografías de catequesis profesionales. Responde SOLO JSON válido en español (sin markdown, sin backticks). Sigue EXACTAMENTE esta estructura:
 
-For serie:
-{"slug":"url-slug","altText":"SEO alt","metaDescription":"150 char","slides":[{"capitulo":1,"titulo":"UPPERCASE TITLE","subtitulo":"subtitle","descripcion":"1-2 lines","puntos":["p1","p2","p3"],"cita":"key quote","tagline":"BOTTOM TAGLINE UPPERCASE","visual":"visual description"}]}` }]
+{
+  "slug": "url-slug-amigable",
+  "titulo": "NOMBRE PRINCIPAL en mayúsculas (ej: SAN JOSÉ)",
+  "subtitulo": "Epíteto descriptivo (ej: EL CUSTODIO DE JESÚS Y ESPOSO DE MARÍA)",
+  "intro": "Párrafo de 3-4 líneas que presenta al santo/tema. Quién fue, por qué importa.",
+  "citaBiblica": { "texto": "Cita bíblica relevante (1 oración)", "ref": "Mateo 1, 24" },
+  "virtudes": [
+    { "nombre": "JUSTO", "desc": "Frase de 8-12 palabras sobre esta virtud", "icono": "balanza" },
+    { "nombre": "TRABAJADOR", "desc": "Frase de 8-12 palabras", "icono": "martillo" },
+    { "nombre": "CASTO", "desc": "Frase de 8-12 palabras", "icono": "lirio" },
+    { "nombre": "PROTECTOR", "desc": "Frase de 8-12 palabras", "icono": "escudo" },
+    { "nombre": "OBEDIENTE", "desc": "Frase de 8-12 palabras", "icono": "corazon" }
+  ],
+  "misiones": [
+    { "titulo": "ELEGIDO POR DIOS", "desc": "Descripción de 1-2 líneas", "escena": "Ángel se aparece a José en sueños" },
+    { "titulo": "PROTECTOR DE LA SAGRADA FAMILIA", "desc": "Descripción de 1-2 líneas", "escena": "Huida a Egipto en burro" },
+    { "titulo": "ENSEÑÓ A JESÚS", "desc": "Descripción de 1-2 líneas", "escena": "José y Jesús niño en el taller de carpintería" },
+    { "titulo": "FORMÓ EL CORAZÓN DE JESÚS", "desc": "Descripción de 1-2 líneas", "escena": "José abrazando a Jesús niño" }
+  ],
+  "patronato": ["La Iglesia Universal", "Las familias", "Los trabajadores", "Una buena muerte"],
+  "oracion": "Oración tradicional al santo/devoción (4-6 líneas completas)",
+  "sabiasQue": "Dato curioso interesante de 2-3 líneas sobre el santo",
+  "citaFamosa": { "texto": "Cita famosa o frase sobre el santo (1 línea poderosa)", "atribucion": "Atribución o contexto" },
+  "llamadaFinal": "ACUDE A [SANTO] EN CADA NECESIDAD",
+  "llamadaSec":  "ENCOMIENDA TU DÍA A [SANTO]",
+  "visualPrincipal": "Descripción cinematográfica de 4-5 líneas de la imagen central: composición, iluminación, ambiente, símbolos visibles. Estilo de pintura católica clásica con halo dorado.",
+  "altText": "Texto alt SEO para Google",
+  "metaDescription": "Descripción SEO meta de 150 caracteres"
+}
+
+CRÍTICO:
+- Si el tema es un santo, completa TODO con datos reales y verificados
+- Si NO es santo (es doctrina/devoción), adapta: las "virtudes" pueden ser "Principios", las "misiones" pueden ser "Aspectos clave", etc.
+- TODO en español, contenido católico ortodoxo basado en el Magisterio
+- Los iconos válidos son: balanza, martillo, lirio, escudo, corazon, cruz, libro, casa, mano, paloma, ancla, llama, estrella, oveja, llave, copa`
+    }]
   });
 
   let text = r.choices[0].message.content.trim().replace(/```json|```/g,'');

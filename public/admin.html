@@ -136,12 +136,21 @@
           <p>Sube una imagen manualmente con SEO optimizado por IA.</p>
 
           <div class="field">
-            <label class="field-label">Imagen (PNG/JPG)</label>
-            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-              <input type="file" id="file-input" accept="image/png,image/jpeg" style="display:none" onchange="handleFile(event)">
-              <div id="upload-placeholder" class="ph">📤 Arrastra o haz clic para subir<br><span style="font-size:12px">Formato 9:16 recomendado · Máx 4MB</span></div>
-              <img id="upload-preview" style="display:none">
-            </div>
+            <label class="field-label">Tipo de infografía</label>
+            <select class="select" id="f-num-imgs" onchange="renderUploadZones()">
+              <option value="1">📷 Imagen única (1 imagen)</option>
+              <option value="2">📑 Carrusel · 2 imágenes</option>
+              <option value="3">📑 Carrusel · 3 imágenes</option>
+              <option value="4">📑 Carrusel · 4 imágenes (serie)</option>
+              <option value="5">📑 Carrusel · 5 imágenes</option>
+              <option value="6">📑 Carrusel · 6 imágenes</option>
+            </select>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:6px">Las series/carruseles se muestran con flechas de navegación en la galería</div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Imágenes (PNG/JPG · máx 4MB c/u)</label>
+            <div id="upload-zones-container"></div>
           </div>
 
           <div class="field">
@@ -321,19 +330,49 @@ function switchTab(name, btn) {
 }
 
 // ── Upload image ──
-function handleFile(e) {
+// Array de imágenes uploaded (soporta carruseles)
+let uploadedImages = [];
+
+function renderUploadZones() {
+  const n = parseInt(document.getElementById('f-num-imgs').value);
+  const container = document.getElementById('upload-zones-container');
+  // Re-init array al tamaño correcto
+  uploadedImages = uploadedImages.slice(0, n);
+  while (uploadedImages.length < n) uploadedImages.push(null);
+
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    const has = uploadedImages[i];
+    html += '<div class="upload-zone-item" style="margin-bottom:8px">';
+    html += '<div style="font-size:11px;color:var(--ink-3);margin-bottom:4px;font-weight:600">' + (n > 1 ? 'Slide ' + (i+1) + ' de ' + n : 'Imagen') + '</div>';
+    html += '<div class="upload-zone" data-slot="' + i + '" onclick="document.getElementById(\'file-input-' + i + '\').click()" style="padding:' + (n > 1 ? '14px' : '30px') + ' 14px;min-height:' + (n > 1 ? '70px' : '120px') + '">';
+    html += '<input type="file" id="file-input-' + i + '" accept="image/png,image/jpeg" style="display:none" onchange="handleFileSlot(event, ' + i + ')">';
+    if (has) {
+      html += '<img src="' + has + '" style="max-height:' + (n > 1 ? '60px' : '120px') + ';border-radius:6px">';
+    } else {
+      html += '<div class="ph" style="font-size:' + (n > 1 ? '12px' : '13px') + '">📤 Click para subir' + (n > 1 ? ' slide ' + (i+1) : '') + '</div>';
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+function handleFileSlot(e, slot) {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > 4 * 1024 * 1024) { setStatus('upload-status', 'err', 'Imagen demasiado grande (máx 4MB)'); return; }
+  if (file.size > 4 * 1024 * 1024) { setStatus('upload-status', 'err', 'Slide ' + (slot+1) + ': imagen demasiado grande (máx 4MB)'); return; }
   const reader = new FileReader();
   reader.onload = (ev) => {
-    uploadedImage = ev.target.result;
-    document.getElementById('upload-preview').src = uploadedImage;
-    document.getElementById('upload-preview').style.display = 'block';
-    document.getElementById('upload-placeholder').style.display = 'none';
+    uploadedImages[slot] = ev.target.result;
+    renderUploadZones();
   };
   reader.readAsDataURL(file);
 }
+
+// Init: render 1 upload zone by default
+window.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('f-num-imgs')) renderUploadZones();
+});
 
 function autoSlug() {
   const titulo = document.getElementById('f-titulo').value;
@@ -376,31 +415,37 @@ async function submitUpload() {
   const categoria = document.getElementById('f-categoria').value;
   const tipo = document.getElementById('f-tipo').value;
 
-  if (!uploadedImage) { setStatus('upload-status', 'err', 'Sube una imagen'); return; }
+  // Filtrar imágenes válidas (slots null no cuentan)
+  const imgs = uploadedImages.filter(Boolean);
+  if (!imgs.length) { setStatus('upload-status', 'err', 'Sube al menos una imagen'); return; }
   if (!titulo) { setStatus('upload-status', 'err', 'Falta el título'); return; }
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Subiendo...';
-  setStatus('upload-status', 'info', 'Subiendo imagen a Cloudinary...');
+  btn.textContent = '⏳ Subiendo ' + imgs.length + ' imagen(es)...';
+  setStatus('upload-status', 'info', 'Subiendo ' + imgs.length + ' imagen(es) a Cloudinary...');
 
   try {
     const r = await fetch('/api/admin/infografias/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ imageData: uploadedImage, titulo, slug, descripcion, keywords, categoria, tipo })
+      body: JSON.stringify({
+        images: imgs,            // array de base64 data URLs
+        titulo, slug, descripcion, keywords, categoria, tipo,
+        esCarrusel: imgs.length > 1
+      })
     });
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Error');
-    setStatus('upload-status', 'ok', '✅ Infografía subida: ' + d.infografia.slug);
-    // Reset form
+    setStatus('upload-status', 'ok', '✅ ' + (imgs.length > 1 ? 'Carrusel' : 'Infografía') + ' subido: ' + d.infografia.slug + ' (' + imgs.length + ' imagen' + (imgs.length > 1 ? 'es' : '') + ')');
+    // Reset
     document.getElementById('f-titulo').value = '';
     document.getElementById('f-slug').value = '';
     document.getElementById('f-descripcion').value = '';
     document.getElementById('f-keywords').value = '';
-    document.getElementById('upload-preview').style.display = 'none';
-    document.getElementById('upload-placeholder').style.display = 'block';
-    uploadedImage = null;
+    document.getElementById('f-num-imgs').value = '1';
+    uploadedImages = [];
+    renderUploadZones();
     loadList();
     loadStats();
   } catch (e) {

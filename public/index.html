@@ -103,7 +103,7 @@
 
   <div class="chat-body">
     <!-- ──────── SIDEBAR ──────── -->
-    <aside class="side closed" id="sb">
+    <aside class="side" id="sb">
       <div class="side-top">
         <button class="btn-new" onclick="newChat();closeSb()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -170,27 +170,6 @@
           <h1 class="empty-h">¿En qué puedo ayudarte, <span class="it">hermano</span>?</h1>
           <p class="empty-sub">Pregunta sobre fe, Biblia, santos o doctrina de la Iglesia.</p>
 
-          <div class="sugg-grid two-cards">
-            <a class="sugg sugg-feature" href="/infografias" style="text-decoration:none;color:inherit">
-              <span class="sugg-ic gold-ic">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4L2 9.4h7.6L12 2z"/></svg>
-              </span>
-              <span>
-                <span class="sugg-t">✨ Generar Infografía Católica</span>
-                <span class="sugg-ex">Santos, encíclicas, oraciones — estilo Clásico, Cinematic o Infantil</span>
-              </span>
-            </a>
-            <button class="sugg sugg-feature" onclick="abrirInfografiaDelDia()">
-              <span class="sugg-ic">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
-              </span>
-              <span>
-                <span class="sugg-t">🌅 Infografía del día</span>
-                <span class="sugg-ex">Ver la infografía católica más reciente</span>
-              </span>
-            </button>
-          </div>
-
         </div>
 
         <!-- Chat area (mensajes) -->
@@ -198,27 +177,7 @@
           <div id="chat-inner"></div>
         </div>
 
-        <!-- Vistas embebidas (Lecturas, Santo, Oración) -->
-        <div id="view-lecturas" class="view-section" style="display:none">
-          <div class="view-card">
-            <div class="view-head"><h2>Lecturas del día</h2><button class="view-back" onclick="closeView()">← Volver</button></div>
-            <div id="view-lecturas-content" class="view-content"><div class="loader">Cargando lecturas...</div></div>
-          </div>
-        </div>
-
-        <div id="view-santo" class="view-section" style="display:none">
-          <div class="view-card">
-            <div class="view-head"><h2>Santo del día</h2><button class="view-back" onclick="closeView()">← Volver</button></div>
-            <div id="view-santo-content" class="view-content"><div class="loader">Cargando santo...</div></div>
-          </div>
-        </div>
-
-        <div id="view-oracion" class="view-section" style="display:none">
-          <div class="view-card">
-            <div class="view-head"><h2>Oración del día</h2><button class="view-back" onclick="closeView()">← Volver</button></div>
-            <div id="view-oracion-content" class="view-content"><div class="loader">Cargando oración...</div></div>
-          </div>
-        </div>
+        <!-- Vistas integradas dentro del chat -->
       </div>
 
       <!-- ──────── COMPOSER ──────── -->
@@ -269,10 +228,25 @@
 .history-item .hi-time { font-size: 11px; color: var(--ink-3); flex-shrink: 0; }
 
 /* Sidebar overlay & mobile open */
-.side.open { margin-left: 0; }
-@media (max-width: 860px) { .side { position: fixed; top: 60px; bottom: 0; left: 0; z-index: 30; transform: translateX(-100%); transition: transform .28s var(--ease); margin-left: 0; box-shadow: var(--shadow-lg); }
+/* DESKTOP: sidebar visible siempre (286px) */
+.side { width: 286px; flex-shrink: 0; transition: margin-left .28s var(--ease); }
+.side.closed { margin-left: -286px; } /* solo se usa si el usuario explícitamente la cierra en desktop */
+
+/* MOBILE: sidebar oculta, slide-in con .open */
+@media (max-width: 860px) {
+  .side { 
+    position: fixed; top: 60px; bottom: 0; left: 0; z-index: 50; 
+    transform: translateX(-100%); transition: transform .3s var(--ease);
+    margin-left: 0 !important; box-shadow: var(--shadow-lg);
+  }
   .side.open { transform: translateX(0); }
-  .side.closed { transform: translateX(-100%); }
+  .side-backdrop { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; background: rgba(43,24,10,.45); backdrop-filter: blur(2px); z-index: 40; cursor: pointer; }
+  .side-backdrop.hidden { display: none; }
+  .icon-btn { display: grid !important; place-items: center; }
+}
+@media (min-width: 861px) {
+  .icon-btn { display: none; }
+  .side-backdrop { display: none !important; }
 }
 
 /* Message rows (compat con app.js) */
@@ -396,8 +370,27 @@
 <!-- LÓGICA — Adaptaciones para mantener compatibilidad con app.js -->
 <script>
 // Sidebar toggle
-function toggleSb() { const sb = document.getElementById('sb'); const o = document.getElementById('sb-overlay'); if (sb.classList.contains('open') || !sb.classList.contains('closed')) { closeSb(); } else { sb.classList.add('open'); sb.classList.remove('closed'); if (o) o.classList.remove('hidden'); } }
-function closeSb() { const sb = document.getElementById('sb'); const o = document.getElementById('sb-overlay'); sb.classList.add('closed'); sb.classList.remove('open'); if (o) o.classList.add('hidden'); }
+function toggleSb() {
+  const sb = document.getElementById('sb');
+  const ov = document.getElementById('sb-overlay');
+  const isOpen = sb.classList.contains('open');
+  if (isOpen) {
+    sb.classList.remove('open');
+    if (ov) ov.classList.add('hidden');
+  } else {
+    sb.classList.add('open');
+    sb.classList.remove('closed');
+    if (ov) ov.classList.remove('hidden');
+  }
+}
+function closeSb() {
+  const sb = document.getElementById('sb');
+  const ov = document.getElementById('sb-overlay');
+  sb.classList.remove('open');
+  if (ov) ov.classList.add('hidden');
+  // En mobile, NO agregar closed (anima con transform). En desktop, .closed oculta con margin
+  if (window.innerWidth > 860) sb.classList.add('closed');
+}
 
 // Composer auto-grow
 function growComposer(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px'; }
@@ -428,53 +421,145 @@ function sendSuggestion(text) {
 }
 
 // Vistas (Lecturas, Santo, Oración)
+// ── openView() — Renderiza Lecturas/Santo/Oración DENTRO del chat (mainframe)
+//    Usa los endpoints Magisterium (fuente OFICIAL de la Iglesia)
 async function openView(id) {
+  // Ocultar empty state, mostrar área de chat
   document.getElementById('welcome').style.display = 'none';
-  document.getElementById('chat-area').style.display = 'none';
-  ['lecturas', 'santo', 'oracion'].forEach(v => {
-    document.getElementById('view-' + v).style.display = v === id ? 'block' : 'none';
-  });
+  const chatArea = document.getElementById('chat-area');
+  chatArea.style.display = 'flex';
+  chatArea.style.flexDirection = 'column';
+  const inner = document.getElementById('chat-inner');
 
-  const target = document.getElementById('view-' + id + '-content');
-  if (target.dataset.loaded === '1') return;
-  target.innerHTML = '<div class="loader">Cargando…</div>';
-
-  try {
-    let endpoint = id === 'lecturas' ? '/api/lecturas-dia' : id === 'santo' ? '/api/santo-del-dia' : '/api/oracion-magisterium';
-    const r = await fetch(endpoint);
-    const d = await r.json();
-    if (id === 'lecturas') {
-      const lectures = d.lecturas || d.data || [];
-      let html = '<div style="font-style:italic;color:var(--ink-3);margin-bottom:14px">' + (d.fecha || new Date().toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })) + '</div>';
-      if (Array.isArray(lectures) && lectures.length) {
-        lectures.forEach(l => {
-          html += '<h3>' + (l.titulo || l.cita || 'Lectura') + '</h3>';
-          html += '<p>' + (l.texto || '').replace(/\n/g, '<br>') + '</p>';
-        });
-      } else if (d.ok && d.contenido) {
-        html += '<div>' + d.contenido.replace(/\n/g, '<br>') + '</div>';
-      } else {
-        html += '<p style="color:var(--ink-3)">No fue posible cargar las lecturas hoy.</p>';
-      }
-      target.innerHTML = html;
-    } else if (id === 'santo') {
-      const s = d.santo || d;
-      target.innerHTML = '<h3>' + (s.nombre || 'Santo del día') + '</h3>' +
-        '<p style="color:var(--ink-3);font-style:italic">' + (s.fecha || s.fechaFestivo || '') + '</p>' +
-        '<p>' + (s.biografia || s.texto || s.descripcion || s.contenido || '').replace(/\n/g, '<br>') + '</p>';
-    } else if (id === 'oracion') {
-      const o = d.oracion || d;
-      target.innerHTML = '<p>' + (o.texto || o.contenido || JSON.stringify(o, null, 2)).replace(/\n/g, '<br>') + '</p>';
+  // Configuración de cada vista
+  const config = {
+    lecturas: {
+      userMsg: '📖 Muéstrame las lecturas del día',
+      endpoint: '/api/lecturas-magisterium',
+      titulo: 'Lecturas del día',
+      icono: '📖'
+    },
+    santo: {
+      userMsg: '✨ ¿Quién es el santo del día?',
+      endpoint: '/api/santo-magisterium',
+      titulo: 'Santo del día',
+      icono: '✨'
+    },
+    oracion: {
+      userMsg: '🙏 Dame la oración del día',
+      endpoint: '/api/oracion-magisterium',
+      titulo: 'Oración del día',
+      icono: '🙏'
     }
-    target.dataset.loaded = '1';
+  };
+  const cfg = config[id];
+  if (!cfg) return;
+
+  // Burbuja de usuario
+  const userRow = document.createElement('div');
+  userRow.className = 'msg-row user-row';
+  userRow.innerHTML = '<div class="av av-user">TÚ</div><div class="bubble bubble-user">' + cfg.userMsg + '</div>';
+  inner.appendChild(userRow);
+
+  // Burbuja del bot (loading)
+  const botRow = document.createElement('div');
+  botRow.className = 'msg-row bot-row';
+  botRow.innerHTML = `
+    <div class="av">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round">
+        <circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/>
+      </svg>
+    </div>
+    <div class="bubble bubble-bot">
+      <div style="display:flex;align-items:center;gap:8px;color:var(--ink-3);font-style:italic">
+        <span class="typing-cursor">▋</span> Consultando Magisterium…
+      </div>
+    </div>`;
+  inner.appendChild(botRow);
+  inner.scrollTop = inner.scrollHeight;
+  const bubble = botRow.querySelector('.bubble-bot');
+
+  // Fetch al endpoint Magisterium
+  try {
+    const r = await fetch(cfg.endpoint);
+    const d = await r.json();
+
+    let html = '<div class="ai-h" style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--espresso);margin-bottom:14px">' + cfg.icono + ' ' + cfg.titulo + '</div>';
+    const fuenteBadge = d.fuente === 'magisterium'
+      ? '<span style="display:inline-block;padding:3px 10px;background:rgba(188,138,54,.1);border:1px solid var(--gold);border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:12px">Magisterium · Fuente Oficial</span>'
+      : '';
+    html += fuenteBadge;
+
+    if (id === 'lecturas') {
+      const data = d.data || d;
+      // Magisterium widget shape: { readings: [{title, citation, text}, ...] } o similar
+      const readings = data.readings || data.lecturas || (Array.isArray(data) ? data : []);
+      if (readings && readings.length) {
+        readings.forEach(L => {
+          const t = L.title || L.titulo || L.citation || L.cita || 'Lectura';
+          const cit = L.citation || L.cita || '';
+          const txt = L.text || L.texto || L.contenido || '';
+          html += '<div class="ai-h" style="font-family:var(--font-display);font-size:18px;color:var(--espresso);margin:18px 0 6px">' + t + '</div>';
+          if (cit && cit !== t) html += '<div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:8px">' + cit + '</div>';
+          html += '<div style="line-height:1.7">' + String(txt).replace(/\n/g, '<br>') + '</div>';
+        });
+      } else if (data.title || data.titulo) {
+        html += '<div class="ai-h">' + (data.title || data.titulo) + '</div>';
+        html += '<div style="line-height:1.7">' + String(data.text || data.texto || data.contenido || JSON.stringify(data)).replace(/\n/g, '<br>') + '</div>';
+      } else {
+        html += '<p style="color:var(--ink-3)">No fue posible obtener las lecturas. Intenta de nuevo en unos minutos.</p>';
+      }
+    } else if (id === 'santo') {
+      const s = d.santo || d.data || d;
+      const nombre = s.name || s.nombre || s.title || s.titulo || 'Santo del día';
+      const fecha = s.feast_date || s.fechaFestivo || s.fecha || '';
+      const bio = s.biography || s.description || s.text || s.texto || s.biografia || s.descripcion || s.contenido || '';
+      html += '<div class="ai-h" style="font-family:var(--font-display);font-size:24px;color:var(--espresso);margin-bottom:6px">' + nombre + '</div>';
+      if (fecha) html += '<div style="font-size:13px;color:var(--gold-deep);font-style:italic;margin-bottom:14px">' + fecha + '</div>';
+      html += '<div style="line-height:1.7">' + String(bio).replace(/\n/g, '<br>') + '</div>';
+    } else if (id === 'oracion') {
+      const o = d.oracion || d.data || d;
+      const titulo = o.title || o.titulo || '';
+      const texto = o.text || o.texto || o.contenido || o.prayer || JSON.stringify(o, null, 2);
+      if (titulo) html += '<div class="ai-h" style="font-family:var(--font-display);font-size:20px;color:var(--espresso);margin-bottom:10px">' + titulo + '</div>';
+      html += '<blockquote style="margin:8px 0;padding:16px 22px;border-left:3px solid var(--gold);background:linear-gradient(120deg, rgba(188,138,54,.07), transparent);border-radius:0 14px 14px 0;font-family:var(--font-display);font-style:italic;font-size:17px;color:var(--coffee);line-height:1.6">' + String(texto).replace(/\n/g, '<br>') + '</blockquote>';
+    }
+
+    // Acciones inferiores
+    html += '<div class="action-row" style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">';
+    html += '<button class="act-btn" onclick="copiarTextoChat(this)">📋 Copiar</button>';
+    html += '<button class="act-btn" onclick="compartirTextoChat(this,\''+ cfg.titulo +'\')">📤 Compartir</button>';
+    html += '</div>';
+
+    bubble.innerHTML = html;
+    inner.scrollTop = inner.scrollHeight;
+
+    // Guardar en historial si está la función
+    if (typeof chatHistory !== 'undefined') {
+      chatHistory.push({ role: 'user', content: cfg.userMsg });
+      chatHistory.push({ role: 'assistant', content: bubble.innerText });
+    }
   } catch (e) {
-    target.innerHTML = '<p style="color:var(--red)">Error al cargar: ' + e.message + '</p>';
+    bubble.innerHTML = '<div style="color:var(--red)">⚠️ Error al cargar: ' + e.message + '</div>';
   }
 }
 
+function copiarTextoChat(btn) {
+  const text = btn.closest('.bubble-bot').innerText;
+  navigator.clipboard.writeText(text);
+  showToast('📋 Copiado al portapapeles');
+}
+
+function compartirTextoChat(btn, titulo) {
+  const text = btn.closest('.bubble-bot').innerText;
+  if (navigator.share) navigator.share({ title: titulo + ' · CatolicosGPT', text, url: 'https://catolicosgpt.com' });
+  else { navigator.clipboard.writeText(text + '\n\nhttps://catolicosgpt.com'); showToast('📤 Compartido'); }
+}
+
 function closeView() {
-  ['lecturas', 'santo', 'oracion'].forEach(v => document.getElementById('view-' + v).style.display = 'none');
+  // Stub legacy — ya no se usa con la nueva arquitectura inline
   document.getElementById('welcome').style.display = 'flex';
+  document.getElementById('chat-area').style.display = 'none';
 }
 
 // ── Auth ──
