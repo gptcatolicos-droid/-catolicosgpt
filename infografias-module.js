@@ -119,14 +119,12 @@ CRITICAL: All text must be clearly readable with high contrast.`;
 }
 
 // ── PROMPT: Serie educativa (4 slides) ──
-function buildPromptSerie(slide, slideNum, totalSlides, userPlan, customNombre, customLogo, estilo = 'clasico') {
+function buildPromptSerie(slide, slideNum, totalSlides, userPlan, customNombre, customLogo) {
   const { titulo, subtitulo, descripcion, puntos, cita, tagline, visual, capitulo } = slide;
   const branding = getBrandingBlock(userPlan, customNombre, customLogo);
-  const styleBlock = getStyleInstructions(estilo);
   const label = slideNum === 1 ? 'RESUMEN' : `CAPÍTULO ${capitulo || slideNum}`;
   return `Create slide ${slideNum} of ${totalSlides} for a Catholic educational series poster.
 ${branding}
-${styleBlock}
 
 SLIDE COUNTER: Top right corner "${slideNum}/${totalSlides}" in small gold text on dark pill
 
@@ -177,34 +175,8 @@ For serie:
 {"slug":"url-slug","altText":"SEO alt","metaDescription":"150 char","slides":[{"capitulo":1,"titulo":"UPPERCASE TITLE","subtitulo":"subtitle","descripcion":"1-2 lines","puntos":["p1","p2","p3"],"cita":"key quote","tagline":"BOTTOM TAGLINE UPPERCASE","visual":"visual description"}]}` }]
   });
 
-  let text = r.choices[0].message.content.trim().replace(/```json|```/g,'');
-  // Robust JSON extraction: find first { and last }
-  const firstBrace = text.indexOf('{');
-  const lastBrace  = text.lastIndexOf('}');
-  if (firstBrace >= 0 && lastBrace > firstBrace) {
-    text = text.slice(firstBrace, lastBrace + 1);
-  }
-  try {
-    return JSON.parse(text);
-  } catch(parseErr) {
-    console.error('[buildInfografiaParams] JSON parse error:', parseErr.message);
-    console.error('[buildInfografiaParams] Raw text (first 300):', text.slice(0, 300));
-    // Fallback: build minimal params manually from tema
-    return {
-      categoria: tipo === 'santo' ? 'SANTO DEL DÍA' : tipo === 'devocional' ? 'DEVOCIÓN' : 'REFLEXIÓN',
-      titulo: tema.length < 50 ? tema : tema.slice(0, 50),
-      subtitulo: '',
-      visual: `Beautiful Catholic religious art depicting ${tema}. Classical painting style with warm dramatic lighting, gold accents, reverent atmosphere.`,
-      puntos: [
-        'Una reflexión profunda sobre la fe',
-        'Inspirado en el Magisterio de la Iglesia',
-        'Para compartir y orar en familia'
-      ],
-      slug: generateSlug(tema),
-      altText: `Infografía católica sobre ${tema}`,
-      metaDescription: `Infografía católica sobre ${tema}. Descarga gratis para compartir tu fe en WhatsApp e Instagram.`.slice(0, 155)
-    };
-  }
+  const text = r.choices[0].message.content.trim().replace(/```json|```/g,'');
+  return JSON.parse(text);
 }
 
 // ── Upload a Cloudinary ──
@@ -301,7 +273,7 @@ async function generarInfografia({ tema, tipo: tipoOverride, formato = '9:16', e
   const imagenes = [];
   for (let i = 0; i < totalSlides; i++) {
     const prompt = esSerie
-      ? buildPromptSerie(params.slides[i], i+1, totalSlides, userPlan, customNombre, customLogo, validEstilo)
+      ? buildPromptSerie(params.slides[i], i+1, totalSlides, userPlan, customNombre, customLogo)
       : buildPromptSantoDevocional(params, userPlan, customNombre, customLogo, validEstilo);
 
     const img      = await generarImagen(prompt, openai, validFormato);

@@ -2095,61 +2095,6 @@ app.post('/api/admin/infografias/upload', auth.authenticateToken, auth.requireAd
   }
 });
 
-
-// ── Sitemap.xml dinámico — incluye todas las infografías y blog posts ──
-app.get('/sitemap.xml', (req, res) => {
-  const baseUrl = 'https://catolicosgpt.com';
-  const today = new Date().toISOString().slice(0, 10);
-
-  const staticUrls = [
-    { loc: '/',            changefreq: 'daily',   priority: '1.0', lastmod: today },
-    { loc: '/infografias', changefreq: 'daily',   priority: '0.95',lastmod: today },
-    { loc: '/planes',      changefreq: 'monthly', priority: '0.7', lastmod: today },
-    { loc: '/blog',        changefreq: 'weekly',  priority: '0.85',lastmod: today },
-    { loc: '/lecturas',    changefreq: 'daily',   priority: '0.9', lastmod: today },
-    { loc: '/breviario',   changefreq: 'daily',   priority: '0.9', lastmod: today },
-    { loc: '/homilia',     changefreq: 'daily',   priority: '0.85',lastmod: today },
-  ];
-
-  // Cargar infografías del catálogo
-  let infografiasUrls = [];
-  try {
-    const { loadCatalog } = require('./infografias-module');
-    const cat = loadCatalog();
-    const items = (cat.infografias || []).filter(i => i.publicado !== false);
-    infografiasUrls = items.map(i => ({
-      loc: '/infografias/' + i.slug,
-      lastmod: (i.fechaISO || today),
-      changefreq: 'monthly',
-      priority: '0.8',
-      image: i.imagenes?.[0]?.url || null,
-      imageTitle: i.titulo || i.tema,
-      imageCaption: i.metaDescription || ''
-    }));
-  } catch(e) { console.error('[Sitemap] Error cargando infografías:', e.message); }
-
-  res.set('Content-Type', 'application/xml; charset=utf-8');
-  res.send(
-    '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n' +
-    staticUrls.map(u =>
-      '  <url><loc>' + baseUrl + u.loc + '</loc><lastmod>' + u.lastmod + '</lastmod><changefreq>' + u.changefreq + '</changefreq><priority>' + u.priority + '</priority></url>'
-    ).join('\n') +
-    '\n' +
-    infografiasUrls.map(u => {
-      let xml = '  <url><loc>' + baseUrl + u.loc + '</loc><lastmod>' + u.lastmod + '</lastmod><changefreq>' + u.changefreq + '</changefreq><priority>' + u.priority + '</priority>';
-      if (u.image) {
-        xml += '<image:image><image:loc>' + u.image + '</image:loc><image:title>' + (u.imageTitle || '').replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</image:title>';
-        if (u.imageCaption) xml += '<image:caption>' + u.imageCaption.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</image:caption>';
-        xml += '</image:image>';
-      }
-      xml += '</url>';
-      return xml;
-    }).join('\n') +
-    '\n</urlset>'
-  );
-});
-
 // ── Cron: Generar infografías diarias ──
 async function generarInfografiasDelDia() {
   console.log('[Cron] Iniciando generación diaria de infografías...');
