@@ -138,18 +138,23 @@ async function loadVideos() {
       return;
     }
     grid.innerHTML = d.items.map(v => {
-      const thumb = v.thumbnailHQ || v.thumbnail || ('https://i.ytimg.com/vi/' + v.youtubeId + '/maxresdefault.jpg');
+      const thumb = v.thumbnailHQ || v.thumbnail || `https://i.ytimg.com/vi/${v.youtubeId}/maxresdefault.jpg`;
       const cat = (v.categoria || 'video').replace('-', ' ');
-      return '<a class="vcard" href="/videos/' + v.slug + '">' +
-        '<div class="vcard-media" style="background-image:url(\\'' + thumb + '\\')">' +
-          '<div class="vcard-badge">' + cat + '</div>' +
-          '<div class="vcard-play">▶</div>' +
-        '</div>' +
-        '<div class="vcard-body">' +
-          '<div class="vcard-title">' + (v.titulo || '').replace(/</g, '&lt;') + '</div>' +
-          '<div class="vcard-meta">' + (v.autor ? '👤 ' + v.autor : '🎥 Video') + '</div>' +
-        '</div>' +
-      '</a>';
+      const titulo = (v.titulo || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const autor = v.autor ? `👤 ${v.autor}` : '🎥 Video';
+      return `
+        <a class="vcard" href="/videos/${v.slug}">
+          <div class="vcard-media">
+            <img src="${thumb}" alt="${titulo}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">
+            <div class="vcard-badge">${cat}</div>
+            <div class="vcard-play">▶</div>
+          </div>
+          <div class="vcard-body">
+            <div class="vcard-title">${titulo}</div>
+            <div class="vcard-meta">${autor}</div>
+          </div>
+        </a>
+      `;
     }).join('');
   } catch(e) {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Error: ' + e.message + '</div>';
