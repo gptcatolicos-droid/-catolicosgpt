@@ -2816,6 +2816,109 @@ app.delete('/api/admin/videos/:slug', auth.authenticateToken, auth.requireAdmin,
   res.json({ ok });
 });
 
+
+// ════════════════════════════════════════════════════════════════
+// VIDEOS — Páginas web: galería y detalle individual
+// ════════════════════════════════════════════════════════════════
+app.get('/videos', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'videos.html'));
+});
+
+app.get('/videos/:slug', (req, res) => {
+  const v = videosModule.getVideoBySlug(req.params.slug);
+  if (!v) return res.status(404).sendFile(path.join(__dirname, 'public', 'videos.html'));
+
+  const titulo = (v.titulo || 'Video').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const descripcion = (v.descripcion || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  res.send(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${titulo} · CatolicosGPT</title>
+<meta name="description" content="${descripcion}">
+<meta name="keywords" content="${v.keywords || ''}">
+<link rel="canonical" href="https://catolicosgpt.com/videos/${v.slug}">
+<meta property="og:type" content="video.other">
+<meta property="og:title" content="${titulo}">
+<meta property="og:description" content="${descripcion}">
+<meta property="og:image" content="${v.thumbnailHQ || v.thumbnail}">
+<meta property="og:url" content="https://catolicosgpt.com/videos/${v.slug}">
+<meta property="og:video" content="${v.embedUrl}">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoObject","name":"${titulo}","description":"${descripcion}","thumbnailUrl":"${v.thumbnailHQ || v.thumbnail}","uploadDate":"${v.fechaCreacion}","embedUrl":"${v.embedUrl}","contentUrl":"${v.watchUrl}"}
+</script>
+<style>
+.shell{max-width:960px;margin:0 auto;padding:30px clamp(16px,4vw,32px)}
+.video-frame{aspect-ratio:16/9;background:#000;border-radius:var(--r-lg);overflow:hidden;margin-bottom:24px;box-shadow:var(--shadow-md)}
+.video-frame iframe{width:100%;height:100%;border:0;display:block}
+.video-meta{margin-bottom:30px}
+.video-title{font-family:var(--font-display);font-size:clamp(24px,4vw,36px);font-weight:700;color:var(--espresso);line-height:1.2;margin-bottom:8px}
+.video-info{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--ink-3);margin-bottom:16px}
+.video-info .tag{padding:4px 12px;background:var(--cream-2);border:1px solid var(--hairline-2);border-radius:99px;color:var(--ink-2)}
+.video-desc{font-family:var(--font-display);font-size:16px;color:var(--ink);line-height:1.6;padding:20px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:var(--r-md);border-left:3px solid var(--gold)}
+.share-row{display:flex;gap:8px;margin:24px 0;flex-wrap:wrap}
+.share-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;font-weight:600;color:var(--espresso);background:#fff;border:1px solid var(--hairline-2);border-radius:99px;cursor:pointer;text-decoration:none;transition:.15s}
+.share-pill:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.share-wa:hover{background:#25D366;color:#fff;border-color:#25D366}
+.share-x:hover{background:#000;color:#fff;border-color:#000}
+.share-fb:hover{background:#1877F2;color:#fff;border-color:#1877F2}
+@media (max-width:768px){
+  .nav{padding:8px 12px;height:56px}
+  .brand-mark{width:28px;height:28px}
+  .brand-word{font-size:15px}
+  .nav-link:not(.active):not(.nav-user){display:none}
+}
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="/" class="brand" style="text-decoration:none">
+    <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/></svg></div>
+    <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
+  </a>
+  <nav class="nav-links">
+    <a class="nav-link" href="/">Chat IA</a>
+    <a class="nav-link" href="/infografias">Infografías</a>
+    <a class="nav-link active" href="/videos">Videos</a>
+    <a class="nav-link" href="/misas">Misas</a>
+    <a class="nav-link" href="/planes">Planes</a>
+  </nav>
+</header>
+<div class="shell">
+  <div class="video-frame">
+    <iframe src="https://www.youtube.com/embed/${v.youtubeId}?rel=0" title="${titulo}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+  </div>
+  <div class="video-meta">
+    <h1 class="video-title">${titulo}</h1>
+    <div class="video-info">
+      ${v.autor ? '<span class="tag">👤 ' + v.autor + '</span>' : ''}
+      <span class="tag">📂 ${v.categoria || 'video'}</span>
+      <span class="tag">📅 ${new Date(v.fechaCreacion).toLocaleDateString('es-ES', {day:'numeric',month:'short',year:'numeric'})}</span>
+    </div>
+    <div class="video-desc">${descripcion}</div>
+    <div class="share-row">
+      <a class="share-pill share-wa" target="_blank" href="https://wa.me/?text=${encodeURIComponent(titulo + ' · CatolicosGPT')}%20https://catolicosgpt.com/videos/${v.slug}">WhatsApp</a>
+      <a class="share-pill share-x" target="_blank" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(titulo)}&url=https://catolicosgpt.com/videos/${v.slug}">X</a>
+      <a class="share-pill share-fb" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://catolicosgpt.com/videos/${v.slug}">Facebook</a>
+      <a class="share-pill" href="${v.watchUrl}" target="_blank">▶ Ver en YouTube</a>
+      <a class="share-pill" href="/videos">← Volver a galería</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>`);
+});
+
+// ════════════════════════════════════════════════════════════════
+// MISAS — Página web
+// ════════════════════════════════════════════════════════════════
+app.get('/misas', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'misas.html'));
+});
+
 // ════════════════════════════════════════════════════════════════
 // MISAS API — Búsqueda combinada (scraping + IA)
 // ════════════════════════════════════════════════════════════════
