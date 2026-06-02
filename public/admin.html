@@ -676,32 +676,44 @@ async function loadCatalogStatus() {
 }
 
 async function rebuildCatalog() {
-  if (!confirm('Esto reconstruirá el catálogo desde Cloudinary. Las infografías locales con metadata válida se restaurarán. ¿Continuar?')) return;
+  if (!confirm('Esto reconstruirá el catálogo desde Cloudinary.\n\nRecupera TODAS las infografías (viejas y nuevas) escaneando el folder catolicosgpt/infografias en Cloudinary.\n\n¿Continuar?')) return;
   const btn = document.getElementById('rebuild-btn');
   const status = document.getElementById('rebuild-status');
   btn.disabled = true;
   btn.textContent = '⏳ Reconstruyendo...';
   status.className = 'status show info';
-  status.textContent = 'Consultando Cloudinary (puede tomar 30-60s si hay muchas imágenes)...';
+  status.innerHTML = '⏳ Consultando Cloudinary (puede tomar 30-60s si hay muchas imágenes)...';
   try {
     const r = await fetch('/api/admin/rebuild-catalog', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Error');
+    if (!r.ok) {
+      const errDetail = 'Error: ' + (d.error || 'desconocido') +
+        (d.stack ? '\n\nStack: ' + d.stack : '') +
+        (d.cloudinaryConfigured === false ? '\n\n⚠️ Cloudinary no está configurado. Revisa env vars: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET' : '') +
+        (d.cloud_name === false ? '\n• Falta CLOUDINARY_CLOUD_NAME' : '') +
+        (d.api_key === false ? '\n• Falta CLOUDINARY_API_KEY' : '') +
+        (d.api_secret === false ? '\n• Falta CLOUDINARY_API_SECRET' : '');
+      throw new Error(errDetail);
+    }
     status.className = 'status show ok';
-    status.innerHTML = '✅ Recovery completado.<br>' +
-      '<strong>Recursos en Cloudinary:</strong> ' + d.resources_scanned + '<br>' +
-      '<strong>Existían:</strong> ' + d.existing + '<br>' +
-      '<strong>Recuperadas:</strong> ' + d.recovered + '<br>' +
-      '<strong>Total ahora:</strong> ' + d.total;
+    status.innerHTML = '✅ <strong>Recovery completado.</strong><br><br>' +
+      '📦 <strong>Recursos en Cloudinary:</strong> ' + d.resources_scanned + '<br>' +
+      '✨ <strong>Vía context (V5.5+):</strong> ' + (d.recovered_via_context || 0) + '<br>' +
+      '🔧 <strong>Vía public_id (legacy):</strong> ' + (d.recovered_via_public_id || 0) + '<br>' +
+      '⏭️ <strong>Saltadas:</strong> ' + (d.skipped || 0) + '<br>' +
+      '🗂️ <strong>Existían:</strong> ' + d.existing + '<br>' +
+      '✅ <strong>Agregadas:</strong> ' + d.recovered + '<br>' +
+      '📚 <strong>Total ahora:</strong> ' + d.total;
     loadList();
     loadStats();
     loadCatalogStatus();
   } catch(e) {
     status.className = 'status show err';
-    status.textContent = '❌ ' + e.message;
+    status.innerHTML = '❌ <strong>' + e.message.split('\n')[0] + '</strong>' +
+      (e.message.includes('\n') ? '<pre style="margin-top:8px;font-size:11px;white-space:pre-wrap;background:rgba(0,0,0,0.05);padding:8px;border-radius:6px">' + e.message.split('\n').slice(1).join('\n').replace(/</g, '&lt;') + '</pre>' : '');
   } finally {
     btn.disabled = false;
     btn.textContent = '🔄 Reconstruir catálogo desde Cloudinary';

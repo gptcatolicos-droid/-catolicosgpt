@@ -2512,75 +2512,155 @@ app.get('/sitemap.xml', (req, res) => {
 
 
 // ── ADMIN: Reconstruir catálogo desde Cloudinary (recovery después de deploy) ──
+// VERSIÓN ROBUSTA: recupera infografias VIEJAS (sin context metadata) Y NUEVAS
 app.post('/api/admin/rebuild-catalog', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
-  if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-    return res.status(500).json({ error: 'Cloudinary no configurado. Sin backup posible.' });
+  if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET || !process.env.CLOUDINARY_CLOUD_NAME) {
+    return res.status(500).json({
+      error: 'Cloudinary no configurado',
+      cloud_name: !!process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: !!process.env.CLOUDINARY_API_KEY,
+      api_secret: !!process.env.CLOUDINARY_API_SECRET
+    });
   }
+
   try {
     const cloudinary = require('cloudinary').v2;
-    console.log('[Rebuild] Iniciando rebuild desde Cloudinary...');
 
-    // Listar TODOS los recursos con tag 'catolicosgpt' (paginado)
+    // CRITICAL: configurar cloudinary EXPLÍCITAMENTE (en este endpoint nuevo no hereda config del módulo)
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true
+    });
+
+    console.log('[Rebuild] Cloudinary config OK, cloud:', process.env.CLOUDINARY_CLOUD_NAME);
+    console.log('[Rebuild] 🔍 Buscando recursos con prefix catolicosgpt/infografias...');
+
+    // Usar resources con PREFIX (no tags) — más confiable, encuentra TODO lo subido al folder
     let resources = [];
     let nextCursor = null;
+    let pages = 0;
     do {
-      const result = await cloudinary.api.resources_by_tag('catolicosgpt', {
+      const opts = {
+        type: 'upload',
+        prefix: 'catolicosgpt/infografias',
         max_results: 500,
         context: true,
-        tags: true,
-        ...(nextCursor ? { next_cursor: nextCursor } : {})
-      });
+        tags: true
+      };
+      if (nextCursor) opts.next_cursor = nextCursor;
+
+      console.log('[Rebuild] Página', pages + 1, '— cursor:', nextCursor ? 'sí' : 'no');
+      const result = await cloudinary.api.resources(opts);
       resources = resources.concat(result.resources || []);
       nextCursor = result.next_cursor;
+      pages++;
+      if (pages > 30) { console.warn('[Rebuild] Safety break en 30 pages'); break; }
     } while (nextCursor);
 
-    console.log(`[Rebuild] ${resources.length} recursos encontrados en Cloudinary`);
+    console.log('[Rebuild] ✅', resources.length, 'recursos encontrados en Cloudinary');
 
-    // Agrupar por slug (cada slug es una infografía, puede tener múltiples slides)
+    if (!resources.length) {
+      return res.json({ ok: true, recovered: 0, existing: 0, total: 0, resources_scanned: 0, message: 'No se encontraron recursos en Cloudinary con prefix catolicosgpt/infografias' });
+    }
+
+    // Agrupar por slug — fallback inteligente cuando no hay context
     const bySlug = {};
+    let recoveredViaContext = 0;
+    let recoveredViaPublicId = 0;
+    let skipped = 0;
+
     for (const r of resources) {
-      const ctx = r.context?.custom || r.context || {};
-      const slug = ctx.slug;
-      if (!slug) continue; // Sin metadata = no recuperable
+      const ctx = (r.context && r.context.custom) || r.context || {};
+      let slug = ctx.slug;
+      let slideNum = parseInt(ctx.slide) || 1;
+      let viaContext = true;
+
+      // FALLBACK: si no hay context, parsear del public_id
+      // Formats conocidos:
+      //   catolicosgpt/infografias/{slug}-{index}-{timestamp}     (auto-generadas)
+      //   catolicosgpt/infografias/admin-{slug}-{slide}-{timestamp} (admin upload v5.5+)
+      //   catolicosgpt/infografias/admin-{slug}-{timestamp}       (admin upload v5.4)
+      if (!slug && r.public_id) {
+        const pid = r.public_id.replace('catolicosgpt/infografias/', '');
+        // Probar patrón admin con slide
+        let m = pid.match(/^admin-(.+?)-(\d+)-\d{10,}$/);
+        if (m) {
+          slug = m[1];
+          slideNum = parseInt(m[2]) + 1; // admin guarda 0-indexed
+          viaContext = false;
+        } else {
+          // Patrón admin simple (sin slide explícito)
+          m = pid.match(/^admin-(.+?)-\d{10,}$/);
+          if (m) {
+            slug = m[1];
+            viaContext = false;
+          } else {
+            // Patrón auto-generado: {slug}-{index}-{timestamp}
+            m = pid.match(/^(.+?)-(\d+)-\d{10,}$/);
+            if (m) {
+              slug = m[1];
+              slideNum = parseInt(m[2]) + 1;
+              viaContext = false;
+            }
+          }
+        }
+      }
+
+      if (!slug) {
+        skipped++;
+        console.warn('[Rebuild] ⚠️ Sin slug:', r.public_id);
+        continue;
+      }
+
+      if (viaContext) recoveredViaContext++;
+      else recoveredViaPublicId++;
+
+      // Tipo desde tags
+      const tags = r.tags || [];
+      let tipo = ctx.tipo || 'santo';
+      if (tags.includes('serie') || tags.includes('carrusel')) tipo = 'serie';
 
       if (!bySlug[slug]) {
         bySlug[slug] = {
           slug,
-          titulo: ctx.titulo || slug,
-          tema: ctx.titulo || slug,
+          titulo: ctx.titulo || slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          tema: ctx.titulo || slug.replace(/-/g, ' '),
           descripcion: ctx.descripcion || '',
           keywords: ctx.keywords || '',
           categoria: ctx.categoria || 'devocional',
-          tipo: ctx.tipo || 'santo',
-          fecha: ctx.fecha || r.created_at?.slice(0, 10),
-          esCarrusel: ctx.es_carrusel === 'true',
+          tipo,
+          fecha: ctx.fecha || (r.created_at ? r.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10)),
+          esCarrusel: ctx.es_carrusel === 'true' || tags.includes('carrusel'),
           totalSlides: parseInt(ctx.total_slides) || 1,
           imagenes: []
         };
       }
       bySlug[slug].imagenes.push({
         url: r.secure_url,
-        slide: parseInt(ctx.slide) || 1,
-        model: 'admin-upload',
-        formato: '1:1',
-        sizeLabel: r.width + 'x' + r.height
+        slide: slideNum,
+        model: ctx.tipo ? 'admin-upload' : 'auto-generated',
+        formato: r.height > r.width ? '9:16' : (r.width > r.height ? '16:9' : '1:1'),
+        sizeLabel: r.width + 'x' + r.height,
+        publicId: r.public_id
       });
     }
 
-    // Ordenar imágenes por slide dentro de cada grupo
+    // Ordenar imágenes por slide
     Object.values(bySlug).forEach(inf => {
       inf.imagenes.sort((a, b) => a.slide - b.slide);
       inf.totalSlides = inf.imagenes.length;
       inf.esCarrusel = inf.imagenes.length > 1;
     });
 
-    // Construir el catálogo
+    // Mergear con catálogo existente (no perder lo nuevo)
     const { loadCatalog, saveCatalog } = require('./infografias-module');
     const existing = loadCatalog();
     const existingSlugs = new Set((existing.infografias || []).map(i => i.slug));
 
     const recovered = Object.values(bySlug).map(inf => ({
-      id: 'inf-' + Date.now() + '-' + inf.slug,
+      id: 'inf-recovered-' + inf.slug + '-' + Date.now(),
       slug: inf.slug,
       tema: inf.tema,
       titulo: inf.titulo,
@@ -2589,16 +2669,15 @@ app.post('/api/admin/rebuild-catalog', auth.authenticateToken, auth.requireAdmin
       categoria: inf.categoria,
       tipo: inf.tipo,
       altText: inf.titulo,
-      fechaCreacion: (inf.fecha || new Date().toISOString().slice(0, 10)) + 'T00:00:00.000Z',
-      fechaISO: inf.fecha || new Date().toISOString().slice(0, 10),
+      fechaCreacion: inf.fecha + 'T00:00:00.000Z',
+      fechaISO: inf.fecha,
       publicado: true,
       totalSlides: inf.totalSlides,
       esCarrusel: inf.esCarrusel,
-      uploadedBy: 'admin',
+      uploadedBy: 'rebuild',
       imagenes: inf.imagenes
     }));
 
-    // Mergear con el catálogo existente (no perder lo que ya hay)
     const merged = [...(existing.infografias || [])];
     let added = 0;
     for (const inf of recovered) {
@@ -2608,28 +2687,43 @@ app.post('/api/admin/rebuild-catalog', auth.authenticateToken, auth.requireAdmin
       }
     }
 
-    // Ordenar por fecha descendente
     merged.sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
 
     const newCatalog = {
-      version: '5.0',
+      version: '6.0',
       total: merged.length,
       categorias: [...new Set(merged.map(i => i.categoria).filter(Boolean))],
       infografias: merged
     };
     saveCatalog(newCatalog);
 
-    console.log(`[Rebuild] ✅ ${added} infografías nuevas recuperadas. Total: ${merged.length}`);
+    console.log('[Rebuild] ✅ COMPLETADO');
+    console.log('  - Recursos escaneados:', resources.length);
+    console.log('  - Recuperadas vía context (V5.5+):', recoveredViaContext);
+    console.log('  - Recuperadas vía public_id (legacy):', recoveredViaPublicId);
+    console.log('  - Saltadas (sin slug parseable):', skipped);
+    console.log('  - Existían:', existing.infografias?.length || 0);
+    console.log('  - Nuevas agregadas:', added);
+    console.log('  - Total final:', merged.length);
+
     res.json({
       ok: true,
       recovered: added,
       existing: existing.infografias?.length || 0,
       total: merged.length,
-      resources_scanned: resources.length
+      resources_scanned: resources.length,
+      recovered_via_context: recoveredViaContext,
+      recovered_via_public_id: recoveredViaPublicId,
+      skipped
     });
   } catch(e) {
-    console.error('[Rebuild]', e);
-    res.status(500).json({ error: e.message });
+    console.error('[Rebuild] FATAL:', e);
+    res.status(500).json({
+      error: e.message,
+      stack: e.stack?.split('\n').slice(0, 5).join(' | '),
+      http_code: e.http_code,
+      cloudinaryConfigured: !!(process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET && process.env.CLOUDINARY_CLOUD_NAME)
+    });
   }
 });
 
