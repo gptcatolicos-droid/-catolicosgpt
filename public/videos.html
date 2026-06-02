@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Videos Católicos · CatolicosGPT</title>
+<meta name="description" content="Videos católicos: homilías, catequesis, testimonios, oraciones, doctrina, vidas de santos. Curados por CatolicosGPT.">
+<meta name="theme-color" content="#F6F0E3">
+<link rel="canonical" href="https://catolicosgpt.com/videos">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.videos-shell { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); }
+.videos-hero { text-align: center; padding: 60px 20px 40px; }
+.videos-hero h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(36px, 6vw, 56px); color: var(--espresso); line-height: 1.05; margin-bottom: 12px; }
+.videos-hero h1 .it { font-style: italic; color: transparent; background: var(--grad-gold); -webkit-background-clip: text; background-clip: text; }
+.videos-hero p { font-family: var(--font-display); font-size: clamp(15px, 2.2vw, 18px); color: var(--ink-2); max-width: 600px; margin: 0 auto; }
+
+.filter-bar { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 30px auto 36px; flex-wrap: wrap; max-width: 800px; }
+.filter-input { flex: 1; min-width: 200px; max-width: 360px; padding: 10px 16px; font-size: 14px; background: #fff; border: 1px solid var(--hairline-2); border-radius: 99px; font-family: var(--font-ui); }
+.filter-input:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+.cat-chip { padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--ink-2); background: var(--cream-2); border: 1px solid var(--hairline); border-radius: 99px; cursor: pointer; transition: .18s; }
+.cat-chip:hover { color: var(--espresso); border-color: var(--gold); }
+.cat-chip.active { background: var(--espresso); color: #f3e4c6; border-color: var(--espresso); }
+
+.videos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; padding-bottom: 60px; }
+
+.vcard { background: #fff; border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; transition: .2s var(--ease); text-decoration: none; color: inherit; display: block; }
+.vcard:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--gold); }
+.vcard-media { aspect-ratio: 16/9; background: #000 center/cover; position: relative; }
+.vcard-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 54px; height: 54px; background: rgba(0,0,0,.7); border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 22px; transition: .18s; }
+.vcard:hover .vcard-play { background: var(--gold-deep); transform: translate(-50%, -50%) scale(1.1); }
+.vcard-badge { position: absolute; top: 8px; left: 8px; padding: 3px 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; border-radius: 4px; }
+.vcard-body { padding: 12px 14px; }
+.vcard-title { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vcard-meta { font-size: 11px; color: var(--ink-3); display: flex; gap: 8px; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: var(--ink-3); }
+.empty-state h2 { font-family: var(--font-display); color: var(--ink-2); margin-bottom: 8px; }
+
+@media (max-width: 768px) {
+  .nav { padding: 8px 12px; height: 56px; }
+  .brand-mark { width: 28px; height: 28px; }
+  .brand-word { font-size: 15px; white-space: nowrap; }
+  .nav-link { padding: 5px 8px; font-size: 12px; }
+  .nav-link:not(.active):not(.nav-user) { display: none; }
+  .videos-hero { padding: 36px 16px 28px; }
+  .videos-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .vcard-title { font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a href="/" class="brand" style="text-decoration:none">
+    <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/></svg></div>
+    <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
+  </a>
+  <nav class="nav-links">
+    <a class="nav-link" href="/">Chat IA</a>
+    <a class="nav-link" href="/infografias">Infografías</a>
+    <a class="nav-link active" href="/videos">Videos</a>
+    <a class="nav-link" href="/misas">Misas</a>
+    <a class="nav-link" href="/planes">Planes</a>
+    <a class="nav-user" href="/"><span class="av">D</span><span>Mi cuenta</span></a>
+  </nav>
+</header>
+
+<div class="videos-shell">
+  <section class="videos-hero">
+    <h1>Videos <span class="it">Católicos</span></h1>
+    <p>Homilías, catequesis, testimonios y enseñanzas. Curado para ti.</p>
+  </section>
+
+  <div class="filter-bar">
+    <input type="text" class="filter-input" id="search" placeholder="🔍 Buscar videos..." oninput="filtrar()">
+    <button class="cat-chip active" data-cat="" onclick="setCat('', this)">Todos</button>
+    <button class="cat-chip" data-cat="homilia" onclick="setCat('homilia', this)">Homilías</button>
+    <button class="cat-chip" data-cat="catequesis" onclick="setCat('catequesis', this)">Catequesis</button>
+    <button class="cat-chip" data-cat="testimonio" onclick="setCat('testimonio', this)">Testimonios</button>
+    <button class="cat-chip" data-cat="oracion" onclick="setCat('oracion', this)">Oración</button>
+    <button class="cat-chip" data-cat="doctrina" onclick="setCat('doctrina', this)">Doctrina</button>
+    <button class="cat-chip" data-cat="vida-santos" onclick="setCat('vida-santos', this)">Santos</button>
+  </div>
+
+  <div id="grid" class="videos-grid"></div>
+</div>
+
+<footer style="background:var(--cream-3);padding:30px 20px;text-align:center;border-top:1px solid var(--hairline);color:var(--ink-3);font-size:13px">
+  © 2026 <a href="/" style="color:var(--gold-deep);text-decoration:none;font-weight:600">CatolicosGPT</a> · <a href="/infografias" style="color:var(--gold-deep);text-decoration:none">Infografías</a> · <a href="/videos" style="color:var(--gold-deep);text-decoration:none">Videos</a> · <a href="/misas" style="color:var(--gold-deep);text-decoration:none">Misas</a>
+</footer>
+
+<script>
+let currentCat = '';
+let currentQ = '';
+
+// Pre-cargar query desde URL (?q=san+jose)
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('q')) {
+  currentQ = urlParams.get('q');
+  document.getElementById('search').value = currentQ;
+}
+if (urlParams.get('categoria')) {
+  currentCat = urlParams.get('categoria');
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.toggle('active', c.dataset.cat === currentCat));
+}
+
+let searchTimer;
+function filtrar() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentQ = document.getElementById('search').value;
+    loadVideos();
+  }, 250);
+}
+
+function setCat(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  loadVideos();
+}
+
+async function loadVideos() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--ink-3)">⏳ Cargando...</div>';
+  try {
+    const params = new URLSearchParams();
+    if (currentCat) params.set('categoria', currentCat);
+    if (currentQ) params.set('q', currentQ);
+    params.set('limit', '50');
+    const r = await fetch('/api/videos?' + params.toString());
+    const d = await r.json();
+    if (!d.items || !d.items.length) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><h2>Sin videos por ahora</h2><p>' +
+        (currentQ ? 'No hay resultados para "' + currentQ + '"' : 'Próximamente videos en esta categoría.') + '</p></div>';
+      return;
+    }
+    grid.innerHTML = d.items.map(v => {
+      const thumb = v.thumbnailHQ || v.thumbnail || ('https://i.ytimg.com/vi/' + v.youtubeId + '/maxresdefault.jpg');
+      const cat = (v.categoria || 'video').replace('-', ' ');
+      return '<a class="vcard" href="/videos/' + v.slug + '">' +
+        '<div class="vcard-media" style="background-image:url(\\'' + thumb + '\\')">' +
+          '<div class="vcard-badge">' + cat + '</div>' +
+          '<div class="vcard-play">▶</div>' +
+        '</div>' +
+        '<div class="vcard-body">' +
+          '<div class="vcard-title">' + (v.titulo || '').replace(/</g, '&lt;') + '</div>' +
+          '<div class="vcard-meta">' + (v.autor ? '👤 ' + v.autor : '🎥 Video') + '</div>' +
+        '</div>' +
+      '</a>';
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Error: ' + e.message + '</div>';
+  }
+}
+
+loadVideos();
+</script>
+</body>
+</html>

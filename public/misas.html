@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Horarios de Misa · CatolicosGPT</title>
+<meta name="description" content="Encuentra horarios de Misa en parroquias católicas de tu ciudad. Búsqueda inteligente para toda América Latina.">
+<meta name="theme-color" content="#F6F0E3">
+<link rel="canonical" href="https://catolicosgpt.com/misas">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.misas-shell { max-width: 900px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); }
+.misas-hero { text-align: center; padding: 50px 20px 30px; }
+.misas-hero h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 5vw, 50px); color: var(--espresso); line-height: 1.05; margin-bottom: 12px; }
+.misas-hero h1 .it { font-style: italic; color: transparent; background: var(--grad-gold); -webkit-background-clip: text; background-clip: text; }
+.misas-hero p { font-family: var(--font-display); font-size: 16px; color: var(--ink-2); max-width: 540px; margin: 0 auto; }
+
+.search-card { background: #fff; border: 1.5px solid var(--gold); border-radius: var(--r-xl); padding: 26px; margin-bottom: 30px; box-shadow: 0 10px 40px rgba(188,138,54,.1); }
+.search-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.search-row input { flex: 1; min-width: 200px; padding: 12px 16px; font-size: 14px; background: var(--cream-3); border: 1px solid var(--hairline-2); border-radius: 10px; font-family: var(--font-ui); }
+.search-row input:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+.btn-search { padding: 12px 22px; background: var(--espresso); color: #f3e4c6; border: none; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: .18s; }
+.btn-search:hover { background: var(--maroon); transform: translateY(-1px); }
+.btn-geo { padding: 12px 22px; background: var(--grad-gold); color: #3a2a0c; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: .18s; }
+.btn-geo:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.geo-hint { font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+
+.results { min-height: 200px; }
+.results-card { background: #fff; border: 1px solid var(--hairline); border-radius: var(--r-lg); padding: 26px; margin-bottom: 16px; font-size: 14.5px; line-height: 1.7; }
+.results-card h2 { font-family: var(--font-display); color: var(--espresso); border-bottom: 1px solid var(--gold); padding-bottom: 8px; margin: 14px 0 12px; }
+.results-card h3 { font-family: var(--font-display); color: var(--maroon); margin: 18px 0 8px; }
+.results-card strong { color: var(--gold-deep); }
+.results-card ul { padding-left: 22px; }
+.results-card blockquote { border-left: 3px solid var(--gold); padding: 8px 16px; background: rgba(188,138,54,.06); margin: 14px 0; font-style: italic; }
+.fuente-tag { display: inline-block; padding: 2px 10px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-deep); background: rgba(188,138,54,.1); border-radius: 99px; margin-right: 6px; }
+
+.loading { text-align: center; padding: 40px; color: var(--ink-3); }
+.empty { text-align: center; padding: 40px; color: var(--ink-3); }
+
+@media (max-width: 600px) {
+  .nav { padding: 8px 12px; height: 56px; }
+  .brand-mark { width: 28px; height: 28px; }
+  .brand-word { font-size: 15px; }
+  .nav-link:not(.active):not(.nav-user) { display: none; }
+  .search-row { flex-direction: column; }
+  .search-row input, .btn-search, .btn-geo { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a href="/" class="brand" style="text-decoration:none">
+    <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/></svg></div>
+    <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
+  </a>
+  <nav class="nav-links">
+    <a class="nav-link" href="/">Chat IA</a>
+    <a class="nav-link" href="/infografias">Infografías</a>
+    <a class="nav-link" href="/videos">Videos</a>
+    <a class="nav-link active" href="/misas">Misas</a>
+    <a class="nav-link" href="/planes">Planes</a>
+    <a class="nav-user" href="/"><span class="av">D</span><span>Mi cuenta</span></a>
+  </nav>
+</header>
+
+<div class="misas-shell">
+  <section class="misas-hero">
+    <h1>Horarios de <span class="it">Misa</span></h1>
+    <p>Encuentra parroquias católicas cerca de ti en toda América Latina. Búsqueda combinada con datos de horariosdemisa.com + IA.</p>
+  </section>
+
+  <div class="search-card">
+    <div class="search-row">
+      <input type="text" id="query" placeholder="Buscar: parroquia, barrio, ciudad...">
+      <button class="btn-search" onclick="buscar()">🔍 Buscar</button>
+    </div>
+    <div class="search-row">
+      <button class="btn-geo" onclick="usarMiUbicacion()">📍 Usar mi ubicación actual</button>
+      <span class="geo-hint">El navegador pedirá permiso de ubicación.</span>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="empty">
+      <p style="font-size:48px;margin-bottom:10px">⛪</p>
+      <h3 style="font-family:var(--font-display);color:var(--ink-2);margin-bottom:6px">Busca horarios de Misa</h3>
+      <p>Escribe el nombre de tu ciudad, barrio o parroquia.<br>O usa tu ubicación actual para encontrar Misas cerca.</p>
+    </div>
+  </div>
+</div>
+
+<footer style="background:var(--cream-3);padding:30px 20px;text-align:center;border-top:1px solid var(--hairline);color:var(--ink-3);font-size:13px;margin-top:40px">
+  © 2026 <a href="/" style="color:var(--gold-deep);text-decoration:none;font-weight:600">CatolicosGPT</a> · Datos de <a href="https://horariosdemisa.com" target="_blank" style="color:var(--gold-deep)">horariosdemisa.com</a> + GPT-4o
+</footer>
+
+<script>
+function escapeHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function parseMarkdown(t) {
+  return escapeHtml(t)
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.+<\/li>\n?)+/g, m => '<ul>' + m + '</ul>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--gold-deep)">$1</a>')
+    .replace(/\n\n+/g, '</p><p>')
+    .replace(/^([^<].+)$/gm, '<p>$1</p>')
+    .replace(/<p><(h[1-3]|blockquote|ul)/g, '<$1')
+    .replace(/<\/(h[1-3]|blockquote|ul)><\/p>/g, '</$1>');
+}
+
+async function buscar(coords) {
+  const query = document.getElementById('query').value.trim();
+  if (!query && !coords) {
+    document.getElementById('results').innerHTML = '<div class="empty"><p>Escribe una ciudad o usa tu ubicación.</p></div>';
+    return;
+  }
+  document.getElementById('results').innerHTML = '<div class="loading">⏳ Buscando parroquias... (puede tomar 5-15 segundos)</div>';
+  try {
+    const body = { query };
+    if (coords) { body.lat = coords.lat; body.lon = coords.lon; }
+    const r = await fetch('/api/misas/buscar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'Error');
+
+    const fuentesHtml = (d.fuentes || []).map(f => '<span class="fuente-tag">' + f + '</span>').join('');
+    document.getElementById('results').innerHTML =
+      '<div class="results-card">' +
+      (d.ciudad ? '<div style="margin-bottom:14px"><span class="fuente-tag" style="background:var(--espresso);color:#f3e4c6;border:none">📍 ' + d.ciudad + '</span>' + fuentesHtml + '</div>' : fuentesHtml ? '<div style="margin-bottom:14px">' + fuentesHtml + '</div>' : '') +
+      parseMarkdown(d.respuesta || 'Sin resultados.') +
+      '</div>';
+  } catch(e) {
+    document.getElementById('results').innerHTML = '<div class="empty" style="color:var(--red)">❌ ' + e.message + '</div>';
+  }
+}
+
+function usarMiUbicacion() {
+  if (!navigator.geolocation) {
+    alert('Tu navegador no soporta geolocalización.');
+    return;
+  }
+  document.getElementById('results').innerHTML = '<div class="loading">📍 Obteniendo tu ubicación...</div>';
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      console.log('[Misas] Coords:', lat, lon);
+      // Reverse geocode para obtener ciudad
+      try {
+        const r = await fetch('/api/misas/reverse-geocode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat, lon })
+        });
+        const geo = await r.json();
+        if (geo.ciudad) {
+          document.getElementById('query').value = geo.ciudad;
+        }
+      } catch(e) {}
+      buscar({ lat, lon });
+    },
+    (err) => {
+      document.getElementById('results').innerHTML = '<div class="empty" style="color:var(--red)">❌ No se pudo obtener tu ubicación. Permiso denegado o GPS no disponible.<br>Escribe manualmente tu ciudad arriba.</div>';
+    },
+    { enableHighAccuracy: false, timeout: 10000 }
+  );
+}
+
+document.getElementById('query').addEventListener('keypress', e => {
+  if (e.key === 'Enter') buscar();
+});
+</script>
+</body>
+</html>

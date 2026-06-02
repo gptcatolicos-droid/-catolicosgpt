@@ -572,12 +572,18 @@ function showResult(inf) {
   box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+// Pre-cargar URL params (?q=san+jose&categoria=santo)
+const _urlParams = new URLSearchParams(window.location.search);
+const _preQ = _urlParams.get('q') || '';
+const _preCat = _urlParams.get('categoria') || '';
+
 // ── Gallery ──
 async function loadGrid(reset = false) {
   if (reset) currentPage = 1;
   try {
     const p = new URLSearchParams({ page: currentPage, limit: 20 });
     if (currentFilter !== 'todas') p.set('categoria', currentFilter);
+    if (_preQ) p.set('q', _preQ);
     const r = await fetch('/api/infografias?' + p);
     const d = await r.json();
     document.getElementById('stat-total').textContent = d.total || 0;

@@ -264,6 +264,8 @@ async function send() {
             chatHistory.push({ role: 'assistant', content: fullText });
             addActions(bubble, fullText);
             if (chatHistory.length === 2) saveConversation(val);
+            // Cargar recursos relacionados (infografias + videos)
+            cargarRecursosRelacionados(val, fullText, bubble);
           }
           if (d.error) throw new Error(d.error);
         } catch(e) {}
@@ -275,6 +277,7 @@ async function send() {
       chatHistory.push({ role: 'assistant', content: fullText });
       addActions(bubble, fullText);
       if (chatHistory.length === 2) saveConversation(val);
+      cargarRecursosRelacionados(val, fullText, bubble);
     }
 
   } catch(e) {
@@ -1279,3 +1282,72 @@ function copyText(btn) {
 // Init
 renderHistory();
 loadSantoDelDia(); // Cargar santo del día para el sidebar
+
+
+// ════════════════════════════════════════════════════════════════
+// RECURSOS RELACIONADOS — Aparece al final de cada respuesta del bot
+// ════════════════════════════════════════════════════════════════
+async function cargarRecursosRelacionados(pregunta, respuesta, bubble) {
+  if (!bubble || !respuesta) return;
+  try {
+    const r = await fetch('/api/recursos-relacionados', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: pregunta, answer: respuesta })
+    });
+    const d = await r.json();
+    if (!d.ok) return;
+    const { infografias = [], videos = [], totalInfografias = 0, totalVideos = 0, queryTerm = '' } = d;
+
+    if (!infografias.length && !videos.length) return;
+
+    let html = '<div class="recursos-relacionados" style="margin-top:18px;padding:16px;background:linear-gradient(135deg, rgba(188,138,54,0.05), rgba(94,27,34,0.03));border:1px solid var(--gold);border-radius:14px">';
+    html += '<div style="font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--gold-deep);margin-bottom:12px;display:flex;align-items:center;gap:6px">✨ Recursos relacionados</div>';
+
+    // Infografías
+    if (infografias.length) {
+      html += '<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px">📚 INFOGRAFÍAS</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">';
+      infografias.forEach(inf => {
+        const img = inf.imagenes?.[0]?.url || '';
+        const titulo = (inf.titulo || inf.tema || '').slice(0, 50);
+        html += '<a href="/infografias/' + inf.slug + '" target="_blank" style="text-decoration:none;color:inherit;display:block;background:#fff;border:1px solid var(--hairline);border-radius:10px;overflow:hidden;transition:.18s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'var(--shadow-md)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">';
+        if (img) html += '<div style="aspect-ratio:1;background:#f5edd8 url(\'' + img + '\') center/cover"></div>';
+        else html += '<div style="aspect-ratio:1;display:grid;place-items:center;background:var(--cream-2);font-size:22px">✝</div>';
+        html += '<div style="padding:6px 8px;font-size:11px;font-weight:600;line-height:1.3;color:var(--ink)">' + titulo + '</div>';
+        html += '</a>';
+      });
+      html += '</div>';
+      if (totalInfografias > infografias.length) {
+        html += '<a href="/infografias?q=' + encodeURIComponent(queryTerm) + '" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--gold-deep);text-decoration:none;font-weight:600">Ver todas las ' + totalInfografias + ' infografías de "' + queryTerm + '" →</a>';
+      }
+      html += '</div>';
+    }
+
+    // Videos
+    if (videos.length) {
+      html += '<div style="margin-top:14px"><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px">▶️ VIDEOS</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">';
+      videos.forEach(v => {
+        const thumb = v.thumbnail || v.thumbnailHQ || ('https://i.ytimg.com/vi/' + v.youtubeId + '/maxresdefault.jpg');
+        const titulo = (v.titulo || '').slice(0, 60);
+        html += '<a href="/videos/' + v.slug + '" target="_blank" style="text-decoration:none;color:inherit;display:block;background:#fff;border:1px solid var(--hairline);border-radius:10px;overflow:hidden;transition:.18s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'var(--shadow-md)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">';
+        html += '<div style="aspect-ratio:16/9;background:#000 url(\'' + thumb + '\') center/cover;position:relative">';
+        html += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;background:rgba(0,0,0,.7);border-radius:50%;display:grid;place-items:center;color:#fff;font-size:14px">▶</div>';
+        html += '</div>';
+        html += '<div style="padding:6px 8px;font-size:11px;font-weight:600;line-height:1.3;color:var(--ink)">' + titulo + '</div>';
+        html += '</a>';
+      });
+      html += '</div>';
+      if (totalVideos > videos.length) {
+        html += '<a href="/videos?q=' + encodeURIComponent(queryTerm) + '" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--gold-deep);text-decoration:none;font-weight:600">Ver todos los ' + totalVideos + ' videos de "' + queryTerm + '" →</a>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+    bubble.insertAdjacentHTML('beforeend', html);
+  } catch(e) {
+    console.error('[Recursos]', e);
+  }
+}

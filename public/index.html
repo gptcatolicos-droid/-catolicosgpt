@@ -93,6 +93,8 @@
     <nav class="nav-links">
       <a class="nav-link active" href="/" style="text-decoration:none">Chat IA</a>
       <a class="nav-link" href="/infografias" style="text-decoration:none">Infografías</a>
+      <a class="nav-link" href="/videos" style="text-decoration:none">Videos</a>
+      <a class="nav-link" href="/misas" style="text-decoration:none">Misas</a>
       <a class="nav-link" href="/planes" style="text-decoration:none">Planes</a>
       <a class="nav-user" href="#" id="nav-user-btn" onclick="navUserClick();return false" style="text-decoration:none">
         <span class="av" id="nav-av">?</span>
@@ -112,19 +114,34 @@
       </div>
 
       <div class="side-scroll">
-        <!-- Holy Widgets -->
-        <div class="side-group">Hoy</div>
-        <div class="side-item" onclick="openView('lecturas');closeSb()">
-          <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h7v16H4zM13 4h7v16h-7z"/></svg></span>
+        <!-- Liturgia del día -->
+        <div class="side-group">Liturgia de hoy</div>
+        <div class="side-item" onclick="pedirEnChat('lecturas')">
+          <span class="ic">📖</span>
           <span>Lecturas del día</span>
         </div>
-        <div class="side-item" onclick="openView('santo');closeSb()">
-          <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.866 3.134-7 7-7s7 3.134 7 7"/></svg></span>
+        <div class="side-item" onclick="pedirEnChat('santo')">
+          <span class="ic">✨</span>
           <span>Santo del día</span>
         </div>
-        <div class="side-item" onclick="openView('oracion');closeSb()">
-          <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M5 9l7-7 7 7"/></svg></span>
+        <div class="side-item" onclick="pedirEnChat('oracion')">
+          <span class="ic">🙏</span>
           <span>Oración del día</span>
+        </div>
+
+        <!-- Liturgia de las Horas -->
+        <div class="side-group">Liturgia de las Horas</div>
+        <div class="side-item" onclick="pedirEnChat('laudes')">
+          <span class="ic">🌅</span>
+          <span>Laudes (mañana)</span>
+        </div>
+        <div class="side-item" onclick="pedirEnChat('visperas')">
+          <span class="ic">🌇</span>
+          <span>Vísperas (tarde)</span>
+        </div>
+        <div class="side-item" onclick="pedirEnChat('completas')">
+          <span class="ic">🌙</span>
+          <span>Completas (noche)</span>
         </div>
 
         <!-- Herramientas -->
@@ -132,6 +149,14 @@
         <a class="side-item" href="/infografias" style="text-decoration:none;color:inherit">
           <span class="ic">✨</span>
           <span>Infografías</span>
+        </a>
+        <a class="side-item" href="/videos" style="text-decoration:none;color:inherit">
+          <span class="ic">▶️</span>
+          <span>Videos</span>
+        </a>
+        <a class="side-item" href="/misas" style="text-decoration:none;color:inherit">
+          <span class="ic">⛪</span>
+          <span>Horarios de Misa</span>
         </a>
         <a class="side-item" href="/planes" style="text-decoration:none;color:inherit">
           <span class="ic">⭐</span>
@@ -420,147 +445,47 @@ function sendSuggestion(text) {
   sendMessage();
 }
 
-// Vistas (Lecturas, Santo, Oración)
-// ── openView() — Renderiza Lecturas/Santo/Oración DENTRO del chat (mainframe)
-//    Usa los endpoints Magisterium (fuente OFICIAL de la Iglesia)
-async function openView(id) {
-  // Ocultar empty state, mostrar área de chat
-  document.getElementById('welcome').style.display = 'none';
-  const chatArea = document.getElementById('chat-area');
-  chatArea.style.display = 'flex';
-  chatArea.style.flexDirection = 'column';
-  const inner = document.getElementById('chat-inner');
-
-  // Configuración de cada vista
-  const config = {
-    lecturas: {
-      userMsg: '📖 Muéstrame las lecturas del día',
-      endpoint: '/api/lecturas-magisterium',
-      titulo: 'Lecturas del día',
-      icono: '📖'
-    },
-    santo: {
-      userMsg: '✨ ¿Quién es el santo del día?',
-      endpoint: '/api/santo-magisterium',
-      titulo: 'Santo del día',
-      icono: '✨'
-    },
-    oracion: {
-      userMsg: '🙏 Dame la oración del día',
-      endpoint: '/api/oracion-magisterium',
-      titulo: 'Oración del día',
-      icono: '🙏'
-    }
+// ── Pedir contenido litúrgico vía el flujo normal del chat
+//    (más robusto: el backend detecta el tipo y pre-carga datos de Magisterium)
+function pedirEnChat(tipo) {
+  const prompts = {
+    lecturas: 'Muéstrame las **lecturas de la Misa de hoy** con cita, texto completo y un breve comentario pastoral por cada lectura.',
+    santo: 'Cuéntame quién es el **santo del día de hoy**: su biografía, virtudes principales, por qué se celebra y una oración para pedir su intercesión.',
+    oracion: 'Comparte una **oración profunda para empezar el día**, basada en la espiritualidad católica de hoy.',
+    laudes: 'Comparte las **Laudes (oración de la mañana)** de hoy según la Liturgia de las Horas: himno, salmodia, lectura breve, cántico de Zacarías y oración final.',
+    visperas: 'Comparte las **Vísperas (oración de la tarde)** de hoy según la Liturgia de las Horas: himno, salmodia, lectura breve, Magnificat y oración final.',
+    completas: 'Comparte las **Completas (oración de la noche)** de hoy según la Liturgia de las Horas: examen de conciencia, himno, salmodia, lectura breve, Nunc Dimittis y bendición nocturna.'
   };
-  const cfg = config[id];
-  if (!cfg) return;
+  const texto = prompts[tipo];
+  if (!texto) return;
 
-  // Burbuja de usuario
-  const userRow = document.createElement('div');
-  userRow.className = 'msg-row user-row';
-  userRow.innerHTML = '<div class="av av-user">TÚ</div><div class="bubble bubble-user">' + cfg.userMsg + '</div>';
-  inner.appendChild(userRow);
+  // Cerrar sidebar en mobile
+  if (window.innerWidth <= 860) closeSb();
 
-  // Burbuja del bot (loading)
-  const botRow = document.createElement('div');
-  botRow.className = 'msg-row bot-row';
-  botRow.innerHTML = `
-    <div class="av">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round">
-        <circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/>
-      </svg>
-    </div>
-    <div class="bubble bubble-bot">
-      <div style="display:flex;align-items:center;gap:8px;color:var(--ink-3);font-style:italic">
-        <span class="typing-cursor">▋</span> Consultando Magisterium…
-      </div>
-    </div>`;
-  inner.appendChild(botRow);
-  inner.scrollTop = inner.scrollHeight;
-  const bubble = botRow.querySelector('.bubble-bot');
+  // Asegurar que el welcome está oculto y el chat visible
+  const w = document.getElementById('welcome'); if (w) w.style.display = 'none';
+  const ca = document.getElementById('chat-area');
+  if (ca) { ca.style.display = 'flex'; ca.style.flexDirection = 'column'; }
 
-  // Fetch al endpoint Magisterium
-  try {
-    const r = await fetch(cfg.endpoint);
-    const d = await r.json();
-
-    let html = '<div class="ai-h" style="font-family:var(--font-display);font-weight:700;font-size:22px;color:var(--espresso);margin-bottom:14px">' + cfg.icono + ' ' + cfg.titulo + '</div>';
-    const fuenteBadge = d.fuente === 'magisterium'
-      ? '<span style="display:inline-block;padding:3px 10px;background:rgba(188,138,54,.1);border:1px solid var(--gold);border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:12px">Magisterium · Fuente Oficial</span>'
-      : '';
-    html += fuenteBadge;
-
-    if (id === 'lecturas') {
-      const data = d.data || d;
-      // Magisterium widget shape: { readings: [{title, citation, text}, ...] } o similar
-      const readings = data.readings || data.lecturas || (Array.isArray(data) ? data : []);
-      if (readings && readings.length) {
-        readings.forEach(L => {
-          const t = L.title || L.titulo || L.citation || L.cita || 'Lectura';
-          const cit = L.citation || L.cita || '';
-          const txt = L.text || L.texto || L.contenido || '';
-          html += '<div class="ai-h" style="font-family:var(--font-display);font-size:18px;color:var(--espresso);margin:18px 0 6px">' + t + '</div>';
-          if (cit && cit !== t) html += '<div style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:8px">' + cit + '</div>';
-          html += '<div style="line-height:1.7">' + String(txt).replace(/\n/g, '<br>') + '</div>';
-        });
-      } else if (data.title || data.titulo) {
-        html += '<div class="ai-h">' + (data.title || data.titulo) + '</div>';
-        html += '<div style="line-height:1.7">' + String(data.text || data.texto || data.contenido || JSON.stringify(data)).replace(/\n/g, '<br>') + '</div>';
-      } else {
-        html += '<p style="color:var(--ink-3)">No fue posible obtener las lecturas. Intenta de nuevo en unos minutos.</p>';
-      }
-    } else if (id === 'santo') {
-      const s = d.santo || d.data || d;
-      const nombre = s.name || s.nombre || s.title || s.titulo || 'Santo del día';
-      const fecha = s.feast_date || s.fechaFestivo || s.fecha || '';
-      const bio = s.biography || s.description || s.text || s.texto || s.biografia || s.descripcion || s.contenido || '';
-      html += '<div class="ai-h" style="font-family:var(--font-display);font-size:24px;color:var(--espresso);margin-bottom:6px">' + nombre + '</div>';
-      if (fecha) html += '<div style="font-size:13px;color:var(--gold-deep);font-style:italic;margin-bottom:14px">' + fecha + '</div>';
-      html += '<div style="line-height:1.7">' + String(bio).replace(/\n/g, '<br>') + '</div>';
-    } else if (id === 'oracion') {
-      const o = d.oracion || d.data || d;
-      const titulo = o.title || o.titulo || '';
-      const texto = o.text || o.texto || o.contenido || o.prayer || JSON.stringify(o, null, 2);
-      if (titulo) html += '<div class="ai-h" style="font-family:var(--font-display);font-size:20px;color:var(--espresso);margin-bottom:10px">' + titulo + '</div>';
-      html += '<blockquote style="margin:8px 0;padding:16px 22px;border-left:3px solid var(--gold);background:linear-gradient(120deg, rgba(188,138,54,.07), transparent);border-radius:0 14px 14px 0;font-family:var(--font-display);font-style:italic;font-size:17px;color:var(--coffee);line-height:1.6">' + String(texto).replace(/\n/g, '<br>') + '</blockquote>';
-    }
-
-    // Acciones inferiores
-    html += '<div class="action-row" style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap">';
-    html += '<button class="act-btn" onclick="copiarTextoChat(this)">📋 Copiar</button>';
-    html += '<button class="act-btn" onclick="compartirTextoChat(this,\''+ cfg.titulo +'\')">📤 Compartir</button>';
-    html += '</div>';
-
-    bubble.innerHTML = html;
-    inner.scrollTop = inner.scrollHeight;
-
-    // Guardar en historial si está la función
-    if (typeof chatHistory !== 'undefined') {
-      chatHistory.push({ role: 'user', content: cfg.userMsg });
-      chatHistory.push({ role: 'assistant', content: bubble.innerText });
-    }
-  } catch (e) {
-    bubble.innerHTML = '<div style="color:var(--red)">⚠️ Error al cargar: ' + e.message + '</div>';
+  // Inyectar en el textarea y enviar usando el flujo normal del chat
+  const cin = document.getElementById('cin');
+  if (cin) {
+    cin.value = texto;
+    cin.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  // Usar la función send() del app.js (maneja streaming, history, sources, etc.)
+  if (typeof send === 'function') {
+    setTimeout(() => send(), 60);
+  } else if (typeof sendMessage === 'function') {
+    setTimeout(() => sendMessage(), 60);
+  } else {
+    console.error('[pedirEnChat] send() no disponible');
   }
 }
 
-function copiarTextoChat(btn) {
-  const text = btn.closest('.bubble-bot').innerText;
-  navigator.clipboard.writeText(text);
-  showToast('📋 Copiado al portapapeles');
-}
-
-function compartirTextoChat(btn, titulo) {
-  const text = btn.closest('.bubble-bot').innerText;
-  if (navigator.share) navigator.share({ title: titulo + ' · CatolicosGPT', text, url: 'https://catolicosgpt.com' });
-  else { navigator.clipboard.writeText(text + '\n\nhttps://catolicosgpt.com'); showToast('📤 Compartido'); }
-}
-
-function closeView() {
-  // Stub legacy — ya no se usa con la nueva arquitectura inline
-  document.getElementById('welcome').style.display = 'flex';
-  document.getElementById('chat-area').style.display = 'none';
-}
+// Stub legacy — openView ya no se usa pero mantenemos por compat si algo lo llama
+function openView(id) { pedirEnChat(id); }
+function closeView() {}
 
 // ── Auth ──
 let chatToken = localStorage.getItem('cgpt_token');

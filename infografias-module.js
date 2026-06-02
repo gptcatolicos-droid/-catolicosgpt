@@ -541,10 +541,17 @@ async function generarInfografia({ tema, tipo: tipoOverride, formato = '9:16', e
 }
 
 // ── Consultas del catálogo ──
-function getInfografias({ categoria, page=1, limit=20 } = {}) {
+function getInfografias({ categoria, q, page=1, limit=20 } = {}) {
   const catalog = loadCatalog();
   let items = catalog.infografias.filter(i => i.publicado !== false);
   if (categoria && categoria !== 'all') items = items.filter(i => i.tipo===categoria || i.categoria===categoria);
+  if (q) {
+    const ql = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    items = items.filter(i => {
+      const text = ((i.titulo||'') + ' ' + (i.tema||'') + ' ' + (i.descripcion||'') + ' ' + (i.keywords||'') + ' ' + (i.categoria||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return text.includes(ql);
+    });
+  }
   const total = items.length;
   return { items: items.slice((page-1)*limit, page*limit), total, page, totalPages: Math.ceil(total/limit) };
 }

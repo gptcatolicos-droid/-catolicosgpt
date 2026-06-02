@@ -9,6 +9,10 @@ const app = express();
 
 // ── v4 Módulos ──
 const { generarInfografia, detectarTipo, getInfografias, getInfografiaBySlug, deleteInfografia } = require('./infografias-module');
+const liturgiaCache = require('./liturgia-cache');
+const videosModule = require('./videos-module');
+const misasModule = require('./misas-module');
+const { findRelatedResources } = require('./recursos-module');
 const auth = require('./auth-module');
 
 app.use(cors());
@@ -43,6 +47,159 @@ const PAPA = loadJSON('papa_leon_xiv');
 const ENCICLICA = loadJSON('enciclica_magnifica_humanitas');
 
 // ── System Prompt ──
+
+// ════════════════════════════════════════════════════════
+// LITURGIA — Detección de peticiones + pre-carga de datos
+// ════════════════════════════════════════════════════════
+const MAG_KEY = process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059';
+
+async function magWidget(endpoint) {
+  try {
+    const r = await fetch('https://api.magisterium.com' + endpoint, {
+      headers: { 'Authorization': 'Bearer ' + MAG_KEY, 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(7000)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch(e) {
+    console.warn('[Magisterium widget]', endpoint, e.message);
+    return null;
+  }
+}
+
+// Detectar tipo de petición litúrgica en el mensaje del usuario
+function detectarPeticionLiturgica(texto) {
+  const t = (texto || '').toLowerCase();
+  if (/lecturas?\b.*(d[ií]a|hoy|misa)|evangelio.*(d[ií]a|hoy)/i.test(t)) return 'lecturas';
+  if (/santo.*(d[ií]a|hoy)|santoral.*hoy|festividad.*hoy/i.test(t)) return 'santo';
+  if (/laudes|oraci[óo]n.*(ma[ñn]ana|matutina)|oficio.*ma[ñn]ana/i.test(t)) return 'laudes';
+  if (/v[íi]speras|oraci[óo]n.*(tarde|vesp)|oficio.*tarde/i.test(t)) return 'visperas';
+  if (/completas|oraci[óo]n.*(noche|antes.*dormir|nocturna)/i.test(t)) return 'completas';
+  if (/oraci[óo]n.*(d[ií]a|hoy)\b/i.test(t) && !t.includes('mañana') && !t.includes('tarde') && !t.includes('noche')) return 'oracion';
+  return null;
+}
+
+// Pre-cargar contexto litúrgico según la petición
+
+// ── Detección y búsqueda en datasets jesuitas/franciscanos ──
+function detectarOrdenReligiosa(texto) {
+  const t = (texto || '').toLowerCase();
+  if (/jesuit|ignaci|loyola|jesuita/i.test(t)) return 'jesuita';
+  if (/francisc|capuchin|menor.*francis|orden.*francis/i.test(t)) return 'franciscana';
+  if (/dominic|aquinate|tom[áa]s.*aquino/i.test(t)) return 'dominica';
+  return null;
+}
+
+// Hace web search restringido a fuentes oficiales de la orden
+async function buscarFuentesOficiales(query, orden) {
+  const sites = {
+    jesuita: ['jesuitportal.bc.edu', 'jesuits.global'],
+    franciscana: ['ofm.org'],
+    dominica: ['op.org', 'dominicos.org']
+  };
+  const targets = sites[orden] || [];
+  if (!targets.length) return null;
+
+  // Construir query con site: filter
+  const siteFilter = targets.map(s => 'site:' + s).join(' OR ');
+  const searchQuery = '(' + siteFilter + ') ' + query;
+  console.log('[Orden] Búsqueda federada:', orden, '→', searchQuery);
+
+  // Devuelve solo los URLs y descripción para citar (no scrapeamos cada uno)
+  return {
+    orden,
+    fuentesSugeridas: targets,
+    nota: 'Para profundizar en este tema, las fuentes oficiales de la Orden ' + orden + ' son: ' +
+          targets.map(s => 'https://' + s).join(', ')
+  };
+}
+
+async function cargarContextoLiturgico(tipo) {
+  const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  // 1. PRIORIDAD: Cache de scraping (dominicos + iBreviary, refresh diario)
+  const cached = liturgiaCache.get(tipo);
+  if (cached) {
+    let texto = '\n\n[CONTEXTO LITÚRGICO — ' + tipo.toUpperCase() + ' · ' + today + ']\n';
+    texto += '[Fuente: ' + (cached.fuente || 'scraping diario') + ']\n\n';
+    if (cached.lecturas && Array.isArray(cached.lecturas)) {
+      cached.lecturas.forEach(l => {
+        texto += '## ' + l.titulo + '\n' + l.texto + '\n\n';
+      });
+    } else if (cached.texto) {
+      texto += cached.texto;
+    } else if (cached.predica) {
+      texto += '## Predicación del día\n' + cached.predica;
+    }
+    console.log('[Chat] ✅ Contexto litúrgico desde CACHE:', tipo, '(', texto.length, 'chars)');
+    return texto;
+  }
+
+  console.log('[Chat] Cache miss para', tipo, '— intentando Magisterium/IA');
+
+  // 2. FALLBACK: Magisterium widgets (lecturas/santo/oracion)
+  if (tipo === 'lecturas') {
+    const data = await magWidget('/v1/widgets/daily-readings');
+    if (!data) return null;
+    const lecturas = data.readings || data.lecturas || data;
+    let texto = '\n\n[CONTEXTO LITÚRGICO — LECTURAS DEL DÍA · ' + today + ']\n';
+    if (Array.isArray(lecturas)) {
+      lecturas.forEach((l, i) => {
+        const titulo = l.title || l.titulo || l.citation || ('Lectura ' + (i+1));
+        const cita = l.citation || l.cita || '';
+        const txt = l.text || l.texto || l.contenido || '';
+        texto += '\n## ' + titulo + (cita ? ' (' + cita + ')' : '') + '\n' + txt + '\n';
+      });
+    } else {
+      texto += JSON.stringify(lecturas).slice(0, 2000);
+    }
+    texto += '\n[Fuente oficial: Magisterium AI]\n';
+    return texto;
+  }
+
+  if (tipo === 'santo') {
+    const data = await magWidget('/v1/widgets/saint-of-the-day');
+    if (!data) return null;
+    const s = data.saint || data;
+    return '\n\n[CONTEXTO LITÚRGICO — SANTO DEL DÍA · ' + today + ']\nNombre: ' + (s.name || s.nombre || '?') +
+           '\nFecha: ' + (s.feast_date || s.fechaFestivo || s.fecha || '') +
+           '\nBiografía: ' + (s.biography || s.description || s.biografia || s.text || JSON.stringify(s).slice(0, 1500)) +
+           '\n[Fuente oficial: Magisterium AI]\n';
+  }
+
+  if (tipo === 'oracion') {
+    const data = await magWidget('/v1/widgets/prayer-of-the-day');
+    if (!data) return null;
+    const o = data.prayer || data;
+    return '\n\n[CONTEXTO LITÚRGICO — ORACIÓN DEL DÍA · ' + today + ']\n' +
+           (o.title ? o.title + ':\n' : '') +
+           (o.text || o.texto || o.prayer || JSON.stringify(o).slice(0, 1000)) +
+           '\n[Fuente oficial: Magisterium AI]\n';
+  }
+
+  // Laudes / Vísperas / Completas — no hay widget, generar contexto con santo + fecha
+  if (['laudes', 'visperas', 'completas'].includes(tipo)) {
+    const santo = await magWidget('/v1/widgets/saint-of-the-day');
+    const s = santo?.saint || santo || {};
+    const nombre = { laudes: 'Laudes', visperas: 'Vísperas', completas: 'Completas' }[tipo];
+    const momento = { laudes: 'la mañana', visperas: 'la tarde', completas: 'antes de dormir' }[tipo];
+    return '\n\n[CONTEXTO LITÚRGICO — ' + nombre.toUpperCase() + ' (Liturgia de las Horas) · ' + today + ']\n' +
+           'Hora: ' + nombre + ' — oración de ' + momento + '\n' +
+           'Santo de hoy: ' + (s.name || s.nombre || 'consulta el santoral') + '\n' +
+           'INSTRUCCIÓN: Componer la oración de ' + nombre + ' completa según la estructura tradicional de la Liturgia de las Horas (Oficio Divino):\n' +
+           '- Invocación inicial\n' +
+           '- Himno apropiado para ' + momento + '\n' +
+           '- Salmodia (1-2 salmos con antífonas)\n' +
+           '- Lectura breve\n' +
+           '- Cántico evangélico (Benedictus para Laudes, Magnificat para Vísperas, Nunc Dimittis para Completas)\n' +
+           '- Preces / Padrenuestro\n' +
+           '- Oración final y bendición\n' +
+           'Estructurar con subtítulos ## y citas con > para que sea visualmente claro.\n';
+  }
+
+  return null;
+}
+
 function getSystemPrompt() {
   const now = new Date();
   const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -482,6 +639,30 @@ app.post('/api/chat', async (req, res) => {
   const lastUserMsg = messages.filter(m => m.role === 'user').pop()?.content || '';
   let systemPrompt = getSystemPrompt();
   const modo = (modeOverride && ['auto','magisterial','scholarly'].includes(modeOverride)) ? modeOverride : detectarModoMagisterium(lastUserMsg);
+
+  // ── Pre-carga de contexto litúrgico si el usuario pregunta por lecturas/santo/oración/laudes/vísperas/completas
+  let contextoLiturgico = '';
+  const peticionLiturgica = detectarPeticionLiturgica(lastUserMsg);
+  if (peticionLiturgica) {
+    console.log('[Chat] Petición litúrgica detectada:', peticionLiturgica);
+    const ctx = await cargarContextoLiturgico(peticionLiturgica);
+    if (ctx) {
+      contextoLiturgico = ctx;
+      systemPrompt = systemPrompt + '\n\n' + ctx + '\n\nINSTRUCCIÓN: Usa el CONTEXTO LITÚRGICO de arriba como FUENTE PRINCIPAL para tu respuesta. Estructura con ## subtítulos, > para citas bíblicas, y agrega un breve comentario pastoral al final. NO inventes citas — usa solo las del contexto.';
+      console.log('[Chat] Contexto inyectado:', ctx.length, 'chars');
+    }
+  }
+
+  // ── Detección de orden religiosa (jesuitas/franciscanos/dominicos) ──
+  const orden = detectarOrdenReligiosa(lastUserMsg);
+  if (orden) {
+    const fuentes = await buscarFuentesOficiales(lastUserMsg, orden);
+    if (fuentes) {
+      systemPrompt += '\n\n[FUENTES OFICIALES DE LA ORDEN ' + orden.toUpperCase() + ']\n' + fuentes.nota +
+        '\n\nINSTRUCCIÓN: Cuando termines tu respuesta, incluye al final una sección "## 📚 Para profundizar" con enlaces a estas fuentes oficiales.';
+      console.log('[Chat] Orden detectada:', orden);
+    }
+  }
   console.log('[Chat] modo:', modo, '| override:', modeOverride || 'auto-detect');
 
   // Detectar si pregunta sobre la encíclica Magnifica Humanitas
@@ -1553,8 +1734,8 @@ app.post('/api/infografias/generar', auth.authenticateToken, async (req, res) =>
 
 // ── Listar infografías ──
 app.get('/api/infografias', (req, res) => {
-  const { categoria, page = 1, limit = 20 } = req.query;
-  const result = getInfografias({ categoria, page: parseInt(page), limit: parseInt(limit) });
+  const { categoria, page = 1, limit = 20, q } = req.query;
+  const result = getInfografias({ categoria, page: parseInt(page), limit: parseInt(limit), q });
   res.json(result);
 });
 
@@ -2467,6 +2648,149 @@ app.get('/api/admin/catalog-status', auth.authenticateToken, auth.requireAdmin, 
   });
 });
 
+
+// ════════════════════════════════════════════════════════════════
+// VIDEOS API
+// ════════════════════════════════════════════════════════════════
+app.get('/api/videos', (req, res) => {
+  const { categoria, q, page = 1, limit = 12 } = req.query;
+  const result = videosModule.getVideos({ categoria, q, page: parseInt(page), limit: parseInt(limit) });
+  res.json({ ok: true, ...result });
+});
+
+app.post('/api/admin/videos/upload', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
+  const { youtubeUrl, contextHint } = req.body;
+  if (!youtubeUrl) return res.status(400).json({ error: 'URL de YouTube requerida' });
+
+  const videoId = videosModule.extractYouTubeId(youtubeUrl);
+  if (!videoId) return res.status(400).json({ error: 'No se pudo extraer el ID de YouTube. Verifica la URL.' });
+
+  try {
+    // 1. Obtener metadata original de YouTube via oEmbed
+    const ytMeta = await videosModule.getYouTubeMetadata(videoId);
+    console.log('[Admin Video] YT oEmbed:', ytMeta.title);
+
+    // 2. IA enrich con GPT-4o-mini
+    const OpenAI = require('openai');
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const ai = await videosModule.enrichVideoWithAI(ytMeta.title, contextHint, openai);
+
+    // 3. Verificar slug único
+    const existing = videosModule.loadVideos();
+    let finalSlug = ai.slug;
+    let n = 1;
+    while ((existing.videos || []).some(v => v.slug === finalSlug)) {
+      finalSlug = ai.slug + '-' + (++n);
+    }
+
+    // 4. Guardar
+    const now = new Date();
+    const video = {
+      id: 'vid-' + Date.now(),
+      slug: finalSlug,
+      youtubeId: videoId,
+      embedUrl: 'https://www.youtube.com/embed/' + videoId,
+      watchUrl: 'https://www.youtube.com/watch?v=' + videoId,
+      thumbnail: ytMeta.thumbnail_url || ('https://i.ytimg.com/vi/' + videoId + '/maxresdefault.jpg'),
+      thumbnailHQ: 'https://i.ytimg.com/vi/' + videoId + '/maxresdefault.jpg',
+      titulo: ai.titulo,
+      tituloOriginal: ytMeta.title,
+      autor: ytMeta.author_name || '',
+      descripcion: ai.descripcion,
+      keywords: ai.keywords,
+      categoria: ai.categoria,
+      altText: ai.altText,
+      fechaCreacion: now.toISOString(),
+      fechaISO: now.toISOString().slice(0, 10),
+      publicado: true,
+      uploadedBy: 'admin'
+    };
+    existing.videos = existing.videos || [];
+    existing.videos.unshift(video);
+    existing.total = existing.videos.length;
+    videosModule.saveVideos(existing);
+
+    res.json({ ok: true, video });
+  } catch(e) {
+    console.error('[Admin Video]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/admin/videos/:slug', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const ok = videosModule.deleteVideo(req.params.slug);
+  res.json({ ok });
+});
+
+// ════════════════════════════════════════════════════════════════
+// MISAS API — Búsqueda combinada (scraping + IA)
+// ════════════════════════════════════════════════════════════════
+app.post('/api/misas/buscar', async (req, res) => {
+  const { query, ciudad, lat, lon } = req.body;
+  let detectedCity = ciudad;
+
+  // Si tenemos coords, hacer reverse geocoding
+  if (lat && lon && !detectedCity) {
+    const geo = await misasModule.reverseGeocode(lat, lon);
+    if (geo) detectedCity = geo.ciudad;
+  }
+
+  const searchTerm = query || detectedCity || '';
+  if (!searchTerm) return res.status(400).json({ error: 'query o ciudad requeridos' });
+
+  try {
+    // 1. Intentar scraping de horariosdemisa.com
+    const scraped = await misasModule.scrapeHorariosDeMisa(detectedCity || searchTerm, 'colombia');
+
+    // 2. SIEMPRE generar respuesta IA con GPT-4o (combinada)
+    const OpenAI = require('openai');
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    let contextoScraping = '';
+    if (scraped && scraped.html_raw) {
+      // Extraer texto plano del HTML scrapeado
+      const text = scraped.html_raw
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 4000);
+      contextoScraping = '\n\n[DATOS DE horariosdemisa.com]\n' + text + '\n[/DATOS]\n';
+    }
+
+    const enrichedQuery = searchTerm + (detectedCity ? ' (en ' + detectedCity + ')' : '');
+    const aiResponse = await misasModule.searchMisasWithAI(enrichedQuery + contextoScraping, detectedCity, openai);
+
+    res.json({
+      ok: true,
+      ciudad: detectedCity,
+      respuesta: aiResponse,
+      fuentes: scraped ? ['horariosdemisa.com', 'GPT-4o'] : ['GPT-4o']
+    });
+  } catch(e) {
+    console.error('[Misas]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Geolocation reverse helper (frontend lo llama después de obtener coords)
+app.post('/api/misas/reverse-geocode', async (req, res) => {
+  const { lat, lon } = req.body;
+  if (!lat || !lon) return res.status(400).json({ error: 'lat y lon requeridos' });
+  const geo = await misasModule.reverseGeocode(lat, lon);
+  res.json({ ok: !!geo, ...geo });
+});
+
+// ════════════════════════════════════════════════════════════════
+// RECURSOS RELACIONADOS — endpoint para que el frontend pida
+// recursos relacionados a una conversación
+// ════════════════════════════════════════════════════════════════
+app.post('/api/recursos-relacionados', (req, res) => {
+  const { question, answer } = req.body;
+  const result = findRelatedResources(question, answer, { maxResults: 4 });
+  res.json({ ok: true, ...result });
+});
+
 // ── Cron: Generar infografías diarias ──
 async function generarInfografiasDelDia() {
   console.log('[Cron] Iniciando generación diaria de infografías...');
@@ -2516,4 +2840,19 @@ app.get('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+// Init liturgia cache al boot (refresh si stale)
+liturgiaCache.init().catch(e => console.error('[Liturgia] init:', e.message));
+
+// Cron diario: refresh liturgia a las 4am Bogotá (09:00 UTC)
+const cronLiturgia = require('node-cron');
+try {
+  cronLiturgia.schedule('0 9 * * *', () => {
+    console.log('[Cron] 4am Bogotá — refresh liturgia');
+    liturgiaCache.refreshLiturgia().catch(e => console.error('[Cron Liturgia]', e.message));
+  }, { timezone: 'America/Bogota' });
+  console.log('[Cron] Liturgia diaria programada para 4am Bogotá');
+} catch(e) {
+  console.warn('[Cron] node-cron no disponible:', e.message);
+}
+
 app.listen(PORT, () => console.log(`CatolicosGPT v10 · Puerto ${PORT}`));

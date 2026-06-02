@@ -115,6 +115,7 @@
     <!-- Tabs -->
     <div class="tabs">
       <div class="tab active" onclick="switchTab('infografias',this)">Infografías</div>
+      <div class="tab" onclick="switchTab('videos',this)">Videos</div>
       <div class="tab" onclick="switchTab('usuarios',this)">Usuarios</div>
       <div class="tab" onclick="switchTab('config',this)">Configuración</div>
     </div>
@@ -221,6 +222,35 @@
             <div style="text-align:center;padding:30px;color:var(--ink-3)">Cargando...</div>
           </div>
         </div>
+      </div>
+    </div>
+
+    
+    <!-- TAB: VIDEOS -->
+    <div id="tab-videos" class="tab-content" style="display:none">
+      <div class="admin-card">
+        <h3>▶️ Agregar Video de YouTube</h3>
+        <p>Pega la URL del video o el código embed. La IA generará automáticamente título, descripción, keywords y categoría optimizados para SEO.</p>
+
+        <div class="field">
+          <label class="field-label">URL de YouTube o código embed</label>
+          <input type="text" id="vid-url" class="input" placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/...">
+          <div style="font-size:11px;color:var(--ink-3);margin-top:6px">Acepta: youtube.com/watch?v=, youtu.be/, /embed/, /shorts/, o el ID directo (11 chars)</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Contexto adicional (opcional, mejora la IA)</label>
+          <textarea id="vid-context" class="input" rows="2" placeholder="Ej: 'Homilía sobre el amor de Dios' o 'Catequesis del Padre Linero sobre el bautismo'"></textarea>
+        </div>
+
+        <button class="btn btn-primary" onclick="submitVideo()" id="vid-submit-btn">▶️ Agregar video</button>
+
+        <div id="vid-upload-status" class="status" style="margin-top:14px"></div>
+      </div>
+
+      <div class="admin-card">
+        <h3>📺 Videos publicados (<span id="videos-count">0</span>)</h3>
+        <div id="videos-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px"></div>
       </div>
     </div>
 
@@ -682,6 +712,80 @@ async function rebuildCatalog() {
 const _origSwitch = switchTab;
 switchTab = function(name, btn) {
   _origSwitch(name, btn);
+  if (name === 'config') loadCatalogStatus();
+};
+
+// ════════════════════════════════════════════════════════════════
+// VIDEOS — Admin functions
+// ════════════════════════════════════════════════════════════════
+async function submitVideo() {
+  const url = document.getElementById('vid-url').value.trim();
+  const contextHint = document.getElementById('vid-context').value.trim();
+  if (!url) { setStatus('vid-upload-status', 'err', 'Pega la URL del video'); return; }
+  const btn = document.getElementById('vid-submit-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Procesando con IA...';
+  setStatus('vid-upload-status', 'info', '🤖 Obteniendo metadata + generando SEO con IA...');
+  try {
+    const r = await fetch('/api/admin/videos/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ youtubeUrl: url, contextHint })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    setStatus('vid-upload-status', 'ok', '✅ Video agregado: ' + d.video.titulo);
+    document.getElementById('vid-url').value = '';
+    document.getElementById('vid-context').value = '';
+    loadVideosAdmin();
+  } catch(e) {
+    setStatus('vid-upload-status', 'err', '❌ ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶️ Agregar video';
+  }
+}
+
+async function loadVideosAdmin() {
+  try {
+    const r = await fetch('/api/videos?limit=50');
+    const d = await r.json();
+    document.getElementById('videos-count').textContent = d.total || 0;
+    const list = document.getElementById('videos-list');
+    if (!d.items || !d.items.length) {
+      list.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--ink-3)">Sin videos. Agrega el primero arriba.</div>';
+      return;
+    }
+    list.innerHTML = d.items.map(v => {
+      const thumb = v.thumbnail || ('https://i.ytimg.com/vi/' + v.youtubeId + '/mqdefault.jpg');
+      return '<div style="background:#fff;border:1px solid var(--hairline);border-radius:10px;overflow:hidden">' +
+        '<div style="aspect-ratio:16/9;background:#000 url(\'' + thumb + '\') center/cover"></div>' +
+        '<div style="padding:8px 10px">' +
+          '<div style="font-size:12px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:4px">' + (v.titulo || '').slice(0, 60) + '</div>' +
+          '<div style="font-size:10px;color:var(--ink-3);margin-bottom:6px">' + (v.categoria || '') + ' · ' + new Date(v.fechaCreacion).toLocaleDateString('es') + '</div>' +
+          '<div style="display:flex;gap:4px">' +
+            '<a href="/videos/' + v.slug + '" target="_blank" style="font-size:10px;padding:3px 8px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:6px;text-decoration:none;color:var(--ink-2)">Ver</a>' +
+            '<button onclick="deleteVideoAdmin(\''+ v.slug +'\')" style="font-size:10px;padding:3px 8px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:6px;cursor:pointer;color:var(--maroon)">Borrar</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function deleteVideoAdmin(slug) {
+  if (!confirm('¿Eliminar este video?')) return;
+  try {
+    const r = await fetch('/api/admin/videos/' + slug, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+    if (r.ok) loadVideosAdmin();
+  } catch(e) { alert(e.message); }
+}
+
+// Hook al cambio de tab
+const _origSwitch3 = switchTab;
+switchTab = function(name, btn) {
+  _origSwitch3(name, btn);
+  if (name === 'videos') loadVideosAdmin();
   if (name === 'config') loadCatalogStatus();
 };
 
