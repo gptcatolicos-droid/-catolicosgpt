@@ -237,6 +237,35 @@
 
     <!-- TAB: CONFIG -->
     <div id="tab-config" class="tab-content" style="display:none">
+      <!-- PERSISTENCIA / RECOVERY -->
+      <div class="admin-card" style="margin-bottom:20px;border-left:3px solid var(--gold)">
+        <h3>💾 Persistencia & Recovery</h3>
+        <p>Render.com tiene filesystem efímero: cada deploy borra el catálogo local. Cloudinary preserva las imágenes y su metadata. Usa este botón después de cada deploy para reconstruir el catálogo.</p>
+
+        <div id="catalog-status-info" style="background:var(--cream-3);border:1px solid var(--hairline-2);border-radius:var(--r-md);padding:14px;margin-bottom:14px;font-family:ui-monospace,monospace;font-size:12px;line-height:1.7"></div>
+
+        <button class="btn btn-gold" onclick="rebuildCatalog()" id="rebuild-btn">
+          🔄 Reconstruir catálogo desde Cloudinary
+        </button>
+
+        <div id="rebuild-status" class="status" style="margin-top:12px"></div>
+
+        <details style="margin-top:18px;font-size:13px;color:var(--ink-2)">
+          <summary style="cursor:pointer;font-weight:600;color:var(--gold-deep)">📘 Cómo persistir entre deploys (Render Disk)</summary>
+          <div style="padding:12px 0 0;line-height:1.7">
+            <p><strong>Opción A (recomendada):</strong> En Render.com → tu service → <em>Disks</em> → <em>Add Disk</em>:</p>
+            <ul style="padding-left:22px;margin:8px 0">
+              <li>Name: <code>catolicosgpt-data</code></li>
+              <li>Mount path: <code>/data</code></li>
+              <li>Size: 1 GB (~$0.25/mes)</li>
+            </ul>
+            <p>Luego agrega una env var:</p>
+            <code style="display:block;background:var(--cream-3);padding:10px;border-radius:8px;margin:6px 0">DATA_DIR=/data</code>
+            <p><strong>Opción B (gratis):</strong> Cada deploy: ejecuta este rebuild → recupera todo desde Cloudinary.</p>
+          </div>
+        </details>
+      </div>
+
       <div class="admin-card">
         <h3>⚙️ Configuración de planes</h3>
         <p>Configura los límites de infografías por plan.</p>
@@ -360,11 +389,42 @@ function renderUploadZones() {
 function handleFileSlot(e, slot) {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > 4 * 1024 * 1024) { setStatus('upload-status', 'err', 'Slide ' + (slot+1) + ': imagen demasiado grande (máx 4MB)'); return; }
+  if (file.size > 12 * 1024 * 1024) { setStatus('upload-status', 'err', 'Slide ' + (slot+1) + ': imagen demasiado grande (máx 12MB)'); return; }
+
+  // Comprimir antes de subir para evitar 413 Payload Too Large
+  setStatus('upload-status', 'info', '⏳ Procesando slide ' + (slot+1) + '...');
   const reader = new FileReader();
   reader.onload = (ev) => {
-    uploadedImages[slot] = ev.target.result;
-    renderUploadZones();
+    const img = new Image();
+    img.onload = () => {
+      // Redimensionar manteniendo aspect ratio, max 1600px lado mayor
+      const MAX = 1600;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, w, h);
+      // JPEG calidad 0.88 → buen balance peso/calidad
+      const compressed = canvas.toDataURL('image/jpeg', 0.88);
+      const orig = ev.target.result.length;
+      const reduced = compressed.length;
+      console.log('[Upload] Slide ' + (slot+1) + ': ' + (orig/1024).toFixed(0) + 'KB → ' + (reduced/1024).toFixed(0) + 'KB (' + Math.round((1-reduced/orig)*100) + '% menos)');
+      uploadedImages[slot] = compressed;
+      renderUploadZones();
+      setStatus('upload-status', 'ok', '✅ Slide ' + (slot+1) + ' listo (' + (reduced/1024).toFixed(0) + 'KB)');
+    };
+    img.onerror = () => {
+      setStatus('upload-status', 'err', 'Error al procesar imagen del slide ' + (slot+1));
+    };
+    img.src = ev.target.result;
+  };
+  reader.onerror = () => {
+    setStatus('upload-status', 'err', 'Error al leer archivo del slide ' + (slot+1));
   };
   reader.readAsDataURL(file);
 }
@@ -423,20 +483,26 @@ async function submitUpload() {
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.textContent = '⏳ Subiendo ' + imgs.length + ' imagen(es)...';
-  setStatus('upload-status', 'info', 'Subiendo ' + imgs.length + ' imagen(es) a Cloudinary...');
+
+  // Calcular peso total estimado
+  const totalKB = imgs.reduce((sum, im) => sum + (im?.length || 0) / 1024, 0);
+  setStatus('upload-status', 'info', '📤 Subiendo ' + imgs.length + ' imagen(es) (' + totalKB.toFixed(0) + 'KB) a Cloudinary...');
 
   try {
+    const payload = {
+      images: imgs,
+      titulo, slug, descripcion, keywords, categoria, tipo,
+      esCarrusel: imgs.length > 1
+    };
     const r = await fetch('/api/admin/infografias/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({
-        images: imgs,            // array de base64 data URLs
-        titulo, slug, descripcion, keywords, categoria, tipo,
-        esCarrusel: imgs.length > 1
-      })
+      body: JSON.stringify(payload)
     });
+    if (r.status === 413) throw new Error('Imágenes demasiado pesadas. Cada slide debe ser <4MB.');
+    if (r.status === 401) throw new Error('Sesión expirada. Recarga la página.');
     const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Error');
+    if (!r.ok) throw new Error(d.error || ('Error HTTP ' + r.status));
     setStatus('upload-status', 'ok', '✅ ' + (imgs.length > 1 ? 'Carrusel' : 'Infografía') + ' subido: ' + d.infografia.slug + ' (' + imgs.length + ' imagen' + (imgs.length > 1 ? 'es' : '') + ')');
     // Reset
     document.getElementById('f-titulo').value = '';
@@ -561,6 +627,63 @@ async function saveConfig() {
     alert('✅ Configuración guardada');
   } catch (e) { alert('Error: ' + e.message); }
 }
+
+// Persistencia / Recovery
+async function loadCatalogStatus() {
+  try {
+    const r = await fetch('/api/admin/catalog-status', { headers: { Authorization: 'Bearer ' + token } });
+    const d = await r.json();
+    const el = document.getElementById('catalog-status-info');
+    if (!el) return;
+    const diskStatus = d.renderDiskMounted ? '<span style="color:#2D6F4A">✅ Render Disk activo</span>' : '<span style="color:#B91C1C">⚠️ Sin Render Disk (efímero)</span>';
+    const cloudStatus = d.cloudinaryConfigured ? '<span style="color:#2D6F4A">✅ Cloudinary configurado</span>' : '<span style="color:#B91C1C">❌ Cloudinary sin configurar</span>';
+    el.innerHTML =
+      '<div><strong>Catálogo local:</strong> ' + d.infografias + ' infografías</div>' +
+      '<div><strong>Path:</strong> ' + d.dataDir + '</div>' +
+      '<div><strong>Disk:</strong> ' + diskStatus + '</div>' +
+      '<div><strong>Cloudinary:</strong> ' + cloudStatus + '</div>';
+  } catch(e) {}
+}
+
+async function rebuildCatalog() {
+  if (!confirm('Esto reconstruirá el catálogo desde Cloudinary. Las infografías locales con metadata válida se restaurarán. ¿Continuar?')) return;
+  const btn = document.getElementById('rebuild-btn');
+  const status = document.getElementById('rebuild-status');
+  btn.disabled = true;
+  btn.textContent = '⏳ Reconstruyendo...';
+  status.className = 'status show info';
+  status.textContent = 'Consultando Cloudinary (puede tomar 30-60s si hay muchas imágenes)...';
+  try {
+    const r = await fetch('/api/admin/rebuild-catalog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    status.className = 'status show ok';
+    status.innerHTML = '✅ Recovery completado.<br>' +
+      '<strong>Recursos en Cloudinary:</strong> ' + d.resources_scanned + '<br>' +
+      '<strong>Existían:</strong> ' + d.existing + '<br>' +
+      '<strong>Recuperadas:</strong> ' + d.recovered + '<br>' +
+      '<strong>Total ahora:</strong> ' + d.total;
+    loadList();
+    loadStats();
+    loadCatalogStatus();
+  } catch(e) {
+    status.className = 'status show err';
+    status.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Reconstruir catálogo desde Cloudinary';
+  }
+}
+
+// Auto-cargar status al entrar al tab de config
+const _origSwitch = switchTab;
+switchTab = function(name, btn) {
+  _origSwitch(name, btn);
+  if (name === 'config') loadCatalogStatus();
+};
 
 init();
 </script>

@@ -182,19 +182,7 @@
 
       <!-- ──────── COMPOSER ──────── -->
       <div class="composer-wrap" id="input-area">
-        <div class="mode-pills" id="mode-pills">
-          <button class="mode-pill active" data-mode="auto" onclick="setMode('auto',this)">
-            <span class="mp-dot"></span> Conversación
-          </button>
-          <button class="mode-pill" data-mode="magisterial" onclick="setMode('magisterial',this)">
-            <span class="mp-dot"></span> Magisterial
-            <span class="mp-tip" title="Doctrina oficial · Catecismo · Encíclicas">ⓘ</span>
-          </button>
-          <button class="mode-pill" data-mode="scholarly" onclick="setMode('scholarly',this)">
-            <span class="mp-dot"></span> Scholarly
-            <span class="mp-tip" title="Padres · Aquino · Agustín · Patrística">ⓘ</span>
-          </button>
-        </div>
+        <!-- Mode pills ocultas (funciones siguen activas: window.chatMode) -->
         <div class="composer">
           <div class="composer-bar">
             <textarea class="composer-input" id="cin" rows="1" placeholder="Pregunta sobre fe, oración, santos, moral…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}" oninput="growComposer(this)"></textarea>
@@ -355,15 +343,27 @@
 .modo-badge.modo-auto { display: none; }
 
 @media (max-width: 768px) {
+  /* Nav header — más compacto en mobile */
+  .nav { padding: 8px 12px; height: 56px; }
+  .nav-left { gap: 8px; }
+  .brand { gap: 6px; }
+  .brand-mark { width: 28px; height: 28px; }
+  .brand-word { font-size: 15px; white-space: nowrap; }
   .nav-links { gap: 2px; }
-  .nav-link { padding: 6px 10px; font-size: 13px; }
-  .nav-user { padding: 4px 10px 4px 4px; font-size: 13px; }
-  .nav-user .av { width: 22px; height: 22px; font-size: 11px; }
-  .nav-links .nav-link:nth-child(2), .nav-links .nav-link:nth-child(3) { display: none; }
-  .empty-emblem { width: 60px; height: 60px; }
-  .empty-h { font-size: clamp(28px, 7vw, 40px); }
+  .nav-link { padding: 5px 8px; font-size: 12px; }
+  .nav-user { padding: 3px 9px 3px 3px; font-size: 12px; }
+  .nav-user .av { width: 20px; height: 20px; font-size: 10px; }
+  /* En mobile: ocultar Chat IA e Infografías de la nav (siguen en sidebar) */
+  .nav-links .nav-link:not(.nav-user) { display: none; }
+  .empty-emblem { width: 56px; height: 56px; }
+  .empty-h { font-size: clamp(26px, 7vw, 38px); }
   .sugg-grid { grid-template-columns: 1fr; }
-  .composer-input { font-size: 16px; }
+  .composer-input { font-size: 16px; } /* anti-zoom iOS */
+}
+@media (max-width: 420px) {
+  .brand-word { font-size: 14px; }
+  .nav-user span:last-child { display: none; } /* solo avatar */
+  .nav-user { padding: 3px; }
 }
 </style>
 

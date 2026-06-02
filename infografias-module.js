@@ -15,9 +15,40 @@ cloudinary.config({
 });
 
 // ── Catálogo ──
-const CATALOG_PATH = path.join(__dirname, 'data', 'infografias-catalog.json');
-function loadCatalog() { try { return JSON.parse(fs.readFileSync(CATALOG_PATH,'utf-8')); } catch(e) { return { version:'4.1', total:0, categorias:[], infografias:[] }; } }
-function saveCatalog(c) { fs.writeFileSync(CATALOG_PATH, JSON.stringify(c,null,2),'utf-8'); }
+// Path persistente: si DATA_DIR está seteada (Render Disk), usar esa; sino fallback a /data local
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch(e) {}
+}
+const CATALOG_PATH = path.join(DATA_DIR, 'infografias-catalog.json');
+// Backup secundario en /data del repo (por si falla el disco)
+const CATALOG_BACKUP = path.join(__dirname, 'data', 'infografias-catalog.json');
+
+function loadCatalog() {
+  // Intentar 1: path principal (Render Disk)
+  try {
+    const data = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf-8'));
+    if (data && data.infografias) return data;
+  } catch(e) {}
+  // Intentar 2: backup del repo
+  try {
+    const data = JSON.parse(fs.readFileSync(CATALOG_BACKUP, 'utf-8'));
+    if (data && data.infografias) {
+      console.log('[Catalog] ⚠️ Cargado desde backup repo. Considera configurar Render Disk + rebuild desde Cloudinary.');
+      return data;
+    }
+  } catch(e) {}
+  // Catálogo vacío
+  console.log('[Catalog] 🆕 No hay catálogo previo. Llama a /api/admin/rebuild-catalog para reconstruir desde Cloudinary.');
+  return { version:'5.0', total:0, categorias:[], infografias:[] };
+}
+
+function saveCatalog(c) {
+  // Guardar en ambos paths (uno persiste, el otro es backup git)
+  const json = JSON.stringify(c, null, 2);
+  try { fs.writeFileSync(CATALOG_PATH, json, 'utf-8'); } catch(e) { console.error('[Catalog] Error path principal:', e.message); }
+  try { fs.writeFileSync(CATALOG_BACKUP, json, 'utf-8'); } catch(e) {}
+}
 
 // ── Slug SEO ──
 function generateSlug(text) {

@@ -12,7 +12,7 @@ const { generarInfografia, detectarTipo, getInfografias, getInfografiaBySlug, de
 const auth = require('./auth-module');
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' })); // 50mb para soportar carruseles de hasta 6 imágenes
 app.use(express.static(path.join(__dirname, 'public')));
 // Servir imágenes locales de infografías (fallback cuando Cloudinary falla)
 app.use('/infografias', express.static(path.join(__dirname, 'public', 'infografias')));
@@ -123,20 +123,59 @@ Citas centrales:
 REGLAS DE CONDUCTA — OBLIGATORIAS
 ════════════════════════════════════════════════
 
+FORMATO DE RESPUESTAS — CRÍTICO
+════════════════════════════════════════════════
+
+Tus respuestas DEBEN tener formato visual claro, NO bloques de texto plano.
+
+USA SIEMPRE:
+• **Negritas** para conceptos clave, nombres de santos, citas centrales
+• Subtítulos '## Título' para secciones cuando la respuesta tiene 3+ partes
+• Subtítulos '### Subsección' para sub-temas
+• Listas con '-' para puntos múltiples (3+ items siempre como lista)
+• Citas con '>' para versículos bíblicos o citas del Magisterio
+• Tablas Markdown '| Columna 1 | Columna 2 |' cuando:
+  - El usuario pide "cuadro", "tabla", "compara", "diferencias"
+  - Hay 3+ items con varias propiedades (santos, mandamientos, sacramentos, virtudes)
+  - Hay un cuadro comparativo natural (catolicismo vs protestantismo, antes vs después, etc.)
+
+LONGITUD:
+- Respuestas SUSTANCIALES (no telegráficas) — mínimo 200 palabras para preguntas sustantivas
+- Pero SIN relleno: cada párrafo debe aportar valor
+- Saludos y respuestas casuales pueden ser breves
+
+ESTRUCTURA RECOMENDADA para preguntas de fondo:
+
+## Introducción breve (2-3 líneas)
+Contexto y enfoque.
+
+## Sección 1 — Subtítulo descriptivo
+Explicación con **negritas** en los conceptos clave.
+- Punto 1
+- Punto 2
+- Punto 3
+
+> "Cita bíblica o del Magisterio" — *Referencia*
+
+## Sección 2 — Subtítulo
+Más contenido con tabla si aplica:
+
+| Concepto | Significado |
+|----------|-------------|
+| Item 1   | Texto       |
+| Item 2   | Texto       |
+
+## Cierre pastoral
+Pregunta o invitación que lleva más adentro.
+
+EJEMPLO de petición de cuadro:
+Si el usuario dice "Explica los 10 mandamientos en un cuadro", responde con tabla Markdown con columnas: # | Mandamiento | Significado profundo.
+
+NUNCA respondas con texto plano corrido cuando puedes estructurar la respuesta visualmente.
+
+════════════════════════════════════════════════
 REGLA 1 — SOLO FE CATÓLICA
 Solo respondes sobre: fe, teología, Biblia, sacramentos, moral, oraciones, santos, liturgia, historia de la Iglesia, espiritualidad, doctrina. Para cualquier otro tema: "Soy CatolicosGPT, acompañante espiritual católico. No puedo ayudarte con eso, pero con gusto camino contigo en cualquier pregunta de fe. ¿Qué llevas en el corazón hoy, hermano/a?"
-
-REGLA ESPECIAL — INFOGRAFÍAS
-Si el usuario pide una infografía, imagen, poster o visual de un tema católico, responde SIEMPRE generando la infografía automáticamente usando este formato EXACTO:
-
-"¡Excelente idea! Puedo generar una infografía de [NOMBRE_REAL_DEL_TEMA] para compartir. [INFOGRAFIA_LINK:NOMBRE_REAL_DEL_TEMA]"
-
-REGLAS CRÍTICAS:
-1. NUNCA escribas "[TEMA]" literalmente — sustituye siempre con el nombre real del tema que pidió el usuario
-2. Si piden "San José" → escribe [INFOGRAFIA_LINK:San José]
-3. Si piden "el Rosario" → escribe [INFOGRAFIA_LINK:El Rosario]
-4. La sintaxis [INFOGRAFIA_LINK:X] activa la generación automática en el chat
-5. NUNCA digas que no puedes crear imágenes o infografías
 
 REGLA 2 — NUNCA ATACAR A LA IGLESIA
 Jamás hablarás mal de la Iglesia, el Papa, sacerdotes, sacramentos ni el Magisterio. Si hay críticas o escándalos: "Para reflexiones sobre situaciones históricas complejas, te invito a dialogar con un sacerdote. ¿Puedo acompañarte en algo de tu fe personal?"
@@ -570,14 +609,8 @@ Prioriza siempre la fuente más reciente y autorizada del Magisterio.
         res.write(`data: ${JSON.stringify({ magisterium: magChatText, sources: fuentesPayload.fuentes, modo })}\n\n`);
       }
 
-      // Detectar [INFOGRAFIA_LINK:TEMA] en el fullReply del stream
-      const infografiaMatch = fullReply.match(/\[INFOGRAFIA_LINK:([^\]]+)\]/);
-      if (infografiaMatch) {
-        const temaInfografia = infografiaMatch[1];
-        res.write(`data: ${JSON.stringify({ done: true, infografiaRequest: temaInfografia })}\n\n`);
-      } else {
-        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      }
+      // Sin auto-detección de infografías — usuario debe ir a /infografias
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
 
     } catch(e) {
@@ -610,10 +643,6 @@ Prioriza siempre la fuente más reciente y autorizada del Magisterio.
         messages: [{ role: 'system', content: systemPrompt }, ...messages]
       });
       let reply = completion.choices[0].message.content;
-      // Detectar [INFOGRAFIA_LINK:TEMA] en la respuesta del bot
-      reply = reply.replace(/\[INFOGRAFIA_LINK:([^\]]+)\]/g, (m, tema) =>
-        `<a href="/infografias?tema=${encodeURIComponent(tema)}" class="chat-infografia-btn" target="_blank">✨ Generar infografía: "${tema}"</a>`
-      );
       res.json({ reply });
     } catch(e) {
       try {
@@ -622,9 +651,6 @@ Prioriza siempre la fuente más reciente y autorizada del Magisterio.
           system: systemPrompt, messages
         });
         let replyA = msg.content[0].text;
-        replyA = replyA.replace(/\[INFOGRAFIA_LINK:([^\]]+)\]/g, (m, tema) =>
-          `<a href="/infografias?tema=${encodeURIComponent(tema)}" class="chat-infografia-btn" target="_blank">✨ Generar infografía: "${tema}"</a>`
-        );
         res.json({ reply: replyA });
       } catch(e2) {
         res.status(500).json({ error: 'Error al conectar con la IA.' });
@@ -1879,121 +1905,184 @@ app.get('/planes', (req, res) => {
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Planes y Precios | CatolicosGPT</title>
-<meta name="description" content="CatolicosGPT — El asistente de IA católico más avanzado en español. Plan gratuito y Premium ilimitado.">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lora:ital@0;1&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Planes y Precios · CatolicosGPT</title>
+<meta name="description" content="El Chat IA con Magisterium es siempre gratis. Plan Premium $4.99/mes: infografías ilimitadas con branding propio. Para parroquias, ministerios y catequistas.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://catolicosgpt.com/planes">
+<meta property="og:title" content="Planes · CatolicosGPT">
+<meta property="og:description" content="Chat IA católico gratis. Premium $4.99/mes para infografías ilimitadas.">
+<meta name="theme-color" content="#F6F0E3">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--ocre:#C9923A;--brown:#5C3D1E;--brown2:#3A2210;--bg:#FAF7F0;--bg2:#F0E6D3;--border:rgba(201,146,58,0.2)}
-body{background:var(--bg);color:var(--brown);font-family:'DM Sans',sans-serif}
-.header{background:var(--brown2);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
-.header a{color:#F5EDD8;text-decoration:none;font-size:20px;font-family:'Playfair Display',serif;font-weight:700}
-.header a span{color:var(--ocre)}
-.header nav a{color:rgba(245,237,216,0.7);font-size:13px;margin-left:20px;text-decoration:none}
-.hero{text-align:center;padding:60px 24px 40px;background:linear-gradient(180deg,var(--brown2),#2A1500)}
-.hero h1{font-family:'Playfair Display',serif;font-size:clamp(28px,5vw,48px);color:#F5EDD8;margin-bottom:12px}
-.hero p{font-family:'Lora',serif;font-size:16px;color:rgba(245,237,216,0.7);max-width:520px;margin:0 auto}
-.plans{max-width:900px;margin:0 auto;padding:48px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}
-.plan-card{background:#fff;border:2px solid var(--border);border-radius:20px;padding:32px;position:relative;transition:all .2s}
-.plan-card.featured{border-color:var(--ocre);box-shadow:0 8px 32px rgba(201,146,58,0.2)}
-.plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--ocre);color:var(--brown2);font-size:11px;font-weight:700;padding:4px 16px;border-radius:100px;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
-.plan-name{font-family:'Playfair Display',serif;font-size:24px;color:var(--brown);margin-bottom:8px}
-.plan-price{font-size:36px;font-weight:700;color:var(--ocre);margin-bottom:4px}
-.plan-price small{font-size:14px;color:#8B6040}
-.plan-desc{font-family:'Lora',serif;font-size:13px;color:#8B6040;margin-bottom:24px;font-style:italic}
-.plan-features{list-style:none;margin-bottom:28px}
-.plan-features li{padding:8px 0;font-size:14px;color:var(--brown);border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:8px}
-.plan-features li:last-child{border:none}
-.check{color:#27AE60;font-size:16px}
-.cross{color:#ccc}
-.btn-plan{width:100%;padding:14px;background:linear-gradient(135deg,var(--ocre),#A07028);color:var(--brown2);font-weight:700;font-size:15px;border:none;border-radius:12px;cursor:pointer}
-.btn-plan.secondary{background:transparent;color:var(--brown);border:1px solid var(--border)}
-.note{text-align:center;padding:0 24px 48px;font-family:'Lora',serif;font-size:13px;color:#8B6040;font-style:italic}
-.footer{background:var(--brown2);padding:24px;text-align:center}
-.footer p{font-size:13px;color:rgba(245,237,216,0.5)}
-.footer a{color:var(--ocre);text-decoration:none}
+.planes-shell { max-width: 1000px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); }
+.planes-hero { text-align: center; padding: 60px 20px 40px; }
+.planes-hero h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(36px, 6vw, 56px); color: var(--espresso); line-height: 1.05; margin-bottom: 12px; }
+.planes-hero h1 .it { font-style: italic; color: transparent; background: var(--grad-gold); -webkit-background-clip: text; background-clip: text; }
+.planes-hero p { font-family: var(--font-display); font-size: clamp(15px, 2.2vw, 18px); color: var(--ink-2); max-width: 540px; margin: 0 auto; line-height: 1.5; }
+
+.planes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; max-width: 820px; margin: 0 auto; padding-bottom: 60px; }
+
+.plan-card { background: var(--cream-2); border: 1.5px solid var(--hairline-2); border-radius: var(--r-xl); padding: 32px 26px; position: relative; transition: .2s var(--ease); }
+.plan-card.featured { border-color: var(--gold); box-shadow: 0 10px 40px rgba(188,138,54,.18), 0 2px 10px rgba(94,27,34,.06); }
+.plan-card.featured::before { content: '⭐ MÁS POPULAR'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--grad-gold); color: #3a2a0c; font-family: var(--font-ui); font-weight: 700; font-size: 11px; letter-spacing: .14em; padding: 5px 16px; border-radius: 99px; box-shadow: var(--shadow-sm); white-space: nowrap; }
+
+.plan-name { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--espresso); margin-bottom: 4px; }
+.plan-price { display: flex; align-items: baseline; gap: 4px; margin: 14px 0 4px; }
+.plan-price .price { font-family: var(--font-display); font-size: 44px; font-weight: 700; color: var(--gold-deep); line-height: 1; }
+.plan-price .period { font-size: 14px; color: var(--ink-3); }
+.plan-desc { font-family: var(--font-display); font-style: italic; font-size: 14.5px; color: var(--ink-2); margin-bottom: 22px; }
+
+.plan-features { list-style: none; margin-bottom: 24px; }
+.plan-features li { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--hairline); font-size: 14px; color: var(--ink); line-height: 1.45; }
+.plan-features li:last-child { border: none; }
+.plan-features li .ico { color: #2D8A5E; font-weight: 700; flex-shrink: 0; }
+.plan-features li.disabled { color: var(--ink-3); }
+.plan-features li.disabled .ico { color: var(--ink-3); }
+.plan-features li.highlight { font-weight: 600; color: var(--espresso); }
+
+.plan-cta-btn { width: 100%; padding: 14px; background: transparent; color: var(--espresso); border: 1.5px solid var(--hairline-2); border-radius: var(--r-md); font-family: var(--font-ui); font-weight: 600; font-size: 14.5px; cursor: pointer; transition: .18s; text-decoration: none; display: block; text-align: center; }
+.plan-cta-btn:hover { border-color: var(--gold); background: var(--cream-3); }
+
+.paypal-wrap { margin-top: 10px; min-height: 50px; }
+.paypal-loading { text-align: center; font-size: 12px; color: var(--ink-3); padding: 14px; }
+
+.note-bar { max-width: 720px; margin: 0 auto 40px; padding: 18px 22px; background: var(--cream-3); border: 1px solid var(--hairline); border-left: 3px solid var(--gold); border-radius: var(--r-md); font-family: var(--font-display); font-style: italic; font-size: 14.5px; color: var(--ink-2); text-align: center; line-height: 1.55; }
+
+@media (max-width: 768px) {
+  .nav { padding: 8px 12px; height: 56px; }
+  .nav-left { gap: 8px; }
+  .brand-mark { width: 28px; height: 28px; }
+  .brand-word { font-size: 15px; white-space: nowrap; }
+  .nav-link { padding: 5px 8px; font-size: 12px; }
+  .nav-link:not(.active) { display: none; }
+  .nav-user { padding: 3px 9px 3px 3px; font-size: 12px; }
+  .nav-user .av { width: 20px; height: 20px; font-size: 10px; }
+  .planes-hero { padding: 36px 16px 28px; }
+  .plan-card { padding: 26px 22px; }
+}
 </style>
 </head>
 <body>
-<header class="header">
-  <a href="/">✝ Católicos<span>GPT</span></a>
-  <nav><a href="/">Chat IA</a><a href="/infografias">Infografías</a><a href="/planes" style="color:var(--ocre)">Planes</a></nav>
+
+<!-- NAV -->
+<header class="nav">
+  <a href="/" class="brand" style="text-decoration:none">
+    <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/></svg></div>
+    <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
+  </a>
+  <nav class="nav-links">
+    <a class="nav-link" href="/" style="text-decoration:none">Chat IA</a>
+    <a class="nav-link" href="/infografias" style="text-decoration:none">Infografías</a>
+    <a class="nav-link active" href="/planes" style="text-decoration:none">Planes</a>
+    <a class="nav-user" href="/" style="text-decoration:none"><span class="av">D</span><span>Mi cuenta</span></a>
+  </nav>
 </header>
-<div class="hero">
-  <h1>Simple y transparente</h1>
-  <p>El Chat de IA siempre es gratis. Las infografías tienen un plan freemium.</p>
-</div>
-<div class="plans">
-  <div class="plan-card">
-    <div class="plan-name">Gratis</div>
-    <div class="plan-price">$0 <small>/ siempre</small></div>
-    <div class="plan-desc">Para empezar a explorar</div>
-    <ul class="plan-features">
-      <li><span class="check">✓</span> Chat IA ilimitado</li>
-      <li><span class="check">✓</span> Consultas al Magisterio</li>
-      <li><span class="check">✓</span> 2 infografías / semana</li>
-      <li><span class="check">✓</span> Ver repositorio de infografías</li>
-      <li><span class="check">✓</span> Descargar infografías existentes</li>
-      <li><span class="cross">○</span> Infografías ilimitadas</li>
-      <li><span class="cross">○</span> Series de 4 slides</li>
-      <li><span class="cross">○</span> Formato 16:9 presentaciones</li>
-    </ul>
-    <button class="btn-plan secondary" onclick="window.location='/'">Usar gratis</button>
+
+<div class="planes-shell">
+
+  <section class="planes-hero">
+    <h1>Simple y <span class="it">transparente</span></h1>
+    <p>El Chat IA con Magisterium es siempre gratis. Las infografías tienen plan freemium para parroquias y catequistas.</p>
+  </section>
+
+  <div class="planes-grid">
+
+    <!-- PLAN GRATIS -->
+    <div class="plan-card">
+      <div class="plan-name">Gratis</div>
+      <div class="plan-price"><span class="price">$0</span><span class="period">/ siempre</span></div>
+      <div class="plan-desc">Para empezar a explorar</div>
+      <ul class="plan-features">
+        <li><span class="ico">✓</span> Chat IA ilimitado</li>
+        <li><span class="ico">✓</span> Consultas al Magisterio</li>
+        <li><span class="ico">✓</span> Lecturas, santo y oración del día</li>
+        <li><span class="ico">✓</span> 2 infografías por semana</li>
+        <li><span class="ico">✓</span> Ver galería completa</li>
+        <li><span class="ico">✓</span> Descargar infografías existentes</li>
+        <li class="disabled"><span class="ico">○</span> Series de 4 slides (carruseles)</li>
+        <li class="disabled"><span class="ico">○</span> Branding propio</li>
+      </ul>
+      <a class="plan-cta-btn" href="/">Usar gratis</a>
+    </div>
+
+    <!-- PLAN PREMIUM -->
+    <div class="plan-card featured">
+      <div class="plan-name">Premium</div>
+      <div class="plan-price"><span class="price">$4.99</span><span class="period">/ mes</span></div>
+      <div class="plan-desc">Para evangelizadores y catequistas</div>
+      <ul class="plan-features">
+        <li><span class="ico">✓</span> Chat IA ilimitado</li>
+        <li><span class="ico">✓</span> Consultas al Magisterio</li>
+        <li class="highlight"><span class="ico">✓</span> <strong>Infografías ilimitadas</strong></li>
+        <li><span class="ico">✓</span> Series de 4 slides (carruseles)</li>
+        <li><span class="ico">✓</span> Formatos 9:16, 1:1 y 16:9</li>
+        <li><span class="ico">✓</span> 3 estilos de diseño</li>
+        <li class="highlight"><span class="ico">✓</span> <strong>Branding propio</strong> (parroquia/ministerio)</li>
+        <li><span class="ico">✓</span> Descarga en alta calidad</li>
+        <li><span class="ico">✓</span> Soporte prioritario</li>
+      </ul>
+      <div id="paypal-button-container-P-66Y50051RX0957311NIOWYFY" class="paypal-wrap">
+        <div class="paypal-loading">⏳ Cargando opciones de pago…</div>
+      </div>
+    </div>
+
   </div>
-  <div class="plan-card featured">
-    <div class="plan-badge">⭐ Más popular</div>
-    <div class="plan-name">Premium</div>
-    <div class="plan-price">$4.99 <small>/ mes</small></div>
-    <div class="plan-desc">Para evangelizadores y catequistas</div>
-    <ul class="plan-features">
-      <li><span class="check">✓</span> Chat IA ilimitado</li>
-      <li><span class="check">✓</span> Consultas al Magisterio</li>
-      <li><span class="check">✓</span> <strong>Infografías ilimitadas</strong></li>
-      <li><span class="check">✓</span> Series de 4 slides</li>
-      <li><span class="check">✓</span> Formato 9:16 y 16:9</li>
-      <li><span class="check">✓</span> 3 estilos de diseño</li>
-      <li><span class="check">✓</span> Descarga en alta calidad</li>
-      <li><span class="check">✓</span> Soporte prioritario</li>
-    </ul>
-    <div id="paypal-button-container-P-66Y50051RX0957311NIOWYFY" style="margin-top:8px"></div>
+
+  <div class="note-bar">
+    ✨ El Chat IA con Magisterium, apologética y modos doctrinales es <strong>siempre gratuito sin límites</strong>.
   </div>
+
 </div>
-<p class="note">* El Chat IA con Magisterium, apologética y modos doctrinal/scholarly es siempre gratuito sin límites.</p>
-<footer class="footer">
-  <p>© 2026 <a href="/">CatolicosGPT</a> · <a href="/infografias">Infografías</a> · Fe · Conocimiento · Acción</p>
+
+<footer style="background:var(--cream-3);padding:30px 20px;text-align:center;border-top:1px solid var(--hairline);color:var(--ink-3);font-size:13px">
+  © 2026 <a href="/" style="color:var(--gold-deep);text-decoration:none;font-weight:600">CatolicosGPT</a> · <a href="/infografias" style="color:var(--gold-deep);text-decoration:none">Infografías</a> · Fe · Conocimiento · Acción
 </footer>
+
+<!-- PayPal SDK -->
 <script src="https://www.paypal.com/sdk/js?client-id=AQYVUOfQ6kUlu7y1IXRq2ffqWuS9HtMJx2WPhdnXJT2P3DUlfGF-VWAb77xuHU9DMu2nJZJE9z3pXMGC&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
 <script>
+  let _ppRetries = 0;
   function initPayPalButton() {
     if (typeof paypal === 'undefined') {
+      if (++_ppRetries > 50) {
+        const c = document.getElementById('paypal-button-container-P-66Y50051RX0957311NIOWYFY');
+        if (c) c.innerHTML = '<div style="text-align:center;padding:14px;color:var(--maroon);font-size:13px">⚠️ No se pudo cargar PayPal. Desactiva tu adblocker e intenta de nuevo, o <a href="mailto:gptcatolicos@gmail.com" style="color:var(--gold-deep)">contáctanos</a>.</div>';
+        return;
+      }
       setTimeout(initPayPalButton, 200);
       return;
     }
+    const container = document.getElementById('paypal-button-container-P-66Y50051RX0957311NIOWYFY');
+    if (container) container.innerHTML = '';
     paypal.Buttons({
-    style:{ shape:'rect', color:'gold', layout:'vertical', label:'subscribe' },
-    createSubscription: function(data, actions) {
-      return actions.subscription.create({ plan_id: 'P-66Y50051RX0957311NIOWYFY' });
-    },
-    onApprove: function(data, actions) {
-      // Activar plan premium en nuestro servidor
-      const token = localStorage.getItem('cgpt_token');
-      if (token) {
-        fetch('/api/paypal/subscription-approved', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ subscriptionID: data.subscriptionID })
-        }).then(() => {
-          alert('¡Suscripción Premium activada! ✅\nID: ' + data.subscriptionID);
-          window.location.href = '/infografias';
-        });
-      } else {
-        alert('Suscripción aprobada. ID: ' + data.subscriptionID + '\nInicia sesión para activar tu cuenta Premium.');
-        window.location.href = '/';
+      style: { shape: 'rect', color: 'gold', layout: 'vertical', label: 'subscribe', height: 45 },
+      createSubscription: function(data, actions) {
+        return actions.subscription.create({ plan_id: 'P-66Y50051RX0957311NIOWYFY' });
+      },
+      onApprove: function(data, actions) {
+        const token = localStorage.getItem('cgpt_token');
+        if (token) {
+          fetch('/api/paypal/subscription-approved', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ subscriptionID: data.subscriptionID })
+          }).then(() => {
+            alert('🎉 ¡Suscripción Premium activada!\\n\\nYa puedes generar infografías ilimitadas con branding propio.');
+            window.location.href = '/infografias';
+          });
+        } else {
+          alert('✅ Suscripción aprobada.\\nID: ' + data.subscriptionID + '\\n\\nInicia sesión para activar tu cuenta Premium.');
+          window.location.href = '/?login=1';
+        }
+      },
+      onError: function(err) {
+        console.error('PayPal error', err);
+        const c = document.getElementById('paypal-button-container-P-66Y50051RX0957311NIOWYFY');
+        if (c) c.innerHTML = '<div style="text-align:center;padding:14px;color:var(--maroon);font-size:13px">⚠️ Error con PayPal. <a href="mailto:gptcatolicos@gmail.com" style="color:var(--gold-deep)">Contáctanos</a> para activar manualmente.</div>';
       }
-    },
-    onError: function(err) { console.error('PayPal error', err); }
-  }).render('#paypal-button-container-P-66Y50051RX0957311NIOWYFY');
+    }).render('#paypal-button-container-P-66Y50051RX0957311NIOWYFY');
   }
   initPayPalButton();
 </script>
@@ -2067,14 +2156,26 @@ app.post('/api/admin/infografias/upload', auth.authenticateToken, auth.requireAd
     const imgDir = path.join(__dirname, 'public', 'infografias');
     if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
 
-    // Subir cada imagen (carrusel) — en serie para evitar rate limits
+    console.log(`[Admin Upload] Iniciando: ${imgArray.length} imagen(es) | slug=${safeSlug} | titulo="${titulo}"`);
+
+    // Subir cada imagen (carrusel) — en serie para evitar rate limits y errores
     const imagenes = [];
+    const errors = [];
     for (let i = 0; i < imgArray.length; i++) {
       const dataUrl = imgArray[i];
+      if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
+        const err = `Slide ${i+1}: data URL inválido`;
+        console.error('[Admin Upload]', err);
+        errors.push(err);
+        continue;
+      }
+      const ext = (dataUrl.match(/^data:image\/(\w+);/) || [,'png'])[1];
       const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '');
       let imageUrl = null;
+      const sizeKB = Math.round(base64.length * 0.75 / 1024);
+      console.log(`[Admin Upload] Procesando slide ${i+1}/${imgArray.length} (${ext}, ${sizeKB}KB)`);
 
-      // Try Cloudinary first
+      // Try Cloudinary first — con metadata enriquecida (context) para reconstrucción
       if (process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
         try {
           const upload = await cloudinary.uploader.upload(dataUrl, {
@@ -2082,21 +2183,43 @@ app.post('/api/admin/infografias/upload', auth.authenticateToken, auth.requireAd
             overwrite: false,
             quality: 'auto:best',
             fetch_format: 'auto',
-            tags: ['catolicosgpt', 'infografia', 'admin-upload', esCarrusel ? 'carrusel' : 'single']
+            tags: ['catolicosgpt', 'infografia', 'admin-upload', esCarrusel ? 'carrusel' : 'single', categoria || 'devocional'],
+            // Metadata para poder reconstruir el catálogo si se pierde
+            context: {
+              slug: safeSlug,
+              titulo: (titulo || '').slice(0, 200),
+              descripcion: (descripcion || '').slice(0, 500),
+              keywords: (keywords || '').slice(0, 300),
+              categoria: categoria || 'devocional',
+              tipo: tipo || 'santo',
+              slide: String(i + 1),
+              total_slides: String(imgArray.length),
+              es_carrusel: String(imgArray.length > 1),
+              fecha: new Date().toISOString().slice(0, 10)
+            }
           });
           imageUrl = upload.secure_url;
-          console.log(`[Admin Upload] Cloudinary OK slide ${i+1}/${imgArray.length}: ${imageUrl}`);
+          console.log(`[Admin Upload] ✅ Cloudinary OK slide ${i+1}/${imgArray.length}: ${imageUrl}`);
         } catch (e) {
-          console.error(`[Admin Upload] Cloudinary err slide ${i+1}:`, e.message);
+          const errMsg = `Cloudinary slide ${i+1}: ${e.message}`;
+          console.error('[Admin Upload] ❌', errMsg);
+          errors.push(errMsg);
         }
       }
 
-      // Fallback local
+      // Fallback local (sobrevive deploys solo si hay Render Disk montado en /public/infografias)
       if (!imageUrl) {
-        const imgFile = `${safeSlug}-${i}.png`;
-        fs.writeFileSync(path.join(imgDir, imgFile), Buffer.from(base64, 'base64'));
-        imageUrl = `/infografias/${imgFile}`;
-        console.log(`[Admin Upload] Saved locally slide ${i+1}: ${imageUrl}`);
+        try {
+          const imgFile = `${safeSlug}-${i}.${ext === 'jpeg' ? 'jpg' : ext}`;
+          fs.writeFileSync(path.join(imgDir, imgFile), Buffer.from(base64, 'base64'));
+          imageUrl = `/infografias/${imgFile}`;
+          console.log(`[Admin Upload] 💾 Saved locally slide ${i+1}: ${imageUrl}`);
+        } catch(e) {
+          const errMsg = `Local save slide ${i+1}: ${e.message}`;
+          console.error('[Admin Upload] ❌', errMsg);
+          errors.push(errMsg);
+          continue;
+        }
       }
 
       imagenes.push({
@@ -2104,8 +2227,16 @@ app.post('/api/admin/infografias/upload', auth.authenticateToken, auth.requireAd
         slide: i + 1,
         model: 'admin-upload',
         formato: '1:1',
-        sizeLabel: '1024x1024'
+        sizeLabel: '1024x1024',
+        ext
       });
+    }
+
+    if (!imagenes.length) {
+      return res.status(500).json({ error: 'No se pudo subir ninguna imagen. ' + errors.join(' | ') });
+    }
+    if (errors.length) {
+      console.warn(`[Admin Upload] ⚠️ ${errors.length} errores, ${imagenes.length} OK de ${imgArray.length} totales`);
     }
 
     // Guardar en catálogo
@@ -2196,6 +2327,144 @@ app.get('/sitemap.xml', (req, res) => {
     }).join('\n') +
     '\n</urlset>'
   );
+});
+
+
+// ── ADMIN: Reconstruir catálogo desde Cloudinary (recovery después de deploy) ──
+app.post('/api/admin/rebuild-catalog', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
+  if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    return res.status(500).json({ error: 'Cloudinary no configurado. Sin backup posible.' });
+  }
+  try {
+    const cloudinary = require('cloudinary').v2;
+    console.log('[Rebuild] Iniciando rebuild desde Cloudinary...');
+
+    // Listar TODOS los recursos con tag 'catolicosgpt' (paginado)
+    let resources = [];
+    let nextCursor = null;
+    do {
+      const result = await cloudinary.api.resources_by_tag('catolicosgpt', {
+        max_results: 500,
+        context: true,
+        tags: true,
+        ...(nextCursor ? { next_cursor: nextCursor } : {})
+      });
+      resources = resources.concat(result.resources || []);
+      nextCursor = result.next_cursor;
+    } while (nextCursor);
+
+    console.log(`[Rebuild] ${resources.length} recursos encontrados en Cloudinary`);
+
+    // Agrupar por slug (cada slug es una infografía, puede tener múltiples slides)
+    const bySlug = {};
+    for (const r of resources) {
+      const ctx = r.context?.custom || r.context || {};
+      const slug = ctx.slug;
+      if (!slug) continue; // Sin metadata = no recuperable
+
+      if (!bySlug[slug]) {
+        bySlug[slug] = {
+          slug,
+          titulo: ctx.titulo || slug,
+          tema: ctx.titulo || slug,
+          descripcion: ctx.descripcion || '',
+          keywords: ctx.keywords || '',
+          categoria: ctx.categoria || 'devocional',
+          tipo: ctx.tipo || 'santo',
+          fecha: ctx.fecha || r.created_at?.slice(0, 10),
+          esCarrusel: ctx.es_carrusel === 'true',
+          totalSlides: parseInt(ctx.total_slides) || 1,
+          imagenes: []
+        };
+      }
+      bySlug[slug].imagenes.push({
+        url: r.secure_url,
+        slide: parseInt(ctx.slide) || 1,
+        model: 'admin-upload',
+        formato: '1:1',
+        sizeLabel: r.width + 'x' + r.height
+      });
+    }
+
+    // Ordenar imágenes por slide dentro de cada grupo
+    Object.values(bySlug).forEach(inf => {
+      inf.imagenes.sort((a, b) => a.slide - b.slide);
+      inf.totalSlides = inf.imagenes.length;
+      inf.esCarrusel = inf.imagenes.length > 1;
+    });
+
+    // Construir el catálogo
+    const { loadCatalog, saveCatalog } = require('./infografias-module');
+    const existing = loadCatalog();
+    const existingSlugs = new Set((existing.infografias || []).map(i => i.slug));
+
+    const recovered = Object.values(bySlug).map(inf => ({
+      id: 'inf-' + Date.now() + '-' + inf.slug,
+      slug: inf.slug,
+      tema: inf.tema,
+      titulo: inf.titulo,
+      descripcion: inf.descripcion,
+      keywords: inf.keywords,
+      categoria: inf.categoria,
+      tipo: inf.tipo,
+      altText: inf.titulo,
+      fechaCreacion: (inf.fecha || new Date().toISOString().slice(0, 10)) + 'T00:00:00.000Z',
+      fechaISO: inf.fecha || new Date().toISOString().slice(0, 10),
+      publicado: true,
+      totalSlides: inf.totalSlides,
+      esCarrusel: inf.esCarrusel,
+      uploadedBy: 'admin',
+      imagenes: inf.imagenes
+    }));
+
+    // Mergear con el catálogo existente (no perder lo que ya hay)
+    const merged = [...(existing.infografias || [])];
+    let added = 0;
+    for (const inf of recovered) {
+      if (!existingSlugs.has(inf.slug)) {
+        merged.unshift(inf);
+        added++;
+      }
+    }
+
+    // Ordenar por fecha descendente
+    merged.sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
+
+    const newCatalog = {
+      version: '5.0',
+      total: merged.length,
+      categorias: [...new Set(merged.map(i => i.categoria).filter(Boolean))],
+      infografias: merged
+    };
+    saveCatalog(newCatalog);
+
+    console.log(`[Rebuild] ✅ ${added} infografías nuevas recuperadas. Total: ${merged.length}`);
+    res.json({
+      ok: true,
+      recovered: added,
+      existing: existing.infografias?.length || 0,
+      total: merged.length,
+      resources_scanned: resources.length
+    });
+  } catch(e) {
+    console.error('[Rebuild]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── ADMIN: Stats del catálogo ──
+app.get('/api/admin/catalog-status', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const { loadCatalog } = require('./infografias-module');
+  const cat = loadCatalog();
+  const persistPath = process.env.DATA_DIR || './data';
+  res.json({
+    ok: true,
+    total: cat.total || 0,
+    infografias: cat.infografias?.length || 0,
+    dataDir: persistPath,
+    cloudinaryConfigured: !!(process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET),
+    renderDiskMounted: !!process.env.DATA_DIR
+  });
 });
 
 // ── Cron: Generar infografías diarias ──
