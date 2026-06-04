@@ -12,6 +12,8 @@ const { generarInfografia, detectarTipo, getInfografias, getInfografiaBySlug, de
 const liturgiaCache = require('./liturgia-cache');
 const videosModule = require('./videos-module');
 const misasModule = require('./misas-module');
+const blogModule = require('./blog-module');
+const podcastModule = require('./podcast-module');
 const { findRelatedResources } = require('./recursos-module');
 const auth = require('./auth-module');
 
@@ -3032,6 +3034,519 @@ async function generarInfografiasDelDia() {
 scheduleDailyAt(6, 0, generarInfografiasDelDia);
 
 // ── Catch-all — sirve index.html ──
+
+// ════════════════════════════════════════════════════════════════════════
+// V6.0 — NUEVOS ENDPOINTS (Blog, Podcast, Migración Cloudinary, Alt-text)
+// ════════════════════════════════════════════════════════════════════════
+
+// ─── /infografias/crear — página dedicada del generador ───
+app.get('/infografias/crear', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'infografias-crear.html'));
+});
+
+// ─── ADMIN: editar metadata (alt-text, título, descripción, keywords, categoría) ───
+app.post('/api/admin/infografias/edit-meta', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const { slug, titulo, descripcion, keywords, altText, categoria } = req.body;
+  if (!slug) return res.status(400).json({ error: 'slug requerido' });
+  try {
+    const { loadCatalog, saveCatalog } = require('./infografias-module');
+    const catalog = loadCatalog();
+    const idx = (catalog.infografias || []).findIndex(i => i.slug === slug);
+    if (idx < 0) return res.status(404).json({ error: 'Infografía no encontrada' });
+    const inf = catalog.infografias[idx];
+    if (titulo !== undefined) inf.titulo = titulo;
+    if (descripcion !== undefined) inf.descripcion = descripcion;
+    if (keywords !== undefined) inf.keywords = keywords;
+    if (altText !== undefined) inf.altText = altText;
+    if (categoria !== undefined) inf.categoria = categoria;
+    inf.fechaModificacion = new Date().toISOString();
+    saveCatalog(catalog);
+    res.json({ ok: true, infografia: inf });
+  } catch(e) {
+    console.error('[Edit meta]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── MIGRACIÓN A CLOUDINARY (proteger imágenes locales) ───
+// Sube TODAS las imágenes locales (/public/infografias/*.jpg) a Cloudinary y actualiza el catálogo
+// El slug NO cambia → URLs públicas indexadas en Search Console siguen funcionando
+app.post('/api/admin/migrate-to-cloudinary', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
+  if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET || !process.env.CLOUDINARY_CLOUD_NAME) {
+    return res.status(500).json({
+      error: 'Cloudinary no configurado',
+      cloud_name: !!process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: !!process.env.CLOUDINARY_API_KEY,
+      api_secret: !!process.env.CLOUDINARY_API_SECRET
+    });
+  }
+  try {
+    const cloudinary = require('cloudinary').v2;
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true
+    });
+
+    const { loadCatalog, saveCatalog } = require('./infografias-module');
+    const catalog = loadCatalog();
+    const items = catalog.infografias || [];
+
+    let migrated = 0, alreadyCloud = 0, errors = 0, notFound = 0;
+    const log = [];
+
+    for (const inf of items) {
+      if (!inf.imagenes || !inf.imagenes.length) continue;
+      for (let i = 0; i < inf.imagenes.length; i++) {
+        const img = inf.imagenes[i];
+        const url = img.url || '';
+        // Saltar si ya está en Cloudinary
+        if (url.includes('cloudinary.com') || url.includes('res.cloudinary')) {
+          alreadyCloud++;
+          continue;
+        }
+        // Resolver path local
+        let fileName = '';
+        if (url.startsWith('/infografias/')) fileName = url.replace('/infografias/', '');
+        else if (url.startsWith('/public/infografias/')) fileName = url.replace('/public/infografias/', '');
+        else if (url.includes('/infografias/')) fileName = url.split('/infografias/').pop();
+        if (!fileName) {
+          log.push(`⚠️ ${inf.slug} slide ${i+1}: URL no reconocida → ${url}`);
+          continue;
+        }
+        const localPath = path.join(__dirname, 'public', 'infografias', fileName);
+        if (!fs.existsSync(localPath)) {
+          notFound++;
+          log.push(`❌ ${inf.slug} slide ${i+1}: archivo no existe → ${localPath}`);
+          continue;
+        }
+        try {
+          const uploadRes = await cloudinary.uploader.upload(localPath, {
+            public_id: `catolicosgpt/infografias/migrated-${inf.slug}-${i}-${Date.now()}`,
+            overwrite: false,
+            quality: 'auto:best',
+            fetch_format: 'auto',
+            tags: ['catolicosgpt', 'infografia', 'migrated'],
+            context: {
+              slug: inf.slug,
+              titulo: (inf.titulo || '').slice(0, 200),
+              descripcion: (inf.descripcion || '').slice(0, 500),
+              keywords: (inf.keywords || '').slice(0, 300),
+              categoria: inf.categoria || 'devocional',
+              tipo: inf.tipo || 'santo',
+              slide: String(i + 1),
+              total_slides: String(inf.imagenes.length),
+              es_carrusel: String(inf.imagenes.length > 1),
+              fecha: inf.fechaISO || new Date().toISOString().slice(0, 10),
+              migrated_from: url
+            }
+          });
+          img.urlOriginalLocal = url;
+          img.url = uploadRes.secure_url;
+          img.publicId = uploadRes.public_id;
+          migrated++;
+          log.push(`✅ ${inf.slug} slide ${i+1}: migrado a Cloudinary`);
+        } catch(e) {
+          errors++;
+          log.push(`❌ ${inf.slug} slide ${i+1}: ${e.message}`);
+        }
+      }
+    }
+
+    saveCatalog(catalog);
+    console.log(`[Migrate] ✅ ${migrated} migradas, ${alreadyCloud} ya en cloud, ${notFound} no encontradas, ${errors} errores`);
+
+    res.json({
+      ok: true,
+      migrated,
+      alreadyCloud,
+      notFound,
+      errors,
+      totalScanned: items.length,
+      log: log.slice(-100)
+    });
+  } catch(e) {
+    console.error('[Migrate FATAL]', e);
+    res.status(500).json({ error: e.message, stack: e.stack?.split('\n').slice(0,5).join(' | ') });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════
+// BLOG — Endpoints API + Páginas web
+// ════════════════════════════════════════════════════════════════════════
+
+app.get('/api/blog', (req, res) => {
+  const { categoria, q, page = 1, limit = 12 } = req.query;
+  const result = blogModule.getPosts({ categoria, q, page: parseInt(page), limit: parseInt(limit) });
+  res.json({ ok: true, ...result });
+});
+
+app.get('/api/blog/:slug', (req, res) => {
+  const post = blogModule.getPostBySlug(req.params.slug);
+  if (!post) return res.status(404).json({ ok: false, error: 'No encontrado' });
+  res.json({ ok: true, post });
+});
+
+// IA: generar metadata SEO desde título + contenido
+app.post('/api/admin/blog/enrich', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
+  const { titulo, contenidoMd } = req.body;
+  if (!titulo) return res.status(400).json({ error: 'titulo requerido' });
+  try {
+    const OpenAI = require('openai');
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const meta = await blogModule.enrichBlogWithAI(titulo, contenidoMd, openai);
+    res.json({ ok: true, ...meta });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Crear o actualizar post
+app.post('/api/admin/blog/upsert', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const { slug, titulo, descripcion, keywords, categoria, altText, extracto, contenidoMd, imagenDestacada, publicado } = req.body;
+  if (!titulo || !contenidoMd) return res.status(400).json({ error: 'titulo y contenidoMd requeridos' });
+  try {
+    const finalSlug = slug && slug.trim() ? blogModule.slugify(slug) : blogModule.slugify(titulo);
+    const existing = blogModule.getPostBySlug(finalSlug);
+    const post = {
+      id: existing?.id || 'post-' + Date.now(),
+      slug: finalSlug,
+      titulo,
+      descripcion: descripcion || '',
+      keywords: keywords || '',
+      categoria: categoria || 'espiritualidad',
+      altText: altText || titulo,
+      extracto: extracto || '',
+      contenidoMd,
+      imagenDestacada: imagenDestacada || '',
+      publicado: publicado !== false,
+      uploadedBy: 'admin'
+    };
+    const saved = blogModule.upsertPost(post);
+    res.json({ ok: true, post: saved, action: existing ? 'updated' : 'created' });
+  } catch(e) {
+    console.error('[Blog upsert]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/admin/blog/:slug', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const ok = blogModule.deletePost(req.params.slug);
+  res.json({ ok });
+});
+
+// ─── /blog — galería pública ───
+// Reemplaza el route anterior basado en SEO_TOPICS (lo preservamos en /blog/:slug como fallback)
+const _origBlogIndex = null; // Comentado: el index anterior se reemplaza por blog.html dinámica
+app._router && app._router.stack && (app._router.stack = app._router.stack.filter(layer => {
+  if (layer.route && layer.route.path === '/blog' && layer.route.methods.get) return false;
+  return true;
+}));
+
+app.get('/blog', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'blog.html'));
+});
+
+// /blog/:slug — primero busca post admin (renderiza con shortcodes), si no, fallback a SEO topic legacy
+const _origBlogSlugRoute = (function() {
+  // Capturar el handler antiguo si existe (para fallback a SEO topic)
+  if (!app._router || !app._router.stack) return null;
+  const layer = app._router.stack.find(l => l.route && l.route.path === '/blog/:slug');
+  return layer ? layer.route.stack[0].handle : null;
+})();
+
+// Eliminar el route anterior /blog/:slug y registrar el nuevo (que busca admin posts primero)
+if (app._router && app._router.stack) {
+  app._router.stack = app._router.stack.filter(layer =>
+    !(layer.route && layer.route.path === '/blog/:slug' && layer.route.methods.get)
+  );
+}
+
+app.get('/blog/:slug', async (req, res, next) => {
+  const slug = req.params.slug;
+  const post = blogModule.getPostBySlug(slug);
+
+  // Si NO existe como post admin, intentar SEO topic legacy
+  if (!post) {
+    if (_origBlogSlugRoute) return _origBlogSlugRoute(req, res, next);
+    return res.status(404).send('Artículo no encontrado');
+  }
+
+  // Render post admin con shortcodes
+  const { getInfografiaBySlug } = require('./infografias-module');
+  let html = blogModule.parseMarkdown(post.contenidoMd || '');
+  html = blogModule.renderShortcodes(html, {
+    getInfografia: getInfografiaBySlug,
+    getVideo: videosModule.getVideoBySlug,
+    getPodcast: podcastModule.getPodcastBySlug
+  });
+
+  const titulo = blogModule.escapeHtml(post.titulo || 'Artículo');
+  const descripcion = blogModule.escapeHtml(post.descripcion || post.extracto || '');
+  const imagen = post.imagenDestacada || '';
+  const altText = blogModule.escapeHtml(post.altText || titulo);
+  const categoriaLabel = post.categoria || 'espiritualidad';
+  const fecha = post.fechaCreacion ? new Date(post.fechaCreacion) : new Date();
+  const fechaFmt = fecha.toLocaleDateString('es-ES', {day:'numeric', month:'long', year:'numeric'});
+
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${titulo} · CatolicosGPT</title>
+<meta name="description" content="${descripcion}">
+<meta name="keywords" content="${blogModule.escapeHtml(post.keywords || '')}">
+<link rel="canonical" href="https://catolicosgpt.com/blog/${post.slug}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="${titulo}">
+<meta property="og:description" content="${descripcion}">
+${imagen ? `<meta property="og:image" content="${imagen}">` : ''}
+<meta property="og:url" content="https://catolicosgpt.com/blog/${post.slug}">
+<meta property="article:published_time" content="${post.fechaCreacion}">
+<meta property="article:section" content="${categoriaLabel}">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","headline":"${titulo.replace(/"/g,'\\"')}","description":"${descripcion.replace(/"/g,'\\"')}","datePublished":"${post.fechaCreacion}","dateModified":"${post.fechaModificacion || post.fechaCreacion}","author":{"@type":"Organization","name":"CatólicosGPT"}${imagen?',"image":"'+imagen+'"':''}}
+</script>
+<style>
+.shell{max-width:780px;margin:0 auto;padding:30px clamp(16px,4vw,32px) 60px}
+.post-meta{margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--hairline)}
+.post-title{font-family:var(--font-display);font-size:clamp(28px,5vw,42px);font-weight:700;color:var(--espresso);line-height:1.15;margin-bottom:14px}
+.post-info{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--ink-3)}
+.post-info .tag{padding:3px 12px;background:var(--cream-2);border:1px solid var(--hairline-2);border-radius:99px;color:var(--ink-2)}
+.post-img-featured{width:100%;border-radius:14px;margin-bottom:24px;display:block;aspect-ratio:16/9;object-fit:cover}
+.post-content{font-family:var(--font-display);font-size:18px;line-height:1.75;color:var(--ink)}
+.post-content h1,.post-content h2,.post-content h3{font-family:var(--font-display);color:var(--espresso);line-height:1.25;font-weight:700}
+.post-content h1{font-size:32px;margin:36px 0 14px}
+.post-content h2{font-size:26px;border-bottom:1px solid var(--gold);padding-bottom:8px;margin:32px 0 14px}
+.post-content h3{font-size:21px;color:var(--maroon);margin:24px 0 10px}
+.post-content p{margin-bottom:18px}
+.post-content strong{color:var(--espresso);font-weight:700}
+.post-content em{color:var(--coffee);font-style:italic}
+.post-content blockquote{border-left:4px solid var(--gold);padding:14px 20px;margin:24px 0;background:rgba(188,138,54,.07);border-radius:0 12px 12px 0;font-style:italic;color:var(--coffee);font-size:17px}
+.post-content ul,.post-content ol{margin:18px 0;padding-left:28px}
+.post-content li{margin-bottom:8px;font-size:17px;line-height:1.7}
+.post-content a{color:var(--gold-deep);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+.post-content a:hover{color:var(--maroon)}
+.post-content hr{border:none;border-top:1px solid var(--hairline);margin:30px 0}
+.post-content pre{background:var(--cream-3);padding:16px;border-radius:10px;overflow-x:auto;font-size:14px;font-family:ui-monospace,monospace}
+.post-content code{background:var(--cream-2);padding:2px 6px;border-radius:4px;font-family:ui-monospace,monospace;font-size:14px;color:var(--maroon)}
+.post-content pre code{background:transparent;padding:0;color:var(--ink)}
+.share-row{display:flex;gap:8px;margin:36px 0 0;flex-wrap:wrap;padding-top:24px;border-top:1px solid var(--hairline)}
+.share-pill{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;font-size:13px;font-weight:600;color:var(--espresso);background:#fff;border:1px solid var(--hairline-2);border-radius:99px;cursor:pointer;text-decoration:none;transition:.15s}
+.share-pill:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.share-wa:hover{background:#25D366;color:#fff;border-color:#25D366}
+.share-x:hover{background:#000;color:#fff;border-color:#000}
+.share-fb:hover{background:#1877F2;color:#fff;border-color:#1877F2}
+@media (max-width:768px){
+  .nav{padding:8px 12px;height:56px}
+  .brand-mark{width:28px;height:28px}
+  .brand-word{font-size:15px}
+  .nav-link:not(.active):not(.nav-user){display:none}
+  .post-content{font-size:17px}
+}
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="/" class="brand" style="text-decoration:none">
+    <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/></svg></div>
+    <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
+  </a>
+  <nav class="nav-links">
+    <a class="nav-link" href="/infografias">Infografías</a>
+    <a class="nav-link" href="/videos">Videos</a>
+    <a class="nav-link" href="/podcast">Podcast</a>
+    <a class="nav-link" href="/">Chat IA</a>
+    <a class="nav-link active" href="/blog">Blog</a>
+  </nav>
+</header>
+<div class="shell">
+  <article>
+    <header class="post-meta">
+      <h1 class="post-title">${titulo}</h1>
+      <div class="post-info">
+        <span class="tag">📂 ${categoriaLabel}</span>
+        <span class="tag">📅 ${fechaFmt}</span>
+      </div>
+    </header>
+    ${imagen ? `<img src="${imagen}" alt="${altText}" class="post-img-featured" loading="lazy">` : ''}
+    <div class="post-content">${html}</div>
+    <div class="share-row">
+      <a class="share-pill share-wa" target="_blank" href="https://wa.me/?text=${encodeURIComponent(post.titulo + ' · CatolicosGPT')}%20https://catolicosgpt.com/blog/${post.slug}">WhatsApp</a>
+      <a class="share-pill share-x" target="_blank" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(post.titulo)}&url=https://catolicosgpt.com/blog/${post.slug}">𝕏</a>
+      <a class="share-pill share-fb" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https://catolicosgpt.com/blog/${post.slug}">Facebook</a>
+      <a class="share-pill" href="/blog">← Ver más artículos</a>
+    </div>
+  </article>
+</div>
+</body>
+</html>`);
+});
+
+// ════════════════════════════════════════════════════════════════════════
+// PODCAST — Endpoints API + Páginas web
+// ════════════════════════════════════════════════════════════════════════
+
+app.get('/api/podcast', (req, res) => {
+  const { categoria, plataforma, q, page = 1, limit = 12 } = req.query;
+  const result = podcastModule.getPodcasts({ categoria, plataforma, q, page: parseInt(page), limit: parseInt(limit) });
+  res.json({ ok: true, ...result });
+});
+
+// Detectar plataforma (preview en admin antes de guardar)
+app.post('/api/admin/podcast/detect', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const { url } = req.body;
+  const det = podcastModule.detectPlatform(url);
+  if (!det) return res.status(400).json({ ok: false, error: 'Plataforma no reconocida. Pega URL de Spotify, Apple Podcasts, SoundCloud, Ivoox o YouTube.' });
+  res.json({ ok: true, ...det });
+});
+
+// Crear podcast
+app.post('/api/admin/podcast/upload', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
+  const { url, contextHint, originalTitle } = req.body;
+  if (!url) return res.status(400).json({ error: 'url requerida' });
+  const det = podcastModule.detectPlatform(url);
+  if (!det) return res.status(400).json({ error: 'Plataforma no reconocida' });
+  try {
+    const OpenAI = require('openai');
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const ai = await podcastModule.enrichPodcastWithAI(originalTitle || '', contextHint, det.plataforma, openai);
+    const existing = podcastModule.loadPodcasts();
+    let finalSlug = ai.slug;
+    let n = 1;
+    while ((existing.podcasts || []).some(p => p.slug === finalSlug)) {
+      finalSlug = ai.slug + '-' + (++n);
+    }
+    const now = new Date();
+    const podcast = {
+      id: 'pod-' + Date.now(),
+      slug: finalSlug,
+      plataforma: det.plataforma,
+      tipo: det.tipo,
+      sourceUrl: det.sourceUrl,
+      embedUrl: det.embedUrl,
+      embedHtml: det.embedHtml,
+      titulo: ai.titulo,
+      tituloOriginal: originalTitle || '',
+      descripcion: ai.descripcion,
+      keywords: ai.keywords,
+      categoria: ai.categoria,
+      altText: ai.altText,
+      fechaCreacion: now.toISOString(),
+      fechaISO: now.toISOString().slice(0, 10),
+      publicado: true,
+      uploadedBy: 'admin'
+    };
+    existing.podcasts = existing.podcasts || [];
+    existing.podcasts.unshift(podcast);
+    existing.total = existing.podcasts.length;
+    podcastModule.savePodcasts(existing);
+    res.json({ ok: true, podcast });
+  } catch(e) {
+    console.error('[Podcast upload]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/admin/podcast/:slug', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const ok = podcastModule.deletePodcast(req.params.slug);
+  res.json({ ok });
+});
+
+// Página /podcast (galería)
+app.get('/podcast', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'podcast.html'));
+});
+
+// Página individual /podcast/:slug
+app.get('/podcast/:slug', (req, res) => {
+  const p = podcastModule.getPodcastBySlug(req.params.slug);
+  if (!p) return res.status(404).sendFile(path.join(__dirname, 'public', 'podcast.html'));
+  const titulo = blogModule.escapeHtml(p.titulo || 'Podcast');
+  const descripcion = blogModule.escapeHtml(p.descripcion || '');
+  const platLabel = p.plataforma === 'spotify' ? '🎵 Spotify' :
+                    p.plataforma === 'apple' ? '🍎 Apple Podcasts' :
+                    p.plataforma === 'soundcloud' ? '☁️ SoundCloud' :
+                    p.plataforma === 'ivoox' ? '📻 Ivoox' :
+                    p.plataforma === 'youtube' ? '▶️ YouTube' : '🎙️ Podcast';
+
+  res.send(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${titulo} · CatolicosGPT</title>
+<meta name="description" content="${descripcion}">
+<meta name="keywords" content="${blogModule.escapeHtml(p.keywords || '')}">
+<link rel="canonical" href="https://catolicosgpt.com/podcast/${p.slug}">
+<meta property="og:type" content="music.song">
+<meta property="og:title" content="${titulo}">
+<meta property="og:description" content="${descripcion}">
+<meta property="og:url" content="https://catolicosgpt.com/podcast/${p.slug}">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.shell{max-width:760px;margin:0 auto;padding:30px clamp(16px,4vw,32px) 60px}
+.podcast-frame{margin-bottom:24px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow-md)}
+.podcast-frame iframe{width:100%;display:block;border:0}
+.podcast-title{font-family:var(--font-display);font-size:clamp(24px,4vw,36px);font-weight:700;color:var(--espresso);line-height:1.2;margin-bottom:8px}
+.podcast-info{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--ink-3);margin-bottom:24px}
+.podcast-info .tag{padding:4px 12px;background:var(--cream-2);border:1px solid var(--hairline-2);border-radius:99px;color:var(--ink-2)}
+.podcast-info .tag.plat{background:var(--espresso);color:#f3e4c6;border-color:var(--espresso)}
+.podcast-desc{font-family:var(--font-display);font-size:16px;color:var(--ink);line-height:1.65;padding:22px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:14px;border-left:3px solid var(--gold)}
+.share-row{display:flex;gap:8px;margin:28px 0;flex-wrap:wrap}
+.share-pill{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;font-size:13px;font-weight:600;color:var(--espresso);background:#fff;border:1px solid var(--hairline-2);border-radius:99px;cursor:pointer;text-decoration:none}
+.share-pill:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+@media (max-width:768px){
+  .nav{padding:8px 12px;height:56px}
+  .brand-mark{width:28px;height:28px}
+  .brand-word{font-size:15px}
+  .nav-link:not(.active):not(.nav-user){display:none}
+}
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="/" class="brand" style="text-decoration:none">
+    <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/></svg></div>
+    <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
+  </a>
+  <nav class="nav-links">
+    <a class="nav-link" href="/infografias">Infografías</a>
+    <a class="nav-link" href="/videos">Videos</a>
+    <a class="nav-link active" href="/podcast">Podcast</a>
+    <a class="nav-link" href="/">Chat IA</a>
+    <a class="nav-link" href="/blog">Blog</a>
+  </nav>
+</header>
+<div class="shell">
+  <article>
+    <h1 class="podcast-title">${titulo}</h1>
+    <div class="podcast-info">
+      <span class="tag plat">${platLabel}</span>
+      <span class="tag">📂 ${p.categoria || 'meditacion'}</span>
+      <span class="tag">📅 ${new Date(p.fechaCreacion).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})}</span>
+    </div>
+    <div class="podcast-frame">${p.embedHtml}</div>
+    <div class="podcast-desc">${descripcion}</div>
+    <div class="share-row">
+      <a class="share-pill" target="_blank" href="https://wa.me/?text=${encodeURIComponent(p.titulo + ' · CatolicosGPT')}%20https://catolicosgpt.com/podcast/${p.slug}">WhatsApp</a>
+      <a class="share-pill" target="_blank" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(p.titulo)}&url=https://catolicosgpt.com/podcast/${p.slug}">𝕏</a>
+      ${p.sourceUrl ? `<a class="share-pill" target="_blank" href="${p.sourceUrl}">▶ Abrir original</a>` : ''}
+      <a class="share-pill" href="/podcast">← Volver a Podcasts</a>
+    </div>
+  </article>
+</div>
+</body>
+</html>`);
+});
+
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
