@@ -417,47 +417,36 @@ async function saveImageLocally(imageData, slug, index) {
   return null;
 }
 
-async function uploadToCloudinary(imageData, slug, index = 0, meta = {}) {
-  // V6.0 - OPCIÓN A: Cloudinary SIEMPRE, sin fallback local (los locales se pierden en deploys)
-  if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET || !process.env.CLOUDINARY_CLOUD_NAME) {
-    throw new Error('Cloudinary no configurado. Configura CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en variables de entorno.');
+async function uploadToCloudinary(imageData, slug, index = 0) {
+  if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.warn('[Cloudinary] Sin credenciales — usando almacenamiento local');
+    return saveImageLocally(imageData, slug, index);
   }
   try {
     const publicId = `catolicosgpt/infografias/${slug}-${index}-${Date.now()}`;
     let source;
     if (typeof imageData === 'string' && imageData.startsWith('http')) {
-      source = imageData;
+      source = imageData; // URL directa (DALL-E 3)
     } else if (typeof imageData === 'string' && imageData.length > 100) {
-      source = `data:image/png;base64,${imageData}`;
+      source = `data:image/png;base64,${imageData}`; // base64 (gpt-image-1)
     } else {
       throw new Error('imageData inválido: ' + (typeof imageData) + ' len=' + (imageData ? imageData.length : 0));
     }
-    console.log('[Cloudinary] Subiendo slug=' + slug + ' index=' + index);
-    // Guardar context metadata para poder reconstruir el catálogo si se pierde
-    const context = {
-      slug,
-      slide: String(index + 1),
-      total_slides: String(meta.totalSlides || 1),
-      es_carrusel: String(meta.esCarrusel || false),
-      titulo: (meta.titulo || '').slice(0, 200),
-      descripcion: (meta.descripcion || '').slice(0, 500),
-      keywords: (meta.keywords || '').slice(0, 300),
-      categoria: meta.categoria || 'devocional',
-      tipo: meta.tipo || 'santo',
-      fecha: meta.fecha || new Date().toISOString().slice(0, 10)
-    };
+    console.log('[Cloudinary] Subiendo imagen slug=' + slug + ' index=' + index + ' sourceType=' + (imageData.startsWith('http') ? 'URL' : 'base64'));
     const result = await cloudinary.uploader.upload(source, {
       public_id: publicId, overwrite: false,
       quality: 'auto:best', fetch_format: 'auto',
-      tags: ['catolicosgpt','infografia'],
-      context
+      tags: ['catolicosgpt','infografia']
     });
-    console.log('[Cloudinary] ✅', result.secure_url);
+    console.log('[Cloudinary] ✅ OK:', result.secure_url);
     return result.secure_url;
   } catch(e) {
-    console.error('[Cloudinary FATAL]', e.message);
-    // NO MÁS FALLBACK LOCAL — lanzar error para que el llamador sepa que falló
-    throw new Error('Cloudinary upload falló: ' + e.message);
+    console.error('[Cloudinary Upload] ❌', e.message);
+    // Fallback a almacenamiento local si el imageData es base64
+    if (typeof imageData === 'string' && !imageData.startsWith('http')) {
+      return saveImageLocally(imageData, slug, index);
+    }
+    return null;
   }
 }
 

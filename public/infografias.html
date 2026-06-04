@@ -107,12 +107,8 @@
     <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
   </a>
   <nav class="nav-links">
-    <a class="nav-link active" href="/infografias" style="text-decoration:none">Infografías</a>
-    <a class="nav-link" href="/videos" style="text-decoration:none">Videos</a>
-    <a class="nav-link" href="/podcast" style="text-decoration:none">Podcast</a>
     <a class="nav-link" href="/" style="text-decoration:none">Chat IA</a>
-    <a class="nav-link" href="/blog" style="text-decoration:none">Blog</a>
-    <a class="nav-link" href="/misas" style="text-decoration:none">Misas</a>
+    <a class="nav-link active" href="/infografias" style="text-decoration:none">Infografías</a>
     <a class="nav-link" href="/planes" style="text-decoration:none">Planes</a>
     <a class="nav-user" href="#" id="nav-user-btn" onclick="openAuth('register');return false" style="text-decoration:none">
       <span class="av">?</span><span id="nav-user-name">Iniciar sesión</span>
@@ -139,13 +135,137 @@
   </div>
 </section>
 
-<!-- ───────── CTA CREAR ───────── -->
-<section class="section" style="padding-top:0;padding-bottom:30px">
-  <div class="wrap" style="max-width:1100px;text-align:center">
-    <a href="/infografias/crear" class="cta-create" style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:var(--grad-gold);color:#3a2a0c;font-family:var(--font-ui);font-weight:700;font-size:15px;text-decoration:none;border-radius:99px;box-shadow:0 6px 20px rgba(188,138,54,.25);transition:.18s var(--ease)">
-      <span style="font-size:18px">✨</span>
-      <span>Crear nueva infografía con IA</span>
-    </a>
+<!-- ───────── GENERATOR ───────── -->
+<section class="section">
+  <div class="wrap" style="max-width:880px">
+    <div class="gen style-cream" id="gen-card">
+
+      <!-- Auth gate -->
+      <div id="auth-gate" style="text-align:center;padding:30px 20px">
+        <div style="font-family:var(--font-display);font-size:24px;color:var(--espresso);margin-bottom:10px">Crea una cuenta gratis</div>
+        <p style="color:var(--ink-2);margin-bottom:20px;font-size:15px">Para generar infografías necesitas iniciar sesión. Una infografía por día gratis.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="chip" onclick="openAuth('login')">Iniciar sesión</button>
+          <button class="btn-generate" style="display:inline-flex;padding:11px 22px;width:auto" onclick="openAuth('register')">Registrarme gratis</button>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div id="gen-form" style="display:none">
+        <div class="gen-head">
+          <span style="color:var(--accent-deep);margin-top:6px">✨</span>
+          <div>
+            <div class="gen-title">Genera tu infografía con IA</div>
+            <p class="gen-desc">Escribe el tema — un santo, una doctrina, un versículo — y CatolicosGPT diseña la infografía en segundos.</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Tema / Prompt de la infografía</label>
+          <textarea class="textarea" id="f-tema" placeholder="Ej: San Francisco de Asís, el Rosario, la parábola del hijo pródigo..."></textarea>
+        </div>
+
+        <div class="field grid-2">
+          <div>
+            <label class="field-label">Formato</label>
+            <select class="select" id="f-formato">
+              <option value="1:1" selected>1:1 — Infografía rica (recomendado)</option>
+              <option value="9:16">9:16 — Instagram / WhatsApp Stories</option>
+              <option value="16:9">16:9 — Presentación / Pantalla</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Tipo de infografía</label>
+            <select class="select" id="f-tipo">
+              <option value="">Auto-detectar</option>
+              <option value="santo">Santo / Devocional</option>
+              <option value="versiculo">Versículo destacado</option>
+              <option value="cita">Cita / Reflexión</option>
+              <option value="educativa">Infografía educativa</option>
+              <option value="pregunta">Pregunta / Enseñanza</option>
+              <option value="oracion">Oración</option>
+              <option value="evento">Anuncio / Evento</option>
+              <option value="serie">Serie 4 slides</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Estilo visual</label>
+          <div class="styles-grid">
+            <button class="style-card active" data-style="clasico" onclick="selectStyle('clasico')">
+              <div class="style-check">✓</div>
+              <div class="style-swatch">
+                <span style="background:#5E1B22"></span>
+                <span style="background:#3B2415"></span>
+                <span style="background:#BC8A36"></span>
+                <span style="background:#D6BB95"></span>
+                <span style="background:#F6F0E3"></span>
+              </div>
+              <div class="style-meta">
+                <div class="style-name">Clásico</div>
+                <div class="style-tag">Crema · pergamino elegante</div>
+              </div>
+            </button>
+            <button class="style-card" data-style="cinematic" onclick="selectStyle('cinematic')">
+              <div class="style-check">✓</div>
+              <div class="style-swatch">
+                <span style="background:#1a120b"></span>
+                <span style="background:#2c1d10"></span>
+                <span style="background:#0d0a07"></span>
+                <span style="background:#BC8A36"></span>
+                <span style="background:#E2BE6E"></span>
+              </div>
+              <div class="style-meta">
+                <div class="style-name">Cinematic</div>
+                <div class="style-tag">Oscuro · dorado dramático</div>
+              </div>
+            </button>
+            <button class="style-card" data-style="infantil" onclick="selectStyle('infantil')">
+              <div class="style-check">✓</div>
+              <div class="style-swatch">
+                <span style="background:#FF6B6B"></span>
+                <span style="background:#FFC93C"></span>
+                <span style="background:#7BC74D"></span>
+                <span style="background:#4DA6FF"></span>
+                <span style="background:#9B6BD6"></span>
+              </div>
+              <div class="style-meta">
+                <div class="style-name">Infantil</div>
+                <div class="style-tag">Color · ilustrado y alegre</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="brand-box" id="brand-box" style="display:none">
+          <div class="brand-box-head">✨ Branding Premium</div>
+          <div class="grid-2">
+            <div>
+              <label class="field-label">Tu nombre / parroquia / ministerio</label>
+              <input class="input" id="f-custom-nombre" placeholder="Ej: Grupo Jóvenes Fe Viva">
+            </div>
+            <div>
+              <label class="field-label">Logo (descripción)</label>
+              <input class="input" id="f-custom-logo" placeholder="Ej: cruz dorada con paloma...">
+            </div>
+          </div>
+        </div>
+
+        <div class="gen-note" id="gen-note"></div>
+
+        <button class="btn-generate" id="gen-btn" onclick="generarInfografia()">
+          <span>✨</span> Generar infografía
+        </button>
+
+        <!-- Resultado -->
+        <div id="result-box" style="display:none;margin-top:24px;padding:24px;background:var(--cream-2);border:1px solid var(--accent);border-radius:var(--r-lg)">
+          <div style="font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--espresso);margin-bottom:14px;text-align:center" id="result-title">✅ Infografía generada</div>
+          <img id="result-img" style="width:100%;max-width:360px;height:auto;display:block;margin:0 auto 18px;border-radius:var(--r-md);box-shadow:var(--shadow-md)">
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap" id="result-actions"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
