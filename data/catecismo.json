@@ -1,0 +1,252 @@
+{
+  "titulo": "Catecismo de la Iglesia Católica",
+  "año": 1992,
+  "papa": "Juan Pablo II",
+  "partes": [
+    {
+      "numero": 1,
+      "titulo": "La profesión de la fe",
+      "secciones": [
+        {
+          "numero": 1,
+          "titulo": "Creo — Creemos",
+          "capitulos": [
+            {
+              "titulo": "El hombre es capaz de Dios",
+              "articulos": [
+                { "cic": 27, "texto": "El deseo de Dios está inscrito en el corazón del hombre, porque el hombre ha sido creado por Dios y para Dios; y Dios no cesa de atraer al hombre hacia sí, y sólo en Dios encontrará el hombre la verdad y la dicha que no cesa de buscar." },
+                { "cic": 28, "texto": "De múltiples maneras, en su historia y hasta el día de hoy, los hombres han expresado su búsqueda de Dios a través de sus creencias y sus comportamientos religiosos (oraciones, sacrificios, cultos, meditaciones, etc.)." },
+                { "cic": 31, "texto": "Creado a imagen de Dios, llamado a conocer y amar a Dios, el hombre que busca a Dios descubre ciertas 'vías' para acceder al conocimiento de Dios." },
+                { "cic": 44, "texto": "El hombre está ordenado a Dios por su propia naturaleza. No por ello deja de ser libre para abandonar o no su tendencia natural hacia Dios." }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "numero": 2,
+      "titulo": "La celebración del misterio cristiano",
+      "secciones": [
+        {
+          "numero": 1,
+          "titulo": "La economía sacramental",
+          "temas": [
+            {
+              "tema": "Los sacramentos de la Iglesia",
+              "articulos": [
+                { "cic": 1113, "texto": "Toda la vida litúrgica de la Iglesia gira en torno al sacrificio eucarístico y los sacramentos." },
+                { "cic": 1114, "texto": "Los sacramentos de la Nueva Ley son instituidos por Jesucristo. Son siete: el Bautismo, la Confirmación, la Eucaristía, la Penitencia, la Unción de enfermos, el Orden y el Matrimonio." },
+                { "cic": 1127, "texto": "Los sacramentos son eficaces ex opere operato, es decir, en virtud de la misma obra sacramental celebrada." }
+              ]
+            },
+            {
+              "tema": "El Bautismo",
+              "articulos": [
+                { "cic": 1213, "texto": "El santo Bautismo es el fundamento de toda la vida cristiana, el pórtico de la vida en el espíritu y la puerta que abre el acceso a los otros sacramentos." },
+                { "cic": 1214, "texto": "Este sacramento se llama Bautismo por su rito central: bautizar significa 'zambullir', 'sumergir' en el agua; el 'zambullimiento' en el agua simboliza el sepultar al catecúmeno en la muerte de Cristo." },
+                { "cic": 1250, "texto": "Nacidos con una naturaleza humana caída e inclinada al mal, los niños necesitan también el nuevo nacimiento en el Bautismo para ser librados del poder de las tinieblas y ser trasladados al reino de la libertad de los hijos de Dios." }
+              ]
+            },
+            {
+              "tema": "La Eucaristía",
+              "articulos": [
+                { "cic": 1322, "texto": "La sagrada Eucaristía culmina la iniciación cristiana. Los que han sido elevados a la dignidad del sacerdocio real por el Bautismo y configurados más profundamente con Cristo por la Confirmación, participan con toda la comunidad en el propio sacrificio del Señor por medio de la Eucaristía." },
+                { "cic": 1323, "texto": "El Señor Jesús, la noche en que fue entregado, instituyó el sacrificio eucarístico de su Cuerpo y de su Sangre para perpetuar el sacrificio de la Cruz a lo largo de los siglos, hasta su vuelta, confiando así a la Iglesia el memorial de su muerte y resurrección." },
+                { "cic": 1324, "texto": "La Eucaristía es 'fuente y cima de toda la vida cristiana'. Los demás sacramentos, como también todos los ministerios eclesiásticos y las obras del apostolado, están unidos a la Eucaristía y a ella se ordenan." },
+                { "cic": 1374, "texto": "El modo de presencia de Cristo bajo las especies eucarísticas es único. Eleva la Eucaristía por encima de todos los sacramentos y hace de ella 'como la perfección de la vida espiritual y el fin al que tienden todos los sacramentos'." },
+                { "cic": 1376, "texto": "El Concilio de Trento resume la fe católica al declarar: 'En el santísimo sacramento de la Eucaristía están contenidos verdadera, real y substancialmente el Cuerpo y la Sangre junto con el alma y la divinidad de nuestro Señor Jesucristo, y por consiguiente Cristo entero'." }
+              ]
+            },
+            {
+              "tema": "La Penitencia y la Reconciliación",
+              "articulos": [
+                { "cic": 1422, "texto": "Los que se acercan al sacramento de la Penitencia reciben de la misericordia de Dios el perdón de los pecados cometidos contra Él y, al mismo tiempo, se reconcilian con la Iglesia, a la que hirieron con su pecado." },
+                { "cic": 1440, "texto": "El pecado es ante todo una ofensa a Dios, una ruptura de la comunión con Él. Al mismo tiempo atenta contra la comunión con la Iglesia." },
+                { "cic": 1452, "texto": "Cuando la contrición nace del amor a Dios amado sobre todas las cosas, se llama 'perfecta' (contrición de caridad). Tal contrición perdona las faltas veniales; obtiene también el perdón de los pecados mortales si comprende la firme resolución de recurrir a la confesión sacramental." }
+              ]
+            },
+            {
+              "tema": "El Matrimonio",
+              "articulos": [
+                { "cic": 1601, "texto": "La alianza matrimonial, por la que el varón y la mujer constituyen entre sí un consorcio de toda la vida, ordenado por su misma índole natural al bien de los cónyuges y a la generación y educación de la prole, fue elevada por Cristo Señor a la dignidad de sacramento entre bautizados." },
+                { "cic": 1614, "texto": "En su predicación Jesús enseñó sin ambigüedad el sentido originario de la unión del hombre y la mujer tal como el Creador la quiso desde el comienzo: la autorización dada por Moisés de repudiar a la propia esposa era una concesión a la dureza del corazón." },
+                { "cic": 1652, "texto": "Por su naturaleza, la institución del matrimonio y el amor conyugal están ordenados a la procreación y educación de la prole, con las que se coronan como su cúspide." }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "numero": 3,
+      "titulo": "La vida en Cristo",
+      "secciones": [
+        {
+          "numero": 1,
+          "titulo": "La vocación del hombre: la vida en el Espíritu",
+          "temas": [
+            {
+              "tema": "La dignidad de la persona humana",
+              "articulos": [
+                { "cic": 1700, "texto": "La dignidad de la persona humana se basa en su creación a imagen y semejanza de Dios." },
+                { "cic": 1730, "texto": "Dios ha creado al hombre racional confiriéndole la dignidad de una persona dotada de la iniciativa y del dominio de sus actos. Quiso Dios 'dejar al hombre en manos de su propia decisión'." },
+                { "cic": 1776, "texto": "En lo más profundo de su conciencia el hombre descubre una ley que él no se ha dado a sí mismo, pero a la que debe obedecer, y cuya voz resuena en el fondo de su corazón." }
+              ]
+            },
+            {
+              "tema": "Los Diez Mandamientos",
+              "articulos": [
+                { "cic": 2052, "texto": "Maestro, ¿qué he de hacer de bueno para conseguir la vida eterna? Al joven rico que le hacía esta pregunta, Jesús le responde citando en primer lugar el amor a Dios y al prójimo." },
+                { "cic": 2055, "texto": "Los Mandamientos se comprenden mejor a la luz del Decálogo. Toda la Ley y los Profetas se compendia en el doble precepto de la caridad." },
+                { "cic": 2083, "texto": "Jesús resumió los deberes del hombre hacia Dios en esta fórmula: Amarás al Señor tu Dios con todo tu corazón, con toda tu alma y con toda tu mente." }
+              ]
+            },
+            {
+              "tema": "La vida humana, su dignidad y el aborto",
+              "articulos": [
+                { "cic": 2258, "texto": "La vida humana es sagrada porque desde su inicio es fruto de la acción creadora de Dios y permanece siempre en una especial relación con el Creador, su único fin. Solo Dios es Señor de la vida desde su comienzo hasta su término." },
+                { "cic": 2270, "texto": "La vida humana debe ser respetada y protegida de manera absoluta desde el momento de la concepción. Desde el primer momento de su existencia, el ser humano debe ver reconocidos sus derechos de persona, entre los cuales está el derecho inviolable de todo ser inocente a la vida." },
+                { "cic": 2271, "texto": "Desde el siglo primero, la Iglesia ha afirmado la malicia moral de todo aborto provocado. Esta enseñanza no ha cambiado y permanece inmutable. El aborto directo, es decir, querido como fin o como medio, es gravemente contrario a la ley moral." },
+                { "cic": 2272, "texto": "La cooperación formal a un aborto constituye una falta grave. La Iglesia sanciona con pena canónica de excomunión este delito contra la vida humana." }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "numero": 4,
+      "titulo": "La oración cristiana",
+      "secciones": [
+        {
+          "numero": 1,
+          "titulo": "La oración en la vida cristiana",
+          "temas": [
+            {
+              "tema": "Qué es la oración",
+              "articulos": [
+                { "cic": 2558, "texto": "La oración es la elevación del alma a Dios o la petición a Dios de bienes convenientes." },
+                { "cic": 2559, "texto": "La oración es la respuesta del amor a la sed de Dios: Dios tiene sed de que nosotros tengamos sed de Él." },
+                { "cic": 2590, "texto": "Dios llama incansablemente a cada persona al encuentro misterioso con Él en la oración. La oración despliega a lo largo de la historia de la salvación mediante las palabras y los actos." }
+              ]
+            },
+            {
+              "tema": "El Padre Nuestro",
+              "articulos": [
+                { "cic": 2759, "texto": "Jesús asocia a su oración filial a sus hijos de adopción, pero les pide primero aprender a orar. Jesús nos enseña esta oración nueva." },
+                { "cic": 2761, "texto": "El Sermón de la montaña es una doctrina de vida; el Padrenuestro es una oración; pero en ambos casos, el Espíritu del Señor da forma nueva a los deseos de los hombres, estos movimientos interiores que animan la vida." },
+                { "cic": 2803, "texto": "Después de ponernos en la presencia de Dios y de adorarle, el Espíritu Santo en nosotros hace que el corazón se eleve hacia el Padre." }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "documentos_vaticano": [
+    {
+      "nombre": "Lumen Gentium",
+      "tipo": "Constitución dogmática",
+      "año": 1964,
+      "papa": "Pablo VI",
+      "concilio": "Vaticano II",
+      "resumen": "Constitución dogmática sobre la Iglesia. Define la naturaleza de la Iglesia como Pueblo de Dios y Cuerpo Místico de Cristo.",
+      "numeros_clave": [
+        { "num": 1, "texto": "Cristo es la luz de los pueblos. Por eso este sagrado Sínodo, reunido en el Espíritu Santo, desea ardientemente iluminar a todos los hombres con la luz de Cristo." },
+        { "num": 8, "texto": "La única Iglesia de Cristo, que en el Símbolo confesamos una, santa, católica y apostólica... subsiste en la Iglesia católica." },
+        { "num": 16, "texto": "Finalmente, los que todavía no han recibido el Evangelio, están ordenados al Pueblo de Dios de varias maneras." }
+      ]
+    },
+    {
+      "nombre": "Humanae Vitae",
+      "tipo": "Encíclica",
+      "año": 1968,
+      "papa": "Pablo VI",
+      "resumen": "Sobre la regulación de la natalidad. Reafirma la enseñanza de la Iglesia sobre el matrimonio y la procreación.",
+      "numeros_clave": [
+        { "num": 11, "texto": "La Iglesia, que interpreta la ley natural por su hermenéutica infalible, recuerda que no puede haber contradicción verdadera entre las leyes divinas que rigen la transmisión de la vida." },
+        { "num": 14, "texto": "Excluimos igualmente como lícito todo acto que, o en anticipación del acto conyugal, o en su realización, o en el desarrollo de sus consecuencias naturales, se proponga como fin o como medio, hacer imposible la procreación." }
+      ]
+    },
+    {
+      "nombre": "Evangelium Vitae",
+      "tipo": "Encíclica",
+      "año": 1995,
+      "papa": "Juan Pablo II",
+      "resumen": "Sobre el valor y el carácter inviolable de la vida humana.",
+      "numeros_clave": [
+        { "num": 2, "texto": "El evangelio del amor de Dios por el hombre, el evangelio de la dignidad de la persona y el evangelio de la vida son un único e indivisible evangelio." },
+        { "num": 57, "texto": "El aborto directo, es decir, querido como fin o como medio, es siempre un desorden moral grave, en cuanto eliminación deliberada de un ser humano inocente." }
+      ]
+    },
+    {
+      "nombre": "Veritatis Splendor",
+      "tipo": "Encíclica",
+      "año": 1993,
+      "papa": "Juan Pablo II",
+      "resumen": "Sobre algunas cuestiones fundamentales de la enseñanza moral de la Iglesia.",
+      "numeros_clave": [
+        { "num": 2, "texto": "El esplendor de la verdad brilla en todas las obras del Creador y, de modo particular, en el hombre, creado a imagen y semejanza de Dios." }
+      ]
+    },
+    {
+      "nombre": "Laudato Si",
+      "tipo": "Encíclica",
+      "año": 2015,
+      "papa": "Francisco",
+      "resumen": "Sobre el cuidado de la casa común. Ecología integral desde la fe católica.",
+      "numeros_clave": [
+        { "num": 1, "texto": "Laudato si', mi' Signore: Alabado seas, mi Señor. En este hermoso cántico recordaba San Francisco de Asís que nuestra casa común es también como una hermana." },
+        { "num": 10, "texto": "Mi deseo es que esta Encíclica, que se agrega al Magisterio social de la Iglesia, nos ayude a reconocer la grandeza, la urgencia y la hermosura del desafío que se nos presenta." }
+      ]
+    },
+    {
+      "nombre": "Amoris Laetitia",
+      "tipo": "Exhortación apostólica postsinodal",
+      "año": 2016,
+      "papa": "Francisco",
+      "resumen": "Sobre el amor en la familia. Fruto de los dos Sínodos sobre la familia.",
+      "numeros_clave": [
+        { "num": 1, "texto": "La alegría del amor que se vive en las familias es también el gozo de la Iglesia." }
+      ]
+    }
+  ],
+  "apariciones_marianas": [
+    {
+      "nombre": "Nuestra Señora de Fátima",
+      "lugar": "Fátima, Portugal",
+      "año": 1917,
+      "videntes": ["Lucía dos Santos", "Francisco Marto", "Jacinta Marto"],
+      "aprobacion": "1930 por el Obispo de Leiria",
+      "mensaje_central": "Oración, penitencia y consagración de Rusia al Inmaculado Corazón de María. Los tres secretos de Fátima.",
+      "promesa": "Al final, mi Inmaculado Corazón triunfará."
+    },
+    {
+      "nombre": "Nuestra Señora de Lourdes",
+      "lugar": "Lourdes, Francia",
+      "año": 1858,
+      "videntes": ["Bernadette Soubirous"],
+      "aprobacion": "1862 por el Obispo de Tarbes",
+      "mensaje_central": "Penitencia, oración por los pecadores. La Inmaculada Concepción.",
+      "promesa": "No te prometo hacerte feliz en este mundo, sino en el otro."
+    },
+    {
+      "nombre": "Nuestra Señora de Guadalupe",
+      "lugar": "México",
+      "año": 1531,
+      "videntes": ["Juan Diego Cuauhtlatoatzin"],
+      "aprobacion": "Aprobada desde el siglo XVI",
+      "mensaje_central": "Edificar un templo. Madre de todos los habitantes de esta tierra.",
+      "promesa": "¿No estoy yo aquí que soy tu madre?"
+    },
+    {
+      "nombre": "Nuestra Señora de Kibeho",
+      "lugar": "Kibeho, Ruanda",
+      "año": 1981,
+      "videntes": ["Alphonsine Mumureke", "Nathalie Mukamazimpaka", "Marie Claire Mukangango"],
+      "aprobacion": "2001 por el Obispo de Gikongoro",
+      "mensaje_central": "Penitencia, conversión, oración del Rosario. Visiones de tribulación para Ruanda."
+    }
+  ]
+}

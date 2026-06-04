@@ -1,0 +1,109 @@
+{
+  "titulo": "Historia de la Iglesia Católica — Dataset CatolicosGPT",
+  "periodos": [
+    {
+      "periodo": "Iglesia Primitiva",
+      "años": "33 — 313 d.C.",
+      "eventos": [
+        { "año": "33", "evento": "Pentecostés — Nacimiento de la Iglesia", "descripcion": "El Espíritu Santo desciende sobre los apóstoles reunidos con María. Pedro predica y se bautizan 3000 personas (Hch 2). La Iglesia nace en Jerusalén." },
+        { "año": "c.35", "evento": "Martirio de San Esteban", "descripcion": "Primer mártir cristiano. Saulo de Tarso presenció su lapidación." },
+        { "año": "c.35", "evento": "Conversión de San Pablo", "descripcion": "En el camino a Damasco, Saulo experimenta una visión de Cristo resucitado y se convierte en el gran apóstol de los gentiles." },
+        { "año": "49", "evento": "Concilio de Jerusalén", "descripcion": "Primer concilio de la Iglesia. Decide que los gentiles no necesitan circuncidarse para salvarse. Base del universalismo cristiano." },
+        { "año": "64-67", "evento": "Martirios de Pedro y Pablo en Roma", "descripcion": "Bajo la persecución de Nerón. Pedro crucificado invertido en el Vaticano. Pablo decapitado en la Vía Ostiense." },
+        { "año": "70", "evento": "Destrucción del Templo de Jerusalén", "descripcion": "Las tropas de Tito destruyen el Templo. Cumplimiento de la profecía de Jesús (Mt 24,2). Los cristianos habían huido a Pella." },
+        { "año": "c.100", "evento": "Muerte del último apóstol — Juan en Éfeso", "descripcion": "Con la muerte de Juan en Éfeso se cierra el período apostólico. El canon del NT se va consolidando." },
+        { "año": "107", "evento": "Martirio de San Ignacio de Antioquía", "descripcion": "Tercer obispo de Antioquía, discípulo de Juan. Devuelto a Roma para ser devorado por leones. Sus cartas son testimonio precioso de la fe primitiva." },
+        { "año": "155", "evento": "Martirio de San Policarpo", "descripcion": "Obispo de Esmirna, discípulo de Juan. Quemado en el estadio. Sus últimas palabras: 'Por 86 años le he servido y nunca me ha hecho daño.'" },
+        { "año": "250-260", "evento": "Persecuciones de Decio y Valeriano", "descripcion": "Primeras persecuciones sistemáticas del Imperio Romano contra el cristianismo. Miles de mártires." },
+        { "año": "303-313", "evento": "Gran Persecución de Diocleciano", "descripcion": "La persecución más sangrienta. Editos contra los cristianos en todo el Imperio." }
+      ]
+    },
+    {
+      "periodo": "Iglesia Imperial",
+      "años": "313 — 590 d.C.",
+      "eventos": [
+        { "año": "313", "evento": "Edicto de Milán", "descripcion": "Constantino y Licinio garantizan libertad religiosa. El cristianismo puede practicarse libremente en el Imperio Romano." },
+        { "año": "325", "evento": "Concilio de Nicea I — Primer Concilio Ecuménico", "descripcion": "Condena la herejía arriana (Arrio negaba la divinidad de Cristo). Define que el Hijo es 'consustancial' (homoousios) al Padre. Se elabora el Credo Niceno." },
+        { "año": "354-430", "evento": "Vida de San Agustín de Hipona", "descripcion": "El mayor Doctor de la Iglesia de Occidente. Converso, obispo de Hipona. Escribe Las Confesiones y La Ciudad de Dios. Define la doctrina del pecado original y la gracia." },
+        { "año": "381", "evento": "Concilio de Constantinopla I", "descripcion": "Define la divinidad del Espíritu Santo. Completa el Credo Niceno-Constantinopolitano que rezamos en misa." },
+        { "año": "385-430", "evento": "San Jerónimo y la Vulgata", "descripcion": "San Jerónimo traduce la Biblia al latín (Vulgata). Esta traducción sería la oficial de la Iglesia por más de 1500 años." },
+        { "año": "431", "evento": "Concilio de Éfeso — María Theotokos", "descripcion": "Condena el nestorianismo. Define que María es Theotokos (Madre de Dios), no solo madre del hombre Jesús. El pueblo de Éfeso celebra con antorchas." },
+        { "año": "451", "evento": "Concilio de Calcedonia", "descripcion": "Define las dos naturalezas de Cristo (divina y humana) en una sola persona. Condena el monofisismo. Dogma cristológico fundamental." },
+        { "año": "529", "evento": "San Benito funda Montecassino", "descripcion": "Padre del monaquismo occidental. Su Regla ('ora et labora') define la vida monástica occidental. Los monasterios benedictinos preservan la cultura durante la Edad Media." }
+      ]
+    },
+    {
+      "periodo": "Edad Media",
+      "años": "590 — 1517 d.C.",
+      "eventos": [
+        { "año": "590-604", "evento": "Pontificado de San Gregorio Magno", "descripcion": "Reorganiza la Iglesia, negocia con los lombardos, envía misioneros a Inglaterra. Padre de la música litúrgica (canto gregoriano). Doctor de la Iglesia." },
+        { "año": "800", "evento": "Coronación de Carlomagno", "descripcion": "León III corona a Carlomagno Emperador de Occidente en Roma. Nace la 'Cristiandad' medieval y la alianza Iglesia-Estado." },
+        { "año": "1054", "evento": "Gran Cisma de Oriente", "descripcion": "Ruptura entre Roma y Constantinopla. El cardenal Humberto deposita una bula de excomunión sobre el altar de Santa Sofía. Nace la Iglesia Ortodoxa." },
+        { "año": "1095-1291", "evento": "Las Cruzadas", "descripcion": "Siete cruzadas para recuperar Tierra Santa. Urbano II convoca la primera en Clermont (1095). Mezcla de fe genuina, política y violencia. Dejan heridas profundas." },
+        { "año": "1181-1226", "evento": "Vida de San Francisco de Asís", "descripcion": "Funda la Orden Franciscana. Propone la pobreza radical y el amor a la creación. Recibe los estigmas. Su Cántico de las Criaturas es la primera poesía italiana." },
+        { "año": "1215", "evento": "Concilio de Letrán IV", "descripcion": "Define la transubstanciación eucarística. Establece la obligación de confesarse al menos una vez al año y comulgar en Pascua." },
+        { "año": "1225-1274", "evento": "Vida de Santo Tomás de Aquino", "descripcion": "El mayor teólogo de la Iglesia. Su Suma Teológica sintetiza la fe y la razón. Doctor Angélico. Define los cinco argumentos de la existencia de Dios." },
+        { "año": "1378-1417", "evento": "El Gran Cisma de Occidente", "descripcion": "Hasta tres papas simultáneos reclaman la sede romana. Crisis gravísima resuelta en el Concilio de Constanza." }
+      ]
+    },
+    {
+      "periodo": "Reforma y Contrarreforma",
+      "años": "1517 — 1648",
+      "eventos": [
+        { "año": "1517", "evento": "Martín Lutero — 95 Tesis", "descripcion": "Lutero clava sus 95 tesis en la puerta de Wittenberg. Protesta contra las indulgencias. Inicio de la Reforma Protestante que divide el cristianismo occidental." },
+        { "año": "1534", "evento": "Enrique VIII rompe con Roma", "descripcion": "El rey de Inglaterra se declara jefe de la Iglesia anglicana para poder anular su matrimonio con Catalina de Aragón." },
+        { "año": "1540", "evento": "San Ignacio de Loyola funda los Jesuitas", "descripcion": "La Compañía de Jesús nace como respuesta a la Reforma. Los jesuitas evangelizan Asia, América y África, y fundan cientos de universidades." },
+        { "año": "1545-1563", "evento": "Concilio de Trento", "descripcion": "La gran Contrarreforma. Define los dogmas atacados por los protestantes: la Biblia y la Tradición, los sacramentos, la justificación, el purgatorio, la transubstanciación. Reforma interna de la Iglesia." }
+      ]
+    },
+    {
+      "periodo": "Época Moderna",
+      "años": "1648 — 1958",
+      "eventos": [
+        { "año": "1854", "evento": "Dogma de la Inmaculada Concepción", "descripcion": "Pío IX define ex cathedra que María fue concebida sin pecado original. Cuatro años después, la Virgen confirma en Lourdes: 'Yo soy la Inmaculada Concepción'." },
+        { "año": "1869-1870", "evento": "Concilio Vaticano I", "descripcion": "Define la infalibilidad papal. Interrumpido por la invasión de los Estados Pontificios por las tropas de Garibaldi." },
+        { "año": "1891", "evento": "Rerum Novarum — Doctrina Social", "descripcion": "León XIII publica la primera gran encíclica social. Base de la Doctrina Social de la Iglesia: dignidad del trabajador, salario justo, rechazo del socialismo y del capitalismo salvaje." },
+        { "año": "1917", "evento": "Apariciones de Fátima", "descripcion": "La Virgen aparece seis veces a tres pastorcillos en Portugal. Pide oración, penitencia y la consagración de Rusia. Los tres secretos de Fátima." },
+        { "año": "1950", "evento": "Dogma de la Asunción", "descripcion": "Pío XII define ex cathedra que María fue asunta en cuerpo y alma al cielo. Último dogma mariano definido." }
+      ]
+    },
+    {
+      "periodo": "Época Contemporánea",
+      "años": "1958 — presente",
+      "eventos": [
+        { "año": "1962-1965", "evento": "Concilio Vaticano II", "descripcion": "Juan XXIII convoca el gran concilio de renovación. Pablo VI lo concluye. Produce 16 documentos. Reforma la liturgia (misa en vernáculo), redefine la Iglesia como Pueblo de Dios, promueve el ecumenismo y el diálogo con el mundo moderno." },
+        { "año": "1978-2005", "evento": "Pontificado de Juan Pablo II", "descripcion": "El papa polaco más viajero de la historia. Cae el comunismo en Europa del Este. Define la Teología del Cuerpo. Canoniza más santos que todos sus predecesores. Publicó el Catecismo (1992). Sufrió el atentado del 13 de mayo de 1981." },
+        { "año": "1992", "evento": "Catecismo de la Iglesia Católica", "descripcion": "Juan Pablo II publica el primer catecismo universal en 400 años. Síntesis completa de la fe católica en 2865 artículos." },
+        { "año": "2013", "evento": "Renuncia de Benedicto XVI y elección de Francisco", "descripcion": "Primera renuncia papal en 600 años. Jorge Mario Bergoglio, SJ, de Argentina, es elegido primer papa latinoamericano. Toma el nombre de Francisco." },
+        { "año": "2015", "evento": "Laudato Si — Encíclica sobre el medioambiente", "descripcion": "Francisco publica la primera encíclica sobre ecología integral. Une fe y cuidado de la creación." },
+        { "año": "2022", "evento": "Aprobación de Nuestra Señora de Guadalupe como fiesta universal", "descripcion": "Francisco extiende la fiesta del 12 de diciembre a toda la Iglesia universal." }
+      ]
+    }
+  ],
+  "papas_importantes": [
+    { "nombre": "San Pedro", "pontificado": "c.30-67", "aporte": "Primer papa. Mártir en Roma." },
+    { "nombre": "San Clemente I", "pontificado": "88-99", "aporte": "Cuarto papa. Su carta a los Corintios es el primer documento magisterial." },
+    { "nombre": "San León Magno", "pontificado": "440-461", "aporte": "Detuvo a Atila. Gran teólogo cristológico." },
+    { "nombre": "San Gregorio Magno", "pontificado": "590-604", "aporte": "Reorganizó la Iglesia. Padre del canto gregoriano." },
+    { "nombre": "Inocencio III", "pontificado": "1198-1216", "aporte": "Máximo poder medieval del papado. Convocó Letrán IV." },
+    { "nombre": "Pío IX", "pontificado": "1846-1878", "aporte": "Pontificado más largo. Definió la Inmaculada Concepción e inauguró el Vaticano I." },
+    { "nombre": "León XIII", "pontificado": "1878-1903", "aporte": "Fundó la Doctrina Social con Rerum Novarum." },
+    { "nombre": "Pío XII", "pontificado": "1939-1958", "aporte": "Segunda Guerra Mundial. Definió la Asunción. Salvó miles de judíos." },
+    { "nombre": "San Juan XXIII", "pontificado": "1958-1963", "aporte": "El Papa Bueno. Convocó el Vaticano II." },
+    { "nombre": "San Pablo VI", "pontificado": "1963-1978", "aporte": "Cerró el Vaticano II. Publicó Humanae Vitae." },
+    { "nombre": "San Juan Pablo II", "pontificado": "1978-2005", "aporte": "Cambió la historia. Catecismo 1992. Teología del Cuerpo." },
+    { "nombre": "Benedicto XVI", "pontificado": "2005-2013", "aporte": "Gran teólogo. Primera renuncia en 600 años." },
+    { "nombre": "Francisco", "pontificado": "2013-presente", "aporte": "Primer papa latinoamericano. Laudato Si. Amoris Laetitia." }
+  ],
+  "concilios_ecumenicos": [
+    { "num": 1, "nombre": "Nicea I", "año": 325, "definicion": "Consubstancialidad del Hijo — contra el arrianismo" },
+    { "num": 2, "nombre": "Constantinopla I", "año": 381, "definicion": "Divinidad del Espíritu Santo" },
+    { "num": 3, "nombre": "Éfeso", "año": 431, "definicion": "María Theotokos — contra el nestorianismo" },
+    { "num": 4, "nombre": "Calcedonia", "año": 451, "definicion": "Dos naturalezas en Cristo — contra el monofisismo" },
+    { "num": 7, "nombre": "Nicea II", "año": 787, "definicion": "Licitud de las imágenes sagradas" },
+    { "num": 12, "nombre": "Letrán IV", "año": 1215, "definicion": "Transubstanciación, confesión anual" },
+    { "num": 19, "nombre": "Trento", "año": "1545-1563", "definicion": "Contrarreforma completa. Sacramentos, justificación, Biblia+Tradición" },
+    { "num": 20, "nombre": "Vaticano I", "año": "1869-1870", "definicion": "Infalibilidad papal" },
+    { "num": 21, "nombre": "Vaticano II", "año": "1962-1965", "definicion": "Renovación litúrgica, ecumenismo, Iglesia como Pueblo de Dios" }
+  ]
+}

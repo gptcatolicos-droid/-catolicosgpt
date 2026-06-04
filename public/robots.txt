@@ -1,0 +1,30 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://catolicosgpt.com/sitemap.xml
+
+# Archivos para asistentes de IA (GEO)
+# ChatGPT, Claude, Perplexity, Gemini pueden leer llms.txt
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Omgilibot
+Allow: /
+
+# Archivo específico para LLMs
+# https://catolicosgpt.com/llms.txt
+# https://catolicosgpt.com/llms-full.txt

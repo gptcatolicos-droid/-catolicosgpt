@@ -1,0 +1,16 @@
+{
+  "users": [
+    {
+      "id": "admin-001",
+      "email": "danipalacio@gmail.com",
+      "passwordHash": "$2b$12$MjM8iPhCoQ89eooXmfILUeI5zlYu.UpYfMJaDYiHqJ84OGTlQ7ap.",
+      "nombre": "Daniel Palacio",
+      "plan": "admin",
+      "infografiasUsadas": 0,
+      "infografiasLimite": -1,
+      "semanaReset": null,
+      "createdAt": "2026-05-31T00:00:00Z",
+      "activo": true
+    }
+  ]
+}
