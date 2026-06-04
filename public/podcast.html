@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Podcast Católicos · CatolicosGPT</title>
+<meta name="description" content="Podcasts católicos en Spotify, Apple Podcasts, SoundCloud, Ivoox y YouTube. Rosarios, novenas, meditaciones, homilías y testimonios.">
+<meta name="theme-color" content="#F6F0E3">
+<link rel="canonical" href="https://catolicosgpt.com/podcast">
+<meta property="og:title" content="Podcast Católicos · CatolicosGPT">
+<meta property="og:description" content="Rosarios, novenas, meditaciones y enseñanzas">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<style>
+.pod-shell { max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); }
+.pod-hero { text-align: center; padding: 60px 20px 30px; }
+.pod-hero h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(36px, 6vw, 56px); color: var(--espresso); line-height: 1.05; margin-bottom: 12px; }
+.pod-hero h1 .it { font-style: italic; color: transparent; background: var(--grad-gold); -webkit-background-clip: text; background-clip: text; }
+.pod-hero p { font-family: var(--font-display); font-size: clamp(15px, 2.2vw, 18px); color: var(--ink-2); max-width: 640px; margin: 0 auto; }
+
+.filter-stack { max-width: 1000px; margin: 28px auto 36px; }
+.filter-row { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+.filter-row .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); margin-right: 4px; }
+.filter-input { flex: 1; min-width: 200px; max-width: 380px; padding: 11px 18px; font-size: 14px; background: #fff; border: 1px solid var(--hairline-2); border-radius: 99px; font-family: var(--font-ui); }
+.filter-input:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+.cat-chip { padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--ink-2); background: var(--cream-2); border: 1px solid var(--hairline); border-radius: 99px; cursor: pointer; transition: .15s; }
+.cat-chip:hover { color: var(--espresso); border-color: var(--gold); }
+.cat-chip.active { background: var(--espresso); color: #f3e4c6; border-color: var(--espresso); }
+.cat-chip.plat-spotify.active { background: #1DB954; border-color: #1DB954; color: #fff; }
+.cat-chip.plat-apple.active { background: #9933CC; border-color: #9933CC; color: #fff; }
+
+.pod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; padding-bottom: 60px; }
+.pod-card { background: #fff; border: 1px solid var(--hairline); border-radius: 16px; overflow: hidden; transition: .2s var(--ease); text-decoration: none; color: inherit; display: flex; flex-direction: column; }
+.pod-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--gold); }
+.pod-card-embed { padding: 14px 14px 0; }
+.pod-card-embed iframe { display: block; width: 100%; border-radius: 10px; }
+.pod-card-body { padding: 14px 18px 18px; }
+.pod-card-plat { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border-radius: 99px; margin-bottom: 8px; }
+.plat-spotify { background: rgba(29,185,84,.12); color: #1DB954; }
+.plat-apple { background: rgba(153,51,204,.1); color: #9933CC; }
+.plat-soundcloud { background: rgba(255,85,0,.1); color: #FF5500; }
+.plat-ivoox { background: rgba(255,102,0,.1); color: #FF6600; }
+.plat-youtube { background: rgba(255,0,0,.08); color: #FF0000; }
+.pod-card-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--espresso); line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pod-card-meta { font-size: 12px; color: var(--ink-3); }
+
+.empty-state { text-align: center; padding: 60px 20px; color: var(--ink-3); grid-column: 1/-1; }
+.empty-state h2 { font-family: var(--font-display); color: var(--ink-2); margin-bottom: 8px; }
+
+@media (max-width: 768px) {
+  .nav { padding: 8px 12px; height: 56px; }
+  .brand-mark { width: 28px; height: 28px; }
+  .brand-word { font-size: 15px; }
+  .nav-link:not(.active):not(.nav-user) { display: none; }
+  .pod-hero { padding: 36px 16px 20px; }
+  .pod-grid { grid-template-columns: 1fr; gap: 16px; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a href="/" class="brand" style="text-decoration:none">
+    <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 5v13M8 9h8"/></svg></div>
+    <span class="brand-word">Católicos<span class="gpt">GPT</span></span>
+  </a>
+  <nav class="nav-links">
+    <a class="nav-link" href="/infografias">Infografías</a>
+    <a class="nav-link" href="/videos">Videos</a>
+    <a class="nav-link active" href="/podcast">Podcast</a>
+    <a class="nav-link" href="/">Chat IA</a>
+    <a class="nav-link" href="/blog">Blog</a>
+    <a class="nav-link" href="/misas">Misas</a>
+    <a class="nav-link" href="/planes">Planes</a>
+  </nav>
+</header>
+
+<div class="pod-shell">
+  <section class="pod-hero">
+    <h1>Podcast <span class="it">Católicos</span></h1>
+    <p>Rosarios, novenas, meditaciones y enseñanzas. Multi-plataforma: Spotify, Apple, SoundCloud, Ivoox.</p>
+  </section>
+
+  <div class="filter-stack">
+    <div class="filter-row">
+      <input type="text" class="filter-input" id="search" placeholder="🔍 Buscar podcasts..." oninput="filtrar()">
+    </div>
+    <div class="filter-row">
+      <span class="lbl">Plataforma:</span>
+      <button class="cat-chip active" data-plat="" onclick="setPlat('', this)">Todas</button>
+      <button class="cat-chip plat-spotify" data-plat="spotify" onclick="setPlat('spotify', this)">🎵 Spotify</button>
+      <button class="cat-chip plat-apple" data-plat="apple" onclick="setPlat('apple', this)">🍎 Apple</button>
+      <button class="cat-chip" data-plat="soundcloud" onclick="setPlat('soundcloud', this)">☁️ SoundCloud</button>
+      <button class="cat-chip" data-plat="ivoox" onclick="setPlat('ivoox', this)">📻 Ivoox</button>
+      <button class="cat-chip" data-plat="youtube" onclick="setPlat('youtube', this)">▶️ YouTube</button>
+    </div>
+    <div class="filter-row">
+      <span class="lbl">Categoría:</span>
+      <button class="cat-chip active" data-cat="" onclick="setCat('', this)">Todas</button>
+      <button class="cat-chip" data-cat="rosario" onclick="setCat('rosario', this)">Rosario</button>
+      <button class="cat-chip" data-cat="novena" onclick="setCat('novena', this)">Novena</button>
+      <button class="cat-chip" data-cat="meditacion" onclick="setCat('meditacion', this)">Meditación</button>
+      <button class="cat-chip" data-cat="homilia" onclick="setCat('homilia', this)">Homilía</button>
+      <button class="cat-chip" data-cat="conferencia" onclick="setCat('conferencia', this)">Conferencia</button>
+      <button class="cat-chip" data-cat="musica" onclick="setCat('musica', this)">Música</button>
+      <button class="cat-chip" data-cat="biblia" onclick="setCat('biblia', this)">Biblia</button>
+    </div>
+  </div>
+
+  <div id="grid" class="pod-grid"></div>
+</div>
+
+<footer style="background:var(--cream-3);padding:30px 20px;text-align:center;border-top:1px solid var(--hairline);color:var(--ink-3);font-size:13px">
+  © 2026 <a href="/" style="color:var(--gold-deep);text-decoration:none;font-weight:600">CatolicosGPT</a>
+</footer>
+
+<script>
+let currentCat = '';
+let currentPlat = '';
+let currentQ = '';
+const _urlParams = new URLSearchParams(window.location.search);
+if (_urlParams.get('q')) currentQ = _urlParams.get('q');
+if (_urlParams.get('categoria')) currentCat = _urlParams.get('categoria');
+if (_urlParams.get('plataforma')) currentPlat = _urlParams.get('plataforma');
+
+let searchTimer;
+function filtrar() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentQ = document.getElementById('search').value;
+    loadPodcasts();
+  }, 250);
+}
+
+function setCat(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.cat-chip[data-cat]').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  loadPodcasts();
+}
+
+function setPlat(plat, btn) {
+  currentPlat = plat;
+  document.querySelectorAll('.cat-chip[data-plat]').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  loadPodcasts();
+}
+
+const platLabel = {
+  spotify: '🎵 Spotify',
+  apple: '🍎 Apple Podcasts',
+  soundcloud: '☁️ SoundCloud',
+  ivoox: '📻 Ivoox',
+  youtube: '▶️ YouTube'
+};
+
+async function loadPodcasts() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '<div class="empty-state">⏳ Cargando...</div>';
+  try {
+    const params = new URLSearchParams();
+    if (currentCat) params.set('categoria', currentCat);
+    if (currentPlat) params.set('plataforma', currentPlat);
+    if (currentQ) params.set('q', currentQ);
+    params.set('limit', '60');
+    const r = await fetch('/api/podcast?' + params.toString());
+    const d = await r.json();
+    if (!d.items || !d.items.length) {
+      grid.innerHTML = `<div class="empty-state"><h2>Sin podcasts por ahora</h2><p>${currentQ ? 'No hay resultados para "' + currentQ + '"' : 'Pronto publicaremos nuevos podcasts.'}</p></div>`;
+      return;
+    }
+    grid.innerHTML = d.items.map(p => {
+      const titulo = (p.titulo || '').replace(/</g, '&lt;');
+      const fechaFmt = new Date(p.fechaCreacion).toLocaleDateString('es-ES', {day:'numeric', month:'short', year:'numeric'});
+      return `
+        <div class="pod-card">
+          <div class="pod-card-embed">${p.embedHtml || ''}</div>
+          <div class="pod-card-body">
+            <span class="pod-card-plat plat-${p.plataforma}">${platLabel[p.plataforma] || p.plataforma}</span>
+            <a href="/podcast/${p.slug}" style="text-decoration:none;color:inherit">
+              <h3 class="pod-card-title">${titulo}</h3>
+            </a>
+            <div class="pod-card-meta">📂 ${p.categoria || 'meditacion'} · 📅 ${fechaFmt}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+  }
+}
+
+loadPodcasts();
+</script>
+</body>
+</html>

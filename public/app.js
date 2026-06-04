@@ -230,12 +230,13 @@ async function send() {
                 if (el) el.innerHTML = 'Para generar necesitas una cuenta. <a href="/infografias?tema=' + encodeURIComponent(tema) + '" style="color:var(--gold)">Crear cuenta gratis →</a>';
               }
             }
-            bubble.innerHTML = bubble.innerHTML || '';
+            // REPLACE (no append) — esto elimina cursor y previene duplicación
+            bubble.innerHTML = parseMarkdown(fullText);
 
             // ── Panel de fuentes verificables v3 ──
             if (sources && sources.length > 0) {
               const modoLabel = { auto: 'Auto', magisterial: 'Magisterial', scholarly: 'Scholarly' }[modoMag] || 'Auto';
-              const modoColor = modoMag === 'scholarly' ? '#7B68EE' : modoMag === 'magisterial' ? 'var(--ocre)' : 'var(--brown)';
+              const modoColor = modoMag === 'scholarly' ? '#7B68EE' : modoMag === 'magisterial' ? 'var(--gold-deep)' : 'var(--espresso)';
               let fuentesHtml = `<div class="sources-panel">
                 <div class="sources-header">
                   <span class="sources-icon">📚</span>
@@ -253,14 +254,11 @@ async function send() {
               fuentesHtml += `</div></div>`;
               bubble.innerHTML += fuentesHtml;
             } else if (magText && magText.length > 50) {
-              // Fallback al badge simple si no hay sources estructuradas
               bubble.innerHTML += `<div class="mag-badge">
                 <div class="mag-badge-title">📚 Fuentes del Magisterio</div>
                 <div class="mag-badge-text">${parseMarkdown(magText)}</div>
               </div>`;
             }
-
-            bubble.innerHTML += parseMarkdown(fullText);
             chatHistory.push({ role: 'assistant', content: fullText });
             addActions(bubble, fullText);
             if (chatHistory.length === 2) saveConversation(val);
