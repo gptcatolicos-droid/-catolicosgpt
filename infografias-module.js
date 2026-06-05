@@ -44,10 +44,29 @@ function loadCatalog() {
 }
 
 function saveCatalog(c) {
-  // Guardar en ambos paths (uno persiste, el otro es backup git)
+  // ⛡ GUARD ANTI-PÉRDIDA: nunca sobrescribir un catálogo con datos por uno vacío
+  const nuevoTotal = (c && c.infografias) ? c.infografias.length : 0;
+  if (nuevoTotal === 0) {
+    try {
+      const existente = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf-8'));
+      if (existente && existente.infografias && existente.infografias.length > 0) {
+        console.error('[Catalog] ⛔ BLOQUEADO: intento de guardar catálogo VACÍO sobre uno con ' + existente.infografias.length + ' infografías. Operación cancelada para proteger datos.');
+        return false;
+      }
+    } catch(e) { /* no existe archivo previo, ok continuar */ }
+  }
+  // Actualizar total y categorías automáticamente
+  if (c && c.infografias) {
+    c.total = c.infografias.length;
+    c.categorias = [...new Set(c.infografias.map(i => i.categoria || i.tipo).filter(Boolean))];
+  }
   const json = JSON.stringify(c, null, 2);
   try { fs.writeFileSync(CATALOG_PATH, json, 'utf-8'); } catch(e) { console.error('[Catalog] Error path principal:', e.message); }
-  try { fs.writeFileSync(CATALOG_BACKUP, json, 'utf-8'); } catch(e) {}
+  // El backup del repo SOLO se escribe si hay datos (evita que un vacío contamine el repo)
+  if (nuevoTotal > 0) {
+    try { fs.writeFileSync(CATALOG_BACKUP, json, 'utf-8'); } catch(e) {}
+  }
+  return true;
 }
 
 // ── Slug SEO ──

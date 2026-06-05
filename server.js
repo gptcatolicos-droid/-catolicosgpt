@@ -14,6 +14,7 @@ const videosModule = require('./videos-module');
 const misasModule = require('./misas-module');
 const blogModule = require('./blog-module');
 const podcastModule = require('./podcast-module');
+const seo = require('./seo-module');
 const { findRelatedResources } = require('./recursos-module');
 const auth = require('./auth-module');
 
@@ -286,6 +287,34 @@ FORMATO DE RESPUESTAS — CRÍTICO
 ════════════════════════════════════════════════
 
 Tus respuestas DEBEN tener formato visual claro, NO bloques de texto plano.
+
+⛔ REGLA ANTI-REPETICIÓN — CRÍTICA E INVIOLABLE:
+Genera tu respuesta UNA SOLA VEZ. JAMÁS repitas el contenido, ni reinicies la respuesta desde el principio, ni dupliques secciones. Cuando termines tu respuesta completa, DETENTE. No vuelvas a escribir el título ni el contenido otra vez.
+
+📊 TABLA SINÓPTICA OBLIGATORIA — para TODA pregunta catequética/doctrinal:
+Además del texto explicativo, SIEMPRE incluye una tabla sinóptica de resumen en formato Markdown que sintetice lo esencial para catequesis. Ejemplo de estructura:
+
+| Aspecto | Detalle |
+|---------|---------|
+| Qué es | ... |
+| Origen / Fundamento | ... |
+| Significado | ... |
+| Cita clave | ... |
+| Aplicación práctica | ... |
+
+La tabla debe ser ÚTIL para que un catequista la use directamente. Adapta las filas al tema (para un santo: nacimiento, virtudes, patronazgo, fiesta; para un sacramento: materia, forma, ministro, efectos; etc.).
+
+🔗 ENLACE OBLIGATORIO AL FINAL — SIEMPRE, SIN EXCEPCIÓN:
+TODA respuesta debe terminar con una sección "## 📖 Para profundizar" que incluya AL MENOS UNO de estos, con enlace real:
+- Cita del Catecismo: usa el formato [CIC 1234] (se vuelve enlace automáticamente)
+- Cita bíblica: usa el formato "Juan 6,51" (se vuelve enlace automáticamente)
+- Documento de la Iglesia con URL real de vatican.va
+
+Ejemplo de cierre:
+## 📖 Para profundizar
+- Catecismo: [CIC 1373] sobre la presencia real
+- Biblia: Juan 6,51-58
+- Documento: [Ecclesia de Eucharistia](https://www.vatican.va/content/john-paul-ii/es/encyclicals/documents/hf_jp-ii_enc_20030417_ecclesia_eucharistia.html)
 
 USA SIEMPRE:
 • **Negritas** para conceptos clave, nombres de santos, citas centrales
@@ -1311,103 +1340,6 @@ function renderBlogHTML(topic, articleContent) {
 </body>
 </html>`;
 }
-
-// ── Ruta individual del blog: /blog/:slug ──
-app.get('/blog/:slug', async (req, res) => {
-  const { slug } = req.params;
-  const topic = SEO_TOPICS.find(t => t.slug === slug);
-  if (!topic) return res.status(404).send('Artículo no encontrado');
-
-  try {
-    const article = await generateBlogArticle(topic);
-    if (!article) return res.status(500).send('Error generando artículo');
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache 24h
-    res.send(renderBlogHTML(topic, article.content));
-  } catch(e) {
-    res.status(500).send('Error interno');
-  }
-});
-
-// ── Índice del blog: /blog ──
-app.get('/blog', (req, res) => {
-  const categories = [...new Set(SEO_TOPICS.map(t => t.category))];
-  const categoriesHTML = categories.map(cat => {
-    const topics = SEO_TOPICS.filter(t => t.category === cat);
-    return `
-      <div class="cat-section">
-        <h2 class="cat-title">${cat.charAt(0).toUpperCase() + cat.slice(1)}</h2>
-        <div class="topics-grid">
-          ${topics.map(t => `
-            <a href="/blog/${t.slug}" class="topic-card">
-              <div class="topic-title">${t.title}</div>
-              <div class="topic-desc">${t.description.slice(0, 80)}...</div>
-            </a>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  res.send(`<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blog Católico — CatolicosGPT | Doctrina, Fe y Espiritualidad</title>
-  <meta name="description" content="Blog católico con artículos sobre doctrina, santos, novenas, oraciones, sacramentos y teología. Basado en el Magisterio de la Iglesia Católica.">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://catolicosgpt.com/blog">
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H8CB7M80S3"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-H8CB7M80S3');</script>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Georgia,serif;background:#FAF7F0;color:#18100A}
-    .header{background:#5C3D1E;padding:14px 16px;text-align:center}
-    .header a{color:#F5E6D0;text-decoration:none;font-size:20px;font-weight:bold}
-    .header a span{color:#C9923A}
-    .hero{background:linear-gradient(135deg,#5C3D1E,#7A5230);color:#F5E6D0;padding:40px 16px;text-align:center}
-    .hero h1{font-size:clamp(24px,4vw,36px);margin-bottom:10px}
-    .hero p{color:#C9A878;font-size:15px;max-width:600px;margin:0 auto}
-    .container{max-width:1000px;margin:0 auto;padding:32px 16px}
-    .cat-title{font-size:20px;color:#5C3D1E;margin:32px 0 16px;padding-bottom:8px;border-bottom:2px solid #C9923A;text-transform:capitalize}
-    .topics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-    .topic-card{background:#fff;border:1px solid #E0D5C2;border-radius:8px;padding:16px;text-decoration:none;display:block;transition:all .15s}
-    .topic-card:hover{border-color:#C9923A;background:#FFF8EE;transform:translateY(-1px)}
-    .topic-title{font-size:14px;font-weight:600;color:#5C3D1E;line-height:1.4;margin-bottom:6px}
-    .topic-desc{font-size:12px;color:#9B8A77;line-height:1.5}
-    .cta{background:#5C3D1E;color:#F5E6D0;text-align:center;padding:40px 16px;margin-top:48px}
-    .cta h2{color:#C9923A;margin-bottom:10px}
-    .cta p{color:#C9A878;margin-bottom:20px;font-size:14px}
-    .cta a{background:#C9923A;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-family:Arial,sans-serif}
-    footer{background:#3D2610;padding:16px;text-align:center}
-    footer p{color:#9B8A77;font-size:12px;font-family:Arial,sans-serif}
-    footer a{color:#C9923A;text-decoration:none}
-    @media(max-width:600px){.topics-grid{grid-template-columns:1fr}}
-  </style>
-</head>
-<body>
-<header class="header">
-  <a href="https://catolicosgpt.com">Católicos<span>GPT</span></a>
-</header>
-<div class="hero">
-  <h1>Blog Católico</h1>
-  <p>Artículos sobre doctrina, fe, novenas, santos y teología — basados en el Magisterio de la Iglesia Católica</p>
-</div>
-<div class="container">
-  ${categoriesHTML}
-  <div class="cta">
-    <h2>¿Tienes preguntas sobre la fe?</h2>
-    <p>Usa CatolicosGPT, el asistente de IA católica #1 en español. Gratis, siempre disponible.</p>
-    <a href="https://catolicosgpt.com">Consultar con IA →</a>
-  </div>
-</div>
-<footer>
-  <p>© 2026 <a href="https://catolicosgpt.com">CatolicosGPT</a> — IA Católica en Español</p>
-</footer>
-</body></html>`);
-});
-
 
 // ══════════════════════════════════════════════════════════════════
 // NUEVOS ENDPOINTS — MAGNIFICA HUMANITAS & SANTO DEL DÍA
@@ -2460,58 +2392,16 @@ app.post('/api/admin/infografias/upload', auth.authenticateToken, auth.requireAd
 
 // ── Sitemap.xml dinámico — incluye todas las infografías y blog posts ──
 app.get('/sitemap.xml', (req, res) => {
-  const baseUrl = 'https://catolicosgpt.com';
-  const today = new Date().toISOString().slice(0, 10);
-
-  const staticUrls = [
-    { loc: '/',            changefreq: 'daily',   priority: '1.0', lastmod: today },
-    { loc: '/infografias', changefreq: 'daily',   priority: '0.95',lastmod: today },
-    { loc: '/planes',      changefreq: 'monthly', priority: '0.7', lastmod: today },
-    { loc: '/blog',        changefreq: 'weekly',  priority: '0.85',lastmod: today },
-    { loc: '/lecturas',    changefreq: 'daily',   priority: '0.9', lastmod: today },
-    { loc: '/breviario',   changefreq: 'daily',   priority: '0.9', lastmod: today },
-    { loc: '/homilia',     changefreq: 'daily',   priority: '0.85',lastmod: today },
-  ];
-
-  // Cargar infografías del catálogo
-  let infografiasUrls = [];
-  try {
-    const { loadCatalog } = require('./infografias-module');
-    const cat = loadCatalog();
-    const items = (cat.infografias || []).filter(i => i.publicado !== false);
-    infografiasUrls = items.map(i => ({
-      loc: '/infografias/' + i.slug,
-      lastmod: (i.fechaISO || today),
-      changefreq: 'monthly',
-      priority: '0.8',
-      image: i.imagenes?.[0]?.url || null,
-      imageTitle: i.titulo || i.tema,
-      imageCaption: i.metaDescription || ''
-    }));
-  } catch(e) { console.error('[Sitemap] Error cargando infografías:', e.message); }
-
-  res.set('Content-Type', 'application/xml; charset=utf-8');
-  res.send(
-    '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n' +
-    staticUrls.map(u =>
-      '  <url><loc>' + baseUrl + u.loc + '</loc><lastmod>' + u.lastmod + '</lastmod><changefreq>' + u.changefreq + '</changefreq><priority>' + u.priority + '</priority></url>'
-    ).join('\n') +
-    '\n' +
-    infografiasUrls.map(u => {
-      let xml = '  <url><loc>' + baseUrl + u.loc + '</loc><lastmod>' + u.lastmod + '</lastmod><changefreq>' + u.changefreq + '</changefreq><priority>' + u.priority + '</priority>';
-      if (u.image) {
-        xml += '<image:image><image:loc>' + u.image + '</image:loc><image:title>' + (u.imageTitle || '').replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</image:title>';
-        if (u.imageCaption) xml += '<image:caption>' + u.imageCaption.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</image:caption>';
-        xml += '</image:image>';
-      }
-      xml += '</url>';
-      return xml;
-    }).join('\n') +
-    '\n</urlset>'
-  );
+  let infografias = [], blogPosts = [], podcasts = [];
+  try { const { loadCatalog } = require('./infografias-module'); infografias = (loadCatalog().infografias || []).filter(i => i.publicado !== false); } catch(e) {}
+  try { blogPosts = (blogModule.loadBlog().posts || []).filter(p => p.publicado !== false); } catch(e) {}
+  try { podcasts = (podcastModule.loadPodcasts().podcasts || []).filter(p => p.publicado !== false); } catch(e) {}
+  const oraciones = ORACIONES.oraciones_principales || [];
+  const novenas = NOVENAS.novenas || [];
+  res.type('application/xml').send(seo.generateSitemap({
+    infografias, blogPosts, podcasts, seoTopics: SEO_TOPICS, oraciones, novenas
+  }));
 });
-
 
 // ── ADMIN: Reconstruir catálogo desde Cloudinary (recovery después de deploy) ──
 // VERSIÓN ROBUSTA: recupera infografias VIEJAS (sin context metadata) Y NUEVAS
@@ -3045,6 +2935,88 @@ app.get('/infografias/crear', (req, res) => {
 });
 
 // ─── ADMIN: editar metadata (alt-text, título, descripción, keywords, categoría) ───
+// ─── ADMIN: Crear/Recuperar infografía manualmente con URLs de Cloudinary ───
+// Permite recrear infografías perdidas asociando el slug (indexado en Search Console) con imágenes de Cloudinary
+app.post('/api/admin/infografias/manual', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const { slug, titulo, descripcion, keywords, altText, categoria, tipo, imagenes } = req.body;
+  if (!slug || !titulo) return res.status(400).json({ error: 'slug y titulo son requeridos' });
+  if (!imagenes || !Array.isArray(imagenes) || imagenes.length === 0) {
+    return res.status(400).json({ error: 'Debes incluir al menos una URL de imagen' });
+  }
+  try {
+    const { loadCatalog, saveCatalog } = require('./infografias-module');
+    const catalog = loadCatalog();
+    catalog.infografias = catalog.infografias || [];
+
+    const slugLimpio = slug.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9-]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+    const existeIdx = catalog.infografias.findIndex(i => i.slug === slugLimpio);
+
+    const imagenesObj = imagenes.filter(u => u && u.trim()).map((url, i) => ({
+      url: url.trim(),
+      slide: i + 1,
+      formato: '1:1',
+      model: 'manual-cloudinary'
+    }));
+
+    const now = new Date();
+    const infografia = {
+      id: existeIdx >= 0 ? catalog.infografias[existeIdx].id : 'inf-manual-' + Date.now(),
+      slug: slugLimpio,
+      tema: titulo,
+      titulo,
+      descripcion: descripcion || '',
+      keywords: keywords || '',
+      altText: altText || titulo,
+      categoria: categoria || 'devocional',
+      tipo: tipo || categoria || 'santo',
+      fechaCreacion: existeIdx >= 0 ? catalog.infografias[existeIdx].fechaCreacion : now.toISOString(),
+      fechaISO: existeIdx >= 0 ? catalog.infografias[existeIdx].fechaISO : now.toISOString().slice(0,10),
+      fechaModificacion: now.toISOString(),
+      publicado: true,
+      esCarrusel: imagenesObj.length > 1,
+      totalSlides: imagenesObj.length,
+      uploadedBy: 'manual',
+      imagenes: imagenesObj
+    };
+
+    if (existeIdx >= 0) catalog.infografias[existeIdx] = infografia;
+    else catalog.infografias.unshift(infografia);
+
+    const ok = saveCatalog(catalog);
+    if (!ok) return res.status(500).json({ error: 'No se pudo guardar (guard anti-vacío)' });
+    res.json({ ok: true, infografia, action: existeIdx >= 0 ? 'updated' : 'created' });
+  } catch(e) {
+    console.error('[Infografia manual]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── ADMIN: Listar TODAS las infografías (incluso sin imagen) para gestión/recuperación ───
+app.get('/api/admin/infografias/all', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  try {
+    const { loadCatalog } = require('./infografias-module');
+    const catalog = loadCatalog();
+    const items = (catalog.infografias || []).map(i => ({
+      slug: i.slug,
+      titulo: i.titulo || i.tema,
+      descripcion: i.descripcion || '',
+      keywords: i.keywords || '',
+      altText: i.altText || '',
+      categoria: i.categoria || i.tipo || '',
+      tipo: i.tipo || '',
+      totalImagenes: (i.imagenes || []).length,
+      primeraImagen: i.imagenes?.[0]?.url || '',
+      imagenes: (i.imagenes || []).map(im => im.url),
+      tieneImagen: (i.imagenes || []).some(im => im.url && (im.url.includes('cloudinary') || im.url.startsWith('http'))),
+      tieneAltText: !!i.altText,
+      fechaISO: i.fechaISO || ''
+    }));
+    res.json({ ok: true, total: items.length, items });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/admin/infografias/edit-meta', auth.authenticateToken, auth.requireAdmin, (req, res) => {
   const { slug, titulo, descripcion, keywords, altText, categoria } = req.body;
   if (!slug) return res.status(400).json({ error: 'slug requerido' });
@@ -3188,6 +3160,132 @@ app.get('/api/blog/:slug', (req, res) => {
   res.json({ ok: true, post });
 });
 
+// ─── ADMIN: Listar TODOS los artículos (posts admin + SEO_TOPICS legacy) ───
+app.get('/api/admin/blog/all', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  try {
+    const adminPosts = (blogModule.loadBlog().posts || []).map(p => ({
+      slug: p.slug,
+      titulo: p.titulo,
+      descripcion: p.descripcion || p.extracto || '',
+      categoria: p.categoria || '',
+      tipo: 'admin',
+      publicado: p.publicado !== false,
+      tieneContenido: !!(p.contenidoMd && p.contenidoMd.length > 50),
+      imagenDestacada: p.imagenDestacada || '',
+      fechaISO: p.fechaCreacion ? p.fechaCreacion.slice(0,10) : ''
+    }));
+    // SEO topics legacy (generados on-the-fly, no editables pero visibles)
+    const seoPosts = SEO_TOPICS.map(t => ({
+      slug: t.slug,
+      titulo: t.title,
+      descripcion: t.description || '',
+      categoria: t.category || '',
+      tipo: 'seo-legacy',
+      publicado: true,
+      tieneContenido: true,
+      imagenDestacada: '',
+      fechaISO: ''
+    })).filter(s => !adminPosts.some(a => a.slug === s.slug)); // evitar duplicados
+
+    res.json({ ok: true, adminPosts, seoPosts, totalAdmin: adminPosts.length, totalSeo: seoPosts.length });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── ADMIN: Generar artículo COMPLETO con IA usando Magisterium API ───
+app.post('/api/admin/blog/generate', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
+  const { tema, categoria } = req.body;
+  if (!tema || !tema.trim()) return res.status(400).json({ error: 'tema requerido' });
+
+  try {
+    // 1. Buscar fuentes en Magisterium para fundamentar el artículo
+    let fuentesContexto = '';
+    let fuentesCitadas = [];
+    try {
+      const searchResp = await fetch('https://api.magisterium.com/v1/search', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + MAG_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ query: tema, limit: 6 }),
+        signal: AbortSignal.timeout(15000)
+      });
+      if (searchResp.ok) {
+        const sd = await searchResp.json();
+        const results = sd.results || sd.documents || sd.citations || [];
+        if (Array.isArray(results) && results.length) {
+          fuentesContexto = results.slice(0, 6).map((r, i) => {
+            const doc = r.document || r.source || r.title || 'Documento';
+            const ref = r.reference || r.citation || '';
+            const txt = (r.text || r.content || r.excerpt || '').slice(0, 500);
+            const url = r.url || '';
+            fuentesCitadas.push({ doc, ref, url });
+            return `[Fuente ${i+1}] ${doc}${ref ? ' — ' + ref : ''}\n"${txt}"${url ? '\nURL: ' + url : ''}`;
+          }).join('\n\n');
+        }
+      }
+    } catch(e) { console.warn('[Blog generate] Magisterium search falló:', e.message); }
+
+    // 2. Generar el artículo completo con Magisterium chat (fundamentado en las fuentes)
+    const sysPrompt = `Eres un teólogo católico experto que escribe artículos de blog en español, fieles al Magisterio de la Iglesia Católica. Escribes en Markdown bien estructurado.`;
+
+    const userPrompt = `Escribe un artículo de blog católico COMPLETO y extenso sobre: "${tema}"
+
+${fuentesContexto ? 'FUENTES DEL MAGISTERIO (úsalas como base, cítalas):\n' + fuentesContexto + '\n\n' : ''}
+
+REQUISITOS DEL ARTÍCULO:
+- Mínimo 800 palabras, bien desarrollado
+- Formato Markdown: usa ## para secciones, ### para subsecciones, **negritas**, listas con -, > para citas
+- Estructura: introducción + 3-5 secciones temáticas + conclusión pastoral
+- Incluye AL MENOS una tabla Markdown sinóptica de resumen
+- Cita el Catecismo con formato [CIC 1234] cuando aplique
+- Cita la Biblia (ej: Juan 3,16) cuando aplique
+- Termina con una sección "## Para profundizar" con referencias a documentos de la Iglesia
+- Fiel al Magisterio, tono pastoral y catequético
+- NO inventes citas: usa solo las fuentes dadas o citas conocidas y verificables
+
+Devuelve SOLO el contenido del artículo en Markdown, sin preámbulos.`;
+
+    const completion = await magisterium.chat.completions.create({
+      model: 'magisterium-1',
+      max_tokens: 4000,
+      temperature: 0.4,
+      messages: [
+        { role: 'system', content: sysPrompt },
+        { role: 'user', content: userPrompt }
+      ]
+    });
+
+    let contenidoMd = completion.choices?.[0]?.message?.content || '';
+    contenidoMd = contenidoMd.replace(/^```markdown\n?/i, '').replace(/```$/,'').trim();
+
+    if (!contenidoMd || contenidoMd.length < 100) {
+      return res.status(500).json({ error: 'La IA no generó contenido suficiente. Intenta reformular el tema.' });
+    }
+
+    // 3. Generar metadata SEO con el contenido generado
+    let meta = { titulo: tema, descripcion: '', keywords: '', altText: tema, extracto: '', categoria: categoria || 'doctrina' };
+    try {
+      meta = await blogModule.enrichBlogWithAI(tema, contenidoMd, openai);
+    } catch(e) { console.warn('[Blog generate] enrich falló:', e.message); }
+
+    res.json({
+      ok: true,
+      contenidoMd,
+      titulo: meta.titulo || tema,
+      descripcion: meta.descripcion || '',
+      keywords: meta.keywords || '',
+      altText: meta.altText || meta.titulo || tema,
+      extracto: meta.extracto || '',
+      categoria: categoria || meta.categoria || 'doctrina',
+      fuentes: fuentesCitadas,
+      fuente_ia: 'magisterium-1'
+    });
+  } catch(e) {
+    console.error('[Blog generate]', e);
+    res.status(500).json({ error: 'Error generando artículo: ' + e.message });
+  }
+});
+
 // IA: generar metadata SEO desde título + contenido
 app.post('/api/admin/blog/enrich', auth.authenticateToken, auth.requireAdmin, async (req, res) => {
   const { titulo, contenidoMd } = req.body;
@@ -3236,40 +3334,29 @@ app.delete('/api/admin/blog/:slug', auth.authenticateToken, auth.requireAdmin, (
   res.json({ ok });
 });
 
-// ─── /blog — galería pública ───
-// Reemplaza el route anterior basado en SEO_TOPICS (lo preservamos en /blog/:slug como fallback)
-const _origBlogIndex = null; // Comentado: el index anterior se reemplaza por blog.html dinámica
-app._router && app._router.stack && (app._router.stack = app._router.stack.filter(layer => {
-  if (layer.route && layer.route.path === '/blog' && layer.route.methods.get) return false;
-  return true;
-}));
-
+// ─── /blog — galería pública (posts admin + SEO topics legacy) ───
 app.get('/blog', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'blog.html'));
 });
 
-// /blog/:slug — primero busca post admin (renderiza con shortcodes), si no, fallback a SEO topic legacy
-const _origBlogSlugRoute = (function() {
-  // Capturar el handler antiguo si existe (para fallback a SEO topic)
-  if (!app._router || !app._router.stack) return null;
-  const layer = app._router.stack.find(l => l.route && l.route.path === '/blog/:slug');
-  return layer ? layer.route.stack[0].handle : null;
-})();
-
-// Eliminar el route anterior /blog/:slug y registrar el nuevo (que busca admin posts primero)
-if (app._router && app._router.stack) {
-  app._router.stack = app._router.stack.filter(layer =>
-    !(layer.route && layer.route.path === '/blog/:slug' && layer.route.methods.get)
-  );
-}
-
-app.get('/blog/:slug', async (req, res, next) => {
+// /blog/:slug — primero busca post admin (Markdown + shortcodes), si no, fallback a SEO_TOPIC legacy
+app.get('/blog/:slug', async (req, res) => {
   const slug = req.params.slug;
   const post = blogModule.getPostBySlug(slug);
 
-  // Si NO existe como post admin, intentar SEO topic legacy
+  // FALLBACK: si no hay post admin, intentar SEO_TOPIC legacy (preserva URLs ya indexadas)
   if (!post) {
-    if (_origBlogSlugRoute) return _origBlogSlugRoute(req, res, next);
+    const topic = SEO_TOPICS.find(t => t.slug === slug);
+    if (topic) {
+      try {
+        const article = await generateBlogArticle(topic);
+        if (article) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+          return res.send(renderBlogHTML(topic, article.content));
+        }
+      } catch(e) { console.error('[Blog SEO legacy]', e.message); }
+    }
     return res.status(404).send('Artículo no encontrado');
   }
 
@@ -3545,6 +3632,443 @@ app.get('/podcast/:slug', (req, res) => {
 </body>
 </html>`);
 });
+
+
+
+// ════════════════════════════════════════════════════════════════════════
+// V8.0 — SEO PROGRAMÁTICO · Páginas de alto volumen de búsqueda
+// Clusters: evangelio-de-hoy, lecturas-de-hoy, santo-del-dia,
+//           oraciones, novenas, santos, robots, rss, sitemap
+// ════════════════════════════════════════════════════════════════════════
+
+
+// ─── robots.txt ───
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(seo.generateRobotsTxt());
+});
+
+// ─── IndexNow key verification ───
+app.get('/catolicosgpt-indexnow-key.txt', (req, res) => {
+  res.type('text/plain').send('catolicosgpt-indexnow-key');
+});
+
+// ─── RSS Feed ───
+app.get('/feed.xml', (req, res) => {
+  const blogPosts = (blogModule.loadBlog().posts || []).filter(p => p.publicado !== false);
+  let infografias = [], podcasts = [];
+  try { const { loadCatalog } = require('./infografias-module'); infografias = loadCatalog().infografias || []; } catch(e) {}
+  try { podcasts = podcastModule.loadPodcasts().podcasts || []; } catch(e) {}
+  res.type('application/xml').send(seo.generateRSS(blogPosts, infografias, podcasts));
+});
+
+// ─── EVANGELIO DE HOY (≈100k búsquedas/mes) ───
+app.get('/evangelio-de-hoy', async (req, res) => {
+  const hoy = new Date();
+  const fechaLarga = hoy.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const fechaISO = hoy.toISOString().slice(0, 10);
+
+  let evangelio = null;
+  try {
+    const cached = liturgiaCache.get('lecturas');
+    if (cached && cached.lecturas) {
+      evangelio = cached.lecturas.find(l => (l.titulo || '').toLowerCase().includes('evangelio'));
+      if (!evangelio) evangelio = cached.lecturas[cached.lecturas.length - 1];
+    }
+    if (!evangelio) {
+      const data = await magWidget('/v1/widgets/daily-readings');
+      if (data) {
+        const lecturas = data.readings || data.lecturas || [];
+        if (Array.isArray(lecturas)) {
+          evangelio = lecturas.find(l => (l.title || l.titulo || '').toLowerCase().includes('evangelio')) || lecturas[lecturas.length - 1];
+          if (evangelio) {
+            evangelio = { titulo: evangelio.title || evangelio.titulo, texto: evangelio.text || evangelio.texto, cita: evangelio.citation || evangelio.cita || '' };
+          }
+        }
+      }
+    }
+  } catch(e) { console.warn('[Evangelio]', e.message); }
+
+  const titulo = evangelio?.titulo || ('Evangelio del día — ' + fechaLarga);
+  const cita = evangelio?.cita || '';
+  const texto = evangelio?.texto || 'El evangelio de hoy se actualizará pronto. Mientras tanto, puedes preguntarle a nuestra IA católica.';
+
+  res.send(seo.renderPage({
+    title: `Evangelio de hoy ${fechaLarga} · CatolicosGPT`,
+    description: `Evangelio del día de hoy ${fechaLarga}. ${cita ? cita + '. ' : ''}Lee la Palabra de Dios con reflexión y comentario pastoral católico.`,
+    canonical: '/evangelio-de-hoy',
+    keywords: 'evangelio de hoy, evangelio del dia, lectura del evangelio, palabra de dios hoy',
+    activeNav: '/evangelio-de-hoy',
+    breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Evangelio de hoy', url: '/evangelio-de-hoy' }],
+    schemaLD: [{
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": `Evangelio de hoy — ${fechaLarga}`,
+      "datePublished": fechaISO,
+      "dateModified": fechaISO,
+      "author": { "@type": "Organization", "name": "CatolicosGPT" },
+      "publisher": { "@type": "Organization", "name": "CatolicosGPT", "logo": { "@type": "ImageObject", "url": seo.BASE_URL + "/favicon.svg" } },
+      "mainEntityOfPage": seo.BASE_URL + "/evangelio-de-hoy"
+    }],
+    body: `
+<div class="seo-shell">
+  <div class="seo-breadcrumb"><a href="/">Inicio</a> › <strong>Evangelio de hoy</strong></div>
+
+  <div class="seo-card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="width:48px;height:48px;border-radius:50%;background:var(--grad-gold);display:grid;place-items:center;font-size:22px;flex-shrink:0">📖</div>
+      <div>
+        <h1 style="font-family:var(--font-display);font-size:clamp(24px,4vw,36px);font-weight:700;color:var(--espresso);line-height:1.15;margin:0">Evangelio de hoy</h1>
+        <div style="font-size:14px;color:var(--ink-2)">${seo.escHtml(fechaLarga)}${cita ? ' · <strong>' + seo.escHtml(cita) + '</strong>' : ''}</div>
+      </div>
+    </div>
+    <h2>${seo.escHtml(titulo)}</h2>
+    <blockquote>${seo.escHtml(texto).replace(/\n/g, '<br>')}</blockquote>
+    <hr>
+    <h3>Reflexión pastoral</h3>
+    <p>Te invitamos a meditar esta Palabra en tu corazón. ¿Qué te dice Dios hoy a través de este Evangelio? Si deseas profundizar, nuestra IA católica puede ayudarte a comprender el contexto, la exégesis y la aplicación pastoral de este pasaje.</p>
+    <div class="seo-cta">
+      <h3>¿Quieres profundizar en el Evangelio?</h3>
+      <p>Pregúntale a nuestra IA católica basada en el Magisterio</p>
+      <a href="/">💬 Hablar con CatolicosGPT</a>
+    </div>
+  </div>
+
+  <div class="seo-card">
+    <h2>Lecturas relacionadas</h2>
+    <div class="seo-grid">
+      <a href="/lecturas-de-hoy" class="seo-grid-item"><span class="tag">Litúrgico</span><h3>Lecturas de hoy</h3><p>Todas las lecturas de la Misa de hoy</p></a>
+      <a href="/santo-del-dia" class="seo-grid-item"><span class="tag">Santos</span><h3>Santo del día</h3><p>Vida y virtudes del santo de hoy</p></a>
+      <a href="/oraciones" class="seo-grid-item"><span class="tag">Oración</span><h3>Oraciones católicas</h3><p>Padre Nuestro, Ave María, Rosario y más</p></a>
+    </div>
+  </div>
+</div>`
+  }));
+});
+
+// ─── LECTURAS DE HOY (≈50k búsquedas/mes) ───
+app.get('/lecturas-de-hoy', async (req, res) => {
+  const hoy = new Date();
+  const fechaLarga = hoy.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const fechaISO = hoy.toISOString().slice(0, 10);
+
+  let lecturas = [];
+  try {
+    const cached = liturgiaCache.get('lecturas');
+    if (cached && cached.lecturas) lecturas = cached.lecturas;
+    if (!lecturas.length) {
+      const data = await magWidget('/v1/widgets/daily-readings');
+      if (data) {
+        const raw = data.readings || data.lecturas || [];
+        if (Array.isArray(raw)) {
+          lecturas = raw.map(l => ({ titulo: l.title || l.titulo || 'Lectura', texto: l.text || l.texto || '', cita: l.citation || l.cita || '' }));
+        }
+      }
+    }
+  } catch(e) {}
+
+  const lecturasHtml = lecturas.length
+    ? lecturas.map((l, i) => `
+        <div class="seo-card">
+          <h2>${seo.escHtml(l.titulo)}${l.cita ? ' <span style="font-size:16px;color:var(--gold-deep);font-weight:400">(' + seo.escHtml(l.cita) + ')</span>' : ''}</h2>
+          <blockquote>${seo.escHtml(l.texto || '').replace(/\n/g, '<br>')}</blockquote>
+        </div>`).join('')
+    : '<div class="seo-card"><p>Las lecturas de hoy se actualizarán pronto. Mientras tanto, pregúntale a nuestra IA católica.</p></div>';
+
+  res.send(seo.renderPage({
+    title: `Lecturas de hoy ${fechaLarga} · Liturgia católica · CatolicosGPT`,
+    description: `Lecturas de la Misa de hoy ${fechaLarga}. Primera lectura, salmo responsorial, segunda lectura y evangelio del día.`,
+    canonical: '/lecturas-de-hoy',
+    keywords: 'lecturas de hoy, lecturas de la misa de hoy, primera lectura, salmo, evangelio',
+    activeNav: '/lecturas-de-hoy',
+    breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Lecturas de hoy', url: '/lecturas-de-hoy' }],
+    schemaLD: [{ "@context": "https://schema.org", "@type": "Article", "headline": `Lecturas de la Misa — ${fechaLarga}`, "datePublished": fechaISO, "dateModified": fechaISO, "author": { "@type": "Organization", "name": "CatolicosGPT" } }],
+    body: `
+<div class="seo-shell">
+  <div class="seo-breadcrumb"><a href="/">Inicio</a> › <strong>Lecturas de hoy</strong></div>
+  <div class="seo-hero">
+    <h1>Lecturas de hoy</h1>
+    <p>${seo.escHtml(fechaLarga)} · Liturgia de la Palabra</p>
+  </div>
+  ${lecturasHtml}
+  <div class="seo-cta">
+    <h3>Reflexiona con la IA católica</h3>
+    <p>Pregunta sobre cualquier lectura y recibe una reflexión basada en el Magisterio</p>
+    <a href="/">💬 Hablar con CatolicosGPT</a>
+  </div>
+  <div class="seo-card">
+    <h2>Más recursos litúrgicos</h2>
+    <div class="seo-grid">
+      <a href="/evangelio-de-hoy" class="seo-grid-item"><span class="tag">Evangelio</span><h3>Evangelio de hoy</h3><p>Lectura y reflexión del evangelio</p></a>
+      <a href="/santo-del-dia" class="seo-grid-item"><span class="tag">Santos</span><h3>Santo del día</h3><p>Vida del santo que celebramos hoy</p></a>
+    </div>
+  </div>
+</div>`
+  }));
+});
+
+// ─── SANTO DEL DÍA (≈30k búsquedas/mes) ───
+app.get('/santo-del-dia', async (req, res) => {
+  const hoy = new Date();
+  const fechaLarga = hoy.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const fechaISO = hoy.toISOString().slice(0, 10);
+
+  let santo = null;
+  try {
+    const cached = liturgiaCache.get('santo');
+    if (cached) {
+      santo = { nombre: cached.nombre || cached.name || '?', bio: cached.texto || cached.biografia || cached.biography || cached.description || '', fecha: cached.fecha || cached.feast_date || '' };
+    }
+    if (!santo || santo.nombre === '?') {
+      const data = await magWidget('/v1/widgets/saint-of-the-day');
+      if (data) {
+        const s = data.saint || data;
+        santo = { nombre: s.name || s.nombre || '?', bio: s.biography || s.description || s.biografia || s.text || '', fecha: s.feast_date || s.fechaFestivo || '' };
+      }
+    }
+  } catch(e) {}
+
+  if (!santo) santo = { nombre: 'Santo del día', bio: 'Información del santo de hoy será actualizada pronto.', fecha: '' };
+
+  res.send(seo.renderPage({
+    title: `Santo del día · ${santo.nombre} · ${fechaLarga} · CatolicosGPT`,
+    description: `${santo.nombre} — santo del día ${fechaLarga}. Biografía, vida, virtudes y oración. Santoral católico.`,
+    canonical: '/santo-del-dia',
+    keywords: 'santo del dia, santo de hoy, santoral, santoral católico, ' + seo.escHtml(santo.nombre).toLowerCase(),
+    activeNav: '/santo-del-dia',
+    breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Santo del día', url: '/santo-del-dia' }],
+    schemaLD: [{ "@context": "https://schema.org", "@type": "Article", "headline": `${santo.nombre} — Santo del día`, "datePublished": fechaISO, "dateModified": fechaISO, "author": { "@type": "Organization", "name": "CatolicosGPT" }, "about": { "@type": "Person", "name": santo.nombre } }],
+    body: `
+<div class="seo-shell">
+  <div class="seo-breadcrumb"><a href="/">Inicio</a> › <a href="/santos">Santoral</a> › <strong>Santo del día</strong></div>
+  <div class="seo-card">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--grad-gold);display:grid;place-items:center;font-size:28px;flex-shrink:0">⛪</div>
+      <div>
+        <div style="font-size:12px;color:var(--gold-deep);font-weight:700;text-transform:uppercase;letter-spacing:.08em">Santo del día · ${seo.escHtml(fechaLarga)}</div>
+        <h1 style="font-family:var(--font-display);font-size:clamp(26px,4vw,40px);font-weight:700;color:var(--espresso);line-height:1.15;margin:4px 0 0">${seo.escHtml(santo.nombre)}</h1>
+      </div>
+    </div>
+    ${santo.bio ? `<div style="font-size:17px;line-height:1.75;color:var(--ink)">${seo.escHtml(santo.bio).replace(/\n/g, '<br>')}</div>` : ''}
+    <hr>
+    <div class="seo-cta">
+      <h3>Conoce más sobre ${seo.escHtml(santo.nombre)}</h3>
+      <p>Pregúntale a nuestra IA católica por su vida, virtudes, oración y patronazgo</p>
+      <a href="/">💬 Preguntar a CatolicosGPT</a>
+    </div>
+  </div>
+  <div class="seo-card">
+    <h2>Explora el santoral</h2>
+    <div class="seo-grid">
+      <a href="/santos" class="seo-grid-item"><span class="tag">Santoral</span><h3>Santos por mes</h3><p>Directorio completo del santoral católico</p></a>
+      <a href="/evangelio-de-hoy" class="seo-grid-item"><span class="tag">Litúrgico</span><h3>Evangelio de hoy</h3><p>La Palabra de Dios para hoy</p></a>
+      <a href="/oraciones" class="seo-grid-item"><span class="tag">Oración</span><h3>Oraciones católicas</h3><p>Reza por intercesión de los santos</p></a>
+    </div>
+  </div>
+</div>`
+  }));
+});
+
+// ─── ORACIONES — Directorio (alto volumen) ───
+app.get('/oraciones', (req, res) => {
+  const oraciones = ORACIONES.oraciones_principales || [];
+  const grid = oraciones.map(o => {
+    const slug = seo.slugify(o.nombre);
+    return `<a href="/oraciones/${slug}" class="seo-grid-item">
+      <span class="tag">${seo.escHtml(o.tipo || 'oración')}</span>
+      <h3>${seo.escHtml(o.nombre)}</h3>
+      <p>${seo.escHtml((o.origen || '').slice(0, 100))}</p>
+    </a>`;
+  }).join('');
+
+  res.send(seo.renderPage({
+    title: 'Oraciones Católicas · Textos completos · CatolicosGPT',
+    description: 'Todas las oraciones católicas con texto completo en español y latín. Padre Nuestro, Ave María, Rosario, Credo, Salve Regina y más.',
+    canonical: '/oraciones',
+    keywords: 'oraciones católicas, oraciones, padre nuestro, ave maria, rosario, credo, oraciones en español',
+    activeNav: '/oraciones',
+    breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Oraciones', url: '/oraciones' }],
+    schemaLD: [{ "@context": "https://schema.org", "@type": "CollectionPage", "name": "Oraciones Católicas", "url": seo.BASE_URL + "/oraciones", "numberOfItems": oraciones.length }],
+    body: `
+<div class="seo-shell">
+  <div class="seo-breadcrumb"><a href="/">Inicio</a> › <strong>Oraciones</strong></div>
+  <div class="seo-hero">
+    <h1>Oraciones <span class="it">Católicas</span></h1>
+    <p>${oraciones.length} oraciones con texto completo en español y latín. Basadas en la tradición de la Iglesia.</p>
+  </div>
+  <div class="seo-grid">${grid}</div>
+  <div class="seo-cta">
+    <h3>¿Necesitas una oración personalizada?</h3>
+    <p>Nuestra IA puede ayudarte a encontrar la oración perfecta para tu situación</p>
+    <a href="/">💬 Pedir oración a CatolicosGPT</a>
+  </div>
+</div>`
+  }));
+});
+
+// ─── ORACIÓN INDIVIDUAL (/oraciones/:slug) ───
+app.get('/oraciones/:slug', (req, res) => {
+  const oraciones = ORACIONES.oraciones_principales || [];
+  const oracion = oraciones.find(o => seo.slugify(o.nombre) === req.params.slug);
+  if (!oracion) return res.status(404).send(seo.renderPage({ title: 'Oración no encontrada', description: '', canonical: '/oraciones', body: '<div class="seo-shell"><div class="seo-card"><h1>Oración no encontrada</h1><p><a href="/oraciones">Ver todas las oraciones →</a></p></div></div>' }));
+
+  const textoEs = oracion.texto_es || oracion.texto || '';
+  const textoLat = oracion.texto_latin || '';
+
+  res.send(seo.renderPage({
+    title: `${oracion.nombre} — Texto completo · CatolicosGPT`,
+    description: `${oracion.nombre}: texto completo en español${textoLat ? ' y latín' : ''}. ${(oracion.origen || '').slice(0, 120)}`,
+    canonical: '/oraciones/' + req.params.slug,
+    keywords: seo.slugify(oracion.nombre).replace(/-/g, ', ') + ', oración católica, texto completo',
+    activeNav: '/oraciones',
+    breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Oraciones', url: '/oraciones' }, { name: oracion.nombre, url: '/oraciones/' + req.params.slug }],
+    schemaLD: [{ "@context": "https://schema.org", "@type": "CreativeWork", "name": oracion.nombre, "inLanguage": "es", "genre": "oración católica", "text": textoEs.slice(0, 500) }],
+    body: `
+<div class="seo-shell">
+  <div class="seo-breadcrumb"><a href="/">Inicio</a> › <a href="/oraciones">Oraciones</a> › <strong>${seo.escHtml(oracion.nombre)}</strong></div>
+  <div class="seo-card">
+    <h1 style="font-family:var(--font-display);font-size:clamp(28px,4vw,42px);font-weight:700;color:var(--espresso);margin-bottom:8px">${seo.escHtml(oracion.nombre)}</h1>
+    <div style="font-size:14px;color:var(--ink-2);margin-bottom:20px">${seo.escHtml(oracion.tipo || '')}${oracion.origen ? ' · ' + seo.escHtml(oracion.origen) : ''}</div>
+    <h2>Texto en español</h2>
+    <blockquote>${seo.escHtml(textoEs).replace(/\n/g, '<br>')}</blockquote>
+    ${textoLat ? `<h2>Texto en latín</h2><blockquote style="font-style:italic;color:var(--ink-3)">${seo.escHtml(textoLat).replace(/\n/g, '<br>')}</blockquote>` : ''}
+  </div>
+  <div class="seo-card">
+    <h2>Más oraciones</h2>
+    <div class="seo-grid">
+      ${oraciones.filter(o => o.nombre !== oracion.nombre).slice(0, 6).map(o => `<a href="/oraciones/${seo.slugify(o.nombre)}" class="seo-grid-item"><h3>${seo.escHtml(o.nombre)}</h3><p>${seo.escHtml(o.tipo || '')}</p></a>`).join('')}
+    </div>
+  </div>
+</div>`
+  }));
+});
+
+// ─── NOVENAS — Directorio ───
+app.get('/novenas', (req, res) => {
+  const novenas = NOVENAS.novenas || [];
+  const grid = novenas.map(n => {
+    const slug = seo.slugify(n.nombre);
+    return `<a href="/novenas/${slug}" class="seo-grid-item">
+      <span class="tag">${n.dias ? n.dias.length + ' días' : '9 días'}</span>
+      <h3>${seo.escHtml(n.nombre)}</h3>
+      <p>${seo.escHtml((n.fechas || n.tambien_cuando || '').slice(0, 100))}</p>
+    </a>`;
+  }).join('');
+
+  res.send(seo.renderPage({
+    title: 'Novenas Católicas · Textos completos día por día · CatolicosGPT',
+    description: 'Novenas católicas completas con oraciones día por día. Novena a San José, Divina Misericordia, Virgen de Guadalupe y más.',
+    canonical: '/novenas',
+    keywords: 'novenas católicas, novena, novenas completas, novena a san jose, novena divina misericordia',
+    activeNav: '/novenas',
+    breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Novenas', url: '/novenas' }],
+    body: `
+<div class="seo-shell">
+  <div class="seo-breadcrumb"><a href="/">Inicio</a> › <strong>Novenas</strong></div>
+  <div class="seo-hero"><h1>Novenas <span class="it">Católicas</span></h1><p>${novenas.length} novenas completas con oraciones día por día</p></div>
+  <div class="seo-grid">${grid}</div>
+</div>`
+  }));
+});
+
+// ─── NOVENA INDIVIDUAL (/novenas/:slug) ───
+app.get('/novenas/:slug', (req, res) => {
+  const novenas = NOVENAS.novenas || [];
+  const novena = novenas.find(n => seo.slugify(n.nombre) === req.params.slug);
+  if (!novena) return res.status(404).send(seo.renderPage({ title: 'Novena no encontrada', description: '', canonical: '/novenas', body: '<div class="seo-shell"><div class="seo-card"><h1>Novena no encontrada</h1><p><a href="/novenas">Ver todas →</a></p></div></div>' }));
+
+  const dias = novena.dias || [];
+  const diasHtml = dias.map((d, i) => `
+    <div class="seo-card">
+      <h2>Día ${i + 1}${d.titulo ? ': ' + seo.escHtml(d.titulo) : ''}</h2>
+      ${d.meditacion ? `<h3>Meditación</h3><p>${seo.escHtml(d.meditacion).replace(/\n/g, '<br>')}</p>` : ''}
+      ${d.oracion ? `<h3>Oración</h3><blockquote>${seo.escHtml(d.oracion).replace(/\n/g, '<br>')}</blockquote>` : ''}
+      ${d.jaculatoria ? `<p style="text-align:center;font-style:italic;color:var(--gold-deep);margin-top:14px">${seo.escHtml(d.jaculatoria)}</p>` : ''}
+    </div>`).join('');
+
+  res.send(seo.renderPage({
+    title: `${novena.nombre} — Texto completo día por día · CatolicosGPT`,
+    description: `${novena.nombre}: oración completa para los 9 días. ${(novena.fechas || '').slice(0, 100)}`,
+    canonical: '/novenas/' + req.params.slug,
+    keywords: seo.slugify(novena.nombre).replace(/-/g, ', ') + ', novena completa, novena católica',
+    activeNav: '/novenas',
+    breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Novenas', url: '/novenas' }, { name: novena.nombre, url: '/novenas/' + req.params.slug }],
+    body: `
+<div class="seo-shell">
+  <div class="seo-breadcrumb"><a href="/">Inicio</a> › <a href="/novenas">Novenas</a> › <strong>${seo.escHtml(novena.nombre)}</strong></div>
+  <div class="seo-card">
+    <h1 style="font-family:var(--font-display);font-size:clamp(28px,4vw,42px);font-weight:700;color:var(--espresso);margin-bottom:8px">${seo.escHtml(novena.nombre)}</h1>
+    <div style="font-size:14px;color:var(--ink-2);margin-bottom:14px">${seo.escHtml(novena.fechas || '')}${novena.tambien_cuando ? ' · ' + seo.escHtml(novena.tambien_cuando) : ''}</div>
+    ${novena.oracion_preparatoria ? `<h3>Oración preparatoria</h3><blockquote>${seo.escHtml(novena.oracion_preparatoria).replace(/\n/g, '<br>')}</blockquote>` : ''}
+  </div>
+  ${diasHtml}
+</div>`
+  }));
+});
+
+// ─── SANTORAL (/santos) ───
+app.get('/santos', (req, res) => {
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const mesActual = meses[new Date().getMonth()];
+  const santosPorMes = SANTOS.santos_por_mes || {};
+
+  const grid = meses.map(m => {
+    const count = (santosPorMes[m] || []).length;
+    const activo = m === mesActual;
+    return `<a href="/santos/${m}" class="seo-grid-item" style="${activo ? 'border-color:var(--gold);background:rgba(188,138,54,.04)' : ''}">
+      <span class="tag">${activo ? '📍 Mes actual' : 'Santoral'}</span>
+      <h3>${m.charAt(0).toUpperCase() + m.slice(1)}</h3>
+      <p>${count} santos y fiestas</p>
+    </a>`;
+  }).join('');
+
+  res.send(seo.renderPage({
+    title: 'Santoral Católico · Santos por mes · CatolicosGPT',
+    description: 'Santoral católico completo organizado por mes. Biografías, fiestas litúrgicas y santos del Martirologio Romano.',
+    canonical: '/santos',
+    keywords: 'santoral católico, santos por mes, santoral, calendario de santos, martirologio romano',
+    activeNav: '/santo-del-dia',
+    breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Santoral', url: '/santos' }],
+    body: `
+<div class="seo-shell">
+  <div class="seo-breadcrumb"><a href="/">Inicio</a> › <strong>Santoral</strong></div>
+  <div class="seo-hero"><h1>Santoral <span class="it">Católico</span></h1><p>Santos, beatos y fiestas litúrgicas organizados por mes</p></div>
+  <div class="seo-grid">${grid}</div>
+</div>`
+  }));
+});
+
+// ─── SANTOS POR MES (/santos/:mes) ───
+app.get('/santos/:mes', (req, res) => {
+  const mes = req.params.mes.toLowerCase();
+  const santosPorMes = SANTOS.santos_por_mes || {};
+  const santos = santosPorMes[mes];
+  if (!santos) return res.status(404).send(seo.renderPage({ title: 'Mes no encontrado', description: '', canonical: '/santos', body: '<div class="seo-shell"><div class="seo-card"><h1>Mes no encontrado</h1><p><a href="/santos">Ver santoral →</a></p></div></div>' }));
+
+  const mesCapital = mes.charAt(0).toUpperCase() + mes.slice(1);
+  const tabla = `<table class="seo-table">
+    <thead><tr><th>Día</th><th>Nombre</th><th>Tipo</th><th>Descripción</th></tr></thead>
+    <tbody>${santos.map(s => `<tr><td style="font-weight:700;color:var(--gold-deep)">${s.dia}</td><td><strong>${seo.escHtml(s.nombre)}</strong></td><td style="font-size:13px;color:var(--ink-2)">${seo.escHtml(s.tipo || '')}</td><td style="font-size:13px">${seo.escHtml((s.descripcion || '').slice(0, 150))}</td></tr>`).join('')}</tbody>
+  </table>`;
+
+  res.send(seo.renderPage({
+    title: `Santos de ${mesCapital} · Santoral católico · CatolicosGPT`,
+    description: `Santoral católico de ${mesCapital}: ${santos.length} santos, beatos y fiestas litúrgicas con biografías y descripciones.`,
+    canonical: '/santos/' + mes,
+    keywords: `santos de ${mes}, santoral ${mes}, santos católicos ${mes}`,
+    activeNav: '/santo-del-dia',
+    breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Santoral', url: '/santos' }, { name: mesCapital, url: '/santos/' + mes }],
+    body: `
+<div class="seo-shell">
+  <div class="seo-breadcrumb"><a href="/">Inicio</a> › <a href="/santos">Santoral</a> › <strong>${mesCapital}</strong></div>
+  <div class="seo-card">
+    <h1 style="font-family:var(--font-display);font-size:clamp(28px,4vw,42px);font-weight:700;color:var(--espresso)">Santos de ${mesCapital}</h1>
+    <p style="color:var(--ink-2);margin-bottom:20px">${santos.length} santos, beatos y fiestas litúrgicas</p>
+    ${tabla}
+  </div>
+</div>`
+  }));
+});
+
 
 
 app.get('*', (req, res) => {

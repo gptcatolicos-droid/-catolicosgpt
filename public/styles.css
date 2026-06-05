@@ -385,7 +385,9 @@ body {
 .rise { animation: rise .5s var(--ease) both; }
 
 /* toast */
-.toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); z-index: 90;
+.toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(80px); z-index: 90;
   background: var(--espresso); color: #f3e4c6; padding: 14px 22px; border-radius: 99px;
   font-size: 14px; font-weight: 500; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px;
-  animation: rise .3s var(--ease) both; }
+  opacity: 0; visibility: hidden; pointer-events: none; transition: transform .3s var(--ease), opacity .3s var(--ease); }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; visibility: visible; }
+.toast:empty { display: none !important; }

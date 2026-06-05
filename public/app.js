@@ -96,6 +96,22 @@ function closeSb() {
 }
 
 // ── Chat ──
+// ── Deduplicación: el modelo a veces genera la respuesta 2x; la detectamos y cortamos ──
+function dedupRespuesta(texto) {
+  if (!texto || texto.length < 200) return texto;
+  const t = texto.trim();
+  // Fingerprint: primeros 60 chars significativos del texto
+  const fp = t.slice(0, 60).trim();
+  if (fp.length < 30) return texto;
+  // Buscar segunda aparición del fingerprint (más allá de la primera mitad)
+  const segundaPos = t.indexOf(fp, Math.floor(t.length * 0.35));
+  if (segundaPos > 0) {
+    // Hay repetición: quedarse con la primera copia
+    return t.slice(0, segundaPos).trim();
+  }
+  return texto;
+}
+
 async function send() {
   const cin = document.getElementById('cin');
   if (!cin) { console.error('[send] textarea #cin no existe en el DOM'); return; }
@@ -230,7 +246,8 @@ async function send() {
                 if (el) el.innerHTML = 'Para generar necesitas una cuenta. <a href="/infografias?tema=' + encodeURIComponent(tema) + '" style="color:var(--gold)">Crear cuenta gratis →</a>';
               }
             }
-            // REPLACE (no append) — esto elimina cursor y previene duplicación
+            // REPLACE (no append) + dedup (modelo a veces genera 2x)
+            fullText = dedupRespuesta(fullText);
             bubble.innerHTML = parseMarkdown(fullText);
 
             // ── Panel de fuentes verificables v3 ──
@@ -271,6 +288,7 @@ async function send() {
     }
 
     if (fullText && !bubble.querySelector('.action-row')) {
+      fullText = dedupRespuesta(fullText);
       bubble.innerHTML = parseMarkdown(fullText);
       chatHistory.push({ role: 'assistant', content: fullText });
       addActions(bubble, fullText);

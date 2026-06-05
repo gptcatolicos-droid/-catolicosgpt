@@ -1,6 +1,6 @@
 {
   "name": "catolicosgpt",
-  "version": "6.0.0",
+  "version": "8.0.0",
   "description": "Asistente teol\u00f3gico cat\u00f3lico con IA",
   "main": "server.js",
   "scripts": {

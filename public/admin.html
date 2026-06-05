@@ -132,6 +132,72 @@
         <div class="stat-card"><div class="val" id="stat-premium">0</div><div class="lbl">Premium</div></div>
       </div>
 
+      <!-- ════ RECUPERACIÓN MANUAL CON CLOUDINARY ════ -->
+      <div class="admin-card" style="border-left:3px solid var(--maroon);background:linear-gradient(135deg, rgba(94,27,34,.03), rgba(188,138,54,.03));margin-bottom:18px">
+        <h3>🛟 Recuperar / Crear infografía con URLs de Cloudinary</h3>
+        <p style="margin-bottom:14px">Si una infografía perdió su imagen tras un deploy, recupérala aquí: escribe el <strong>mismo slug</strong> que ya estaba indexado (ej: <code>corpus-christi-cuerpo-de-cristo-eucaristia</code>) y pega la(s) URL(s) de Cloudinary. La URL pública <code>/infografias/{slug}</code> seguirá funcionando idéntica — el SEO no se pierde.</p>
+
+        <div class="field">
+          <label class="field-label">Slug (URL exacta, sin dominio) <span style="color:var(--maroon)">★</span></label>
+          <input class="input" id="rec-slug" placeholder="corpus-christi-cuerpo-de-cristo-eucaristia" style="font-family:ui-monospace,monospace;font-size:13px">
+          <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Cópialo de Search Console o de la URL que ya estaba indexada</div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Título <span style="color:var(--maroon)">★</span></label>
+          <input class="input" id="rec-titulo" placeholder="Corpus Christi — Cuerpo de Cristo en la Eucaristía">
+        </div>
+
+        <div class="field">
+          <label class="field-label">URLs de imágenes en Cloudinary <span style="color:var(--maroon)">★</span></label>
+          <textarea class="input" id="rec-imagenes" rows="3" placeholder="https://res.cloudinary.com/.../imagen1.jpg
+https://res.cloudinary.com/.../imagen2.jpg  (una por línea para carrusel)" style="font-family:ui-monospace,monospace;font-size:12px"></textarea>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Una URL por línea. Varias = carrusel. Súbelas primero a Cloudinary si no están.</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field">
+            <label class="field-label">Categoría</label>
+            <select class="select" id="rec-categoria">
+              <option value="devocional">Devocional</option>
+              <option value="santo">Santo</option>
+              <option value="apologetica">Apologética</option>
+              <option value="enciclica">Encíclica</option>
+              <option value="doctrinal">Doctrina</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Alt text (SEO)</label>
+            <input class="input" id="rec-alttext" placeholder="Infografía sobre Corpus Christi">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Descripción (SEO)</label>
+          <textarea class="input" id="rec-descripcion" rows="2" placeholder="Breve descripción para meta tags"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Keywords (separadas por comas)</label>
+          <input class="input" id="rec-keywords" placeholder="corpus christi, eucaristía, cuerpo de cristo">
+        </div>
+
+        <button class="btn btn-gold" style="width:100%;background:linear-gradient(135deg, var(--maroon), var(--gold-deep));color:#fff" onclick="recuperarInfografia()" id="rec-btn">🛟 Crear / Recuperar infografía</button>
+        <div class="status" id="rec-status" style="margin-top:12px"></div>
+      </div>
+
+      <!-- ════ LISTA DE INFOGRAFÍAS CON ESTADO DE IMAGEN ════ -->
+      <div class="admin-card" style="margin-bottom:18px">
+        <h3>📋 Todas las infografías — estado de imágenes</h3>
+        <p>Revisa cuáles tienen imagen asociada y cuáles necesitan recuperación. Click en una sin imagen para precargar su slug arriba.</p>
+        <div style="margin:10px 0">
+          <input class="input" id="rec-filter" placeholder="🔍 Filtrar por slug o título..." oninput="renderRecoveryList()" style="font-size:13px">
+        </div>
+        <div id="recovery-list" style="max-height:400px;overflow-y:auto">
+          <div style="text-align:center;color:var(--ink-3);padding:20px">Cargando...</div>
+        </div>
+      </div>
+
       <div class="admin-grid">
         <!-- FORMULARIO -->
         <div class="admin-card">
@@ -297,6 +363,36 @@
 
     <!-- TAB: BLOG -->
     <div id="tab-blog" class="tab-content" style="display:none">
+      <!-- ════ GENERAR ARTÍCULO CON IA (MAGISTERIUM) ════ -->
+      <div class="admin-card" style="border-left:3px solid var(--gold-deep);background:linear-gradient(135deg, rgba(188,138,54,.05), rgba(94,27,34,.02));margin-bottom:18px">
+        <h3>🤖 Generar artículo completo con IA (Magisterium)</h3>
+        <p style="margin-bottom:14px">Escribe un tema y la IA generará el artículo COMPLETO fundamentado en el Magisterio de la Iglesia (busca fuentes en la API de Magisterium, redacta el contenido en Markdown con tabla sinóptica, citas del Catecismo y referencias). Luego puedes editarlo abajo antes de publicar.</p>
+
+        <div class="field">
+          <label class="field-label">Tema del artículo</label>
+          <input type="text" id="gen-tema" class="input" placeholder="Ej: El aborto en la doctrina de la Iglesia Católica">
+        </div>
+
+        <div class="field">
+          <label class="field-label">Categoría sugerida</label>
+          <select id="gen-categoria" class="input">
+            <option value="doctrina">Doctrina</option>
+            <option value="espiritualidad">Espiritualidad</option>
+            <option value="santos">Santos</option>
+            <option value="liturgia">Liturgia</option>
+            <option value="magisterio">Magisterio</option>
+            <option value="oracion">Oración</option>
+            <option value="familia">Familia</option>
+            <option value="apologetica">Apologética</option>
+            <option value="vida-cristiana">Vida cristiana</option>
+          </select>
+        </div>
+
+        <button class="btn btn-gold" style="width:100%;background:linear-gradient(135deg, var(--gold-deep), var(--maroon));color:#fff" onclick="generarArticuloIA()" id="gen-btn">🤖 Generar contenido con IA</button>
+        <div class="status" id="gen-status" style="margin-top:12px"></div>
+        <div id="gen-fuentes" style="margin-top:10px;font-size:12px;color:var(--ink-3)"></div>
+      </div>
+
       <div class="admin-card">
         <h3>📝 Editor de artículos (Markdown)</h3>
         <p>Escribe en Markdown. Inserta infografías, videos y podcasts con shortcodes:
@@ -735,6 +831,99 @@ function setStatus(id, type, msg) {
 }
 
 // ── Lista de infografías ──
+// ════════════════════════════════════════════════════════════════
+// RECUPERACIÓN DE INFOGRAFÍAS CON CLOUDINARY
+// ════════════════════════════════════════════════════════════════
+let _allInfografias = [];
+
+async function recuperarInfografia() {
+  const slug = document.getElementById('rec-slug').value.trim();
+  const titulo = document.getElementById('rec-titulo').value.trim();
+  const imagenesRaw = document.getElementById('rec-imagenes').value.trim();
+  if (!slug || !titulo || !imagenesRaw) {
+    setStatus('rec-status', 'err', 'Slug, titulo y al menos una URL de imagen son obligatorios');
+    return;
+  }
+  const imagenes = imagenesRaw.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!imagenes.length) { setStatus('rec-status', 'err', 'Agrega al menos una URL'); return; }
+
+  const btn = document.getElementById('rec-btn');
+  btn.disabled = true; btn.textContent = '\u23f3 Guardando...';
+  try {
+    const r = await fetch('/api/admin/infografias/manual', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({
+        slug, titulo, imagenes,
+        categoria: document.getElementById('rec-categoria').value,
+        altText: document.getElementById('rec-alttext').value.trim(),
+        descripcion: document.getElementById('rec-descripcion').value.trim(),
+        keywords: document.getElementById('rec-keywords').value.trim()
+      })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    setStatus('rec-status', 'ok', '\u2705 Infografia ' + (d.action === 'updated' ? 'actualizada' : 'creada') + ': /infografias/' + d.infografia.slug);
+    ['rec-slug','rec-titulo','rec-imagenes','rec-alttext','rec-descripcion','rec-keywords'].forEach(id => document.getElementById(id).value = '');
+    loadRecoveryList(); loadList(); loadStats();
+  } catch(e) {
+    setStatus('rec-status', 'err', '\u274c ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '\ud83d\udedf Crear / Recuperar infografia';
+  }
+}
+
+async function loadRecoveryList() {
+  try {
+    const r = await fetch('/api/admin/infografias/all', { headers: { Authorization: 'Bearer ' + token } });
+    const d = await r.json();
+    _allInfografias = d.items || [];
+    renderRecoveryList();
+  } catch(e) {
+    document.getElementById('recovery-list').innerHTML = '<div style="color:var(--maroon);padding:12px">Error: ' + e.message + '</div>';
+  }
+}
+
+function renderRecoveryList() {
+  const filter = (document.getElementById('rec-filter') ? document.getElementById('rec-filter').value : '').toLowerCase();
+  const list = document.getElementById('recovery-list');
+  let items = _allInfografias;
+  if (filter) items = items.filter(i => (i.slug + ' ' + i.titulo).toLowerCase().includes(filter));
+  if (!items.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--ink-3);padding:20px">' + (_allInfografias.length ? 'Sin resultados' : 'Catalogo vacio - usa el formulario de arriba para recuperar tus infografias') + '</div>';
+    return;
+  }
+  list.innerHTML = items.map(i => {
+    const ok = i.tieneImagen;
+    const altOk = i.tieneAltText;
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--hairline);cursor:pointer" onclick="precargarRecuperacion(\'' + i.slug.replace(/'/g,"") + '\')">' +
+      (i.primeraImagen ? '<img src="' + i.primeraImagen + '" style="width:42px;height:42px;object-fit:cover;border-radius:6px">' : '<div style="width:42px;height:42px;border-radius:6px;background:var(--cream-3);display:flex;align-items:center;justify-content:center;font-size:18px">\ud83d\uddbc\ufe0f</div>') +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:13px;font-weight:600;color:var(--espresso);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (i.titulo || i.slug) + '</div>' +
+        '<div style="font-size:11px;color:var(--ink-3);font-family:ui-monospace,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + i.slug + '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:4px;flex-shrink:0">' +
+        '<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:' + (ok ? 'rgba(34,139,34,.12);color:#228B22' : 'rgba(94,27,34,.12);color:var(--maroon)') + '">' + (ok ? '\u2705 img' : '\u26a0\ufe0f sin img') + '</span>' +
+        '<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:' + (altOk ? 'rgba(34,139,34,.12);color:#228B22' : 'rgba(188,138,54,.15);color:var(--gold-deep)') + '">' + (altOk ? 'alt' : 'sin alt') + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function precargarRecuperacion(slug) {
+  const inf = _allInfografias.find(i => i.slug === slug);
+  if (!inf) return;
+  document.getElementById('rec-slug').value = inf.slug;
+  document.getElementById('rec-titulo').value = inf.titulo || '';
+  document.getElementById('rec-imagenes').value = (inf.imagenes || []).join('\n');
+  document.getElementById('rec-alttext').value = inf.altText || '';
+  document.getElementById('rec-descripcion').value = inf.descripcion || '';
+  document.getElementById('rec-keywords').value = inf.keywords || '';
+  if (inf.categoria) document.getElementById('rec-categoria').value = inf.categoria;
+  document.getElementById('rec-slug').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setStatus('rec-status', 'info', 'Precargado: ' + inf.slug + '. Edita las URLs y guarda.');
+}
+
 async function loadList() {
   try {
     const r = await fetch('/api/infografias?limit=50');
@@ -1098,6 +1287,50 @@ function insertShortcode(type) {
   ta.focus();
 }
 
+async function generarArticuloIA() {
+  const tema = document.getElementById('gen-tema').value.trim();
+  if (!tema) { setStatus('gen-status', 'err', 'Escribe un tema primero'); return; }
+  const categoria = document.getElementById('gen-categoria').value;
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.textContent = '\u23f3 Generando con Magisterium... (30-60s)';
+  setStatus('gen-status', 'info', '\ud83e\udd16 Buscando fuentes en Magisterium y redactando el articulo completo...');
+  document.getElementById('gen-fuentes').innerHTML = '';
+
+  try {
+    const r = await fetch('/api/admin/blog/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ tema, categoria })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+
+    // Volcar el contenido generado al editor
+    document.getElementById('blog-titulo').value = d.titulo || tema;
+    document.getElementById('blog-contenido').value = d.contenidoMd || '';
+    document.getElementById('blog-seo-titulo').value = d.titulo || tema;
+    document.getElementById('blog-descripcion').value = d.descripcion || '';
+    document.getElementById('blog-keywords').value = d.keywords || '';
+    document.getElementById('blog-alt').value = d.altText || '';
+    document.getElementById('blog-extracto').value = d.extracto || '';
+    if (d.categoria) document.getElementById('blog-categoria').value = d.categoria;
+
+    setStatus('gen-status', 'ok', '\u2705 Articulo generado (' + (d.contenidoMd || '').length + ' chars). Revisalo abajo, edita lo que quieras y publica.');
+
+    if (d.fuentes && d.fuentes.length) {
+      document.getElementById('gen-fuentes').innerHTML = '<strong>Fuentes consultadas:</strong> ' +
+        d.fuentes.map(f => f.doc + (f.ref ? ' (' + f.ref + ')' : '')).join(' · ');
+    }
+    // Scroll al editor
+    document.getElementById('blog-titulo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch(e) {
+    setStatus('gen-status', 'err', '\u274c ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '\ud83e\udd16 Generar contenido con IA';
+  }
+}
+
 async function enrichBlogSEO() {
   const titulo = document.getElementById('blog-titulo').value.trim();
   const contenidoMd = document.getElementById('blog-contenido').value.trim();
@@ -1206,32 +1439,63 @@ async function deleteBlogPost(slug) {
 
 async function loadBlogAdmin() {
   try {
-    const r = await fetch('/api/blog?limit=100');
+    const r = await fetch('/api/admin/blog/all', { headers: { Authorization: 'Bearer ' + token } });
     const d = await r.json();
-    document.getElementById('blog-count').textContent = d.total || 0;
+    const adminPosts = d.adminPosts || [];
+    const seoPosts = d.seoPosts || [];
+    document.getElementById('blog-count').textContent = (d.totalAdmin || 0) + ' propios + ' + (d.totalSeo || 0) + ' SEO';
     const list = document.getElementById('blog-list');
-    if (!d.items || !d.items.length) {
-      list.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--ink-3)">Sin artículos aún. Crea el primero arriba.</div>';
-      return;
+
+    let html = '';
+    if (adminPosts.length) {
+      html += '<div style="grid-column:1/-1;font-size:12px;font-weight:700;color:var(--gold-deep);text-transform:uppercase;letter-spacing:.08em;margin:4px 0">Mis articulos (editables)</div>';
+      adminPosts.forEach(function(p) {
+        var imgDiv = p.imagenDestacada
+          ? '<div style="aspect-ratio:16/9;background:var(--cream-2) url(' + p.imagenDestacada + ') center/cover"></div>'
+          : '<div style="aspect-ratio:16/9;background:var(--cream-2);display:grid;place-items:center;font-size:36px;color:var(--gold-deep)">&#x1f4d6;</div>';
+        html += '<div style="background:#fff;border:1px solid var(--hairline);border-radius:10px;overflow:hidden">' +
+          imgDiv +
+          '<div style="padding:10px 12px">' +
+            '<div style="font-size:10px;font-weight:700;color:var(--gold-deep);letter-spacing:.08em;text-transform:uppercase">' + (p.categoria || '') + '</div>' +
+            '<div style="font-size:13px;font-weight:600;color:var(--espresso);line-height:1.3;margin:4px 0 6px">' + (p.titulo || '').slice(0, 60) + '</div>' +
+            '<div style="font-size:11px;color:var(--ink-3);margin-bottom:8px">' + (p.fechaISO || '') + '</div>' +
+            '<div style="display:flex;gap:4px">' +
+              '<a href="/blog/' + p.slug + '" target="_blank" style="font-size:10px;padding:4px 8px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:6px;text-decoration:none;color:var(--ink-2)">Ver</a>' +
+              '<button data-slug="' + p.slug + '" onclick="editBlogPost(this.dataset.slug)" style="font-size:10px;padding:4px 8px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:6px;cursor:pointer;color:var(--gold-deep)">Editar</button>' +
+              '<button data-slug="' + p.slug + '" onclick="deleteBlogPost(this.dataset.slug)" style="font-size:10px;padding:4px 8px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:6px;cursor:pointer;color:var(--maroon)">Borrar</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      });
     }
-    list.innerHTML = d.items.map(p => {
-      const fecha = new Date(p.fechaCreacion).toLocaleDateString('es');
-      const img = p.imagenDestacada;
-      return `<div style="background:#fff;border:1px solid var(--hairline);border-radius:10px;overflow:hidden">
-        ${img ? `<div style="aspect-ratio:16/9;background:var(--cream-2) url('${img}') center/cover"></div>` : `<div style="aspect-ratio:16/9;background:var(--cream-2);display:grid;place-items:center;font-size:36px;color:var(--gold-deep)">📖</div>`}
-        <div style="padding:10px 12px">
-          <div style="font-size:10px;font-weight:700;color:var(--gold-deep);letter-spacing:.08em;text-transform:uppercase">${p.categoria || ''}</div>
-          <div style="font-size:13px;font-weight:600;color:var(--espresso);line-height:1.3;margin:4px 0 6px">${(p.titulo || '').slice(0, 60)}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px">${fecha} · ${p.publicado === false ? '🚫 No publicado' : '✅ Publicado'}</div>
-          <div style="display:flex;gap:4px">
-            <a href="/blog/${p.slug}" target="_blank" style="font-size:10px;padding:4px 8px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:6px;text-decoration:none;color:var(--ink-2)">Ver</a>
-            <button onclick="editBlogPost('${p.slug}')" style="font-size:10px;padding:4px 8px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:6px;cursor:pointer;color:var(--gold-deep)">Editar</button>
-            <button onclick="deleteBlogPost('${p.slug}')" style="font-size:10px;padding:4px 8px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:6px;cursor:pointer;color:var(--maroon)">Borrar</button>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
+
+    if (seoPosts.length) {
+      html += '<div style="grid-column:1/-1;font-size:12px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 4px">Articulos SEO legacy (ya indexados)</div>';
+      seoPosts.forEach(function(p) {
+        html += '<div style="background:#fff;border:1px dashed var(--hairline-2);border-radius:10px;overflow:hidden;opacity:.85">' +
+          '<div style="padding:10px 12px">' +
+            '<div style="font-size:10px;font-weight:700;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase">' + (p.categoria || '') + ' SEO</div>' +
+            '<div style="font-size:13px;font-weight:600;color:var(--espresso);line-height:1.3;margin:4px 0 6px">' + (p.titulo || '').slice(0, 60) + '</div>' +
+            '<div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;font-family:ui-monospace,monospace">/blog/' + p.slug + '</div>' +
+            '<div style="display:flex;gap:4px">' +
+              '<a href="/blog/' + p.slug + '" target="_blank" style="font-size:10px;padding:4px 8px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:6px;text-decoration:none;color:var(--ink-2)">Ver</a>' +
+              '<button data-slug="' + p.slug + '" onclick="importarSeoArticulo(this.dataset.slug)" style="font-size:10px;padding:4px 8px;background:var(--cream-2);border:1px solid var(--hairline);border-radius:6px;cursor:pointer;color:var(--gold-deep)">Convertir</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      });
+    }
+
+    if (!html) html = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--ink-3)">Sin articulos aun. Genera uno con IA o crealo manualmente.</div>';
+    list.innerHTML = html;
   } catch(e) { console.error('[Blog admin]', e); }
+}
+
+async function importarSeoArticulo(slug) {
+  if (!confirm('Generar contenido del articulo SEO "' + slug + '" con IA para editarlo?')) return;
+  document.getElementById('gen-tema').value = slug.replace(/-/g, ' ');
+  document.getElementById('blog-slug').value = slug;
+  await generarArticuloIA();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1381,9 +1645,12 @@ switchTab = function(name, btn) {
   _origSwitch4(name, btn);
   if (name === 'blog') loadBlogAdmin();
   if (name === 'podcast') loadPodcastsAdmin();
+  if (name === 'infografias') loadRecoveryList();
 };
 
 init();
+// Cargar lista de recuperación al iniciar (tab infografías es el default)
+setTimeout(() => { if (typeof loadRecoveryList === 'function') loadRecoveryList(); }, 500);
 </script>
 </body>
 </html>
