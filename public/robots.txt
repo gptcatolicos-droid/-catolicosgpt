@@ -4,6 +4,7 @@ Disallow: /api/
 
 # Sitemap
 Sitemap: https://catolicosgpt.com/sitemap.xml
+Sitemap: https://catolicosgpt.com/sitemap-seo.xml
 
 # Archivos para asistentes de IA (GEO)
 # ChatGPT, Claude, Perplexity, Gemini pueden leer llms.txt
