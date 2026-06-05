@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<!-- ══ PÁGINAS PRINCIPALES (daily freshness) ══ -->
+<url><loc>https://catolicosgpt.com/</loc><lastmod>2026-06-05</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
+<url><loc>https://catolicosgpt.com/evangelio-de-hoy</loc><lastmod>2026-06-05</lastmod><changefreq>daily</changefreq><priority>0.98</priority></url>
+<url><loc>https://catolicosgpt.com/lecturas-de-hoy</loc><lastmod>2026-06-05</lastmod><changefreq>daily</changefreq><priority>0.98</priority></url>
+<url><loc>https://catolicosgpt.com/santo-del-dia</loc><lastmod>2026-06-05</lastmod><changefreq>daily</changefreq><priority>0.95</priority></url>
+<url><loc>https://catolicosgpt.com/misas</loc><lastmod>2026-06-05</lastmod><changefreq>daily</changefreq><priority>0.80</priority></url>
+<!-- ══ ORACIONES (16 oraciones individuales) ══ -->
+<url><loc>https://catolicosgpt.com/oraciones</loc><lastmod>2026-06-05</lastmod><changefreq>weekly</changefreq><priority>0.90</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/padre-nuestro</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/ave-maria</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/gloria-al-padre</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/credo-apostolico</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/credo-niceno-constantinopolitano</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/salve-regina</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/acto-de-contricion</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/rosario</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/angelus</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/magnificat</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/memorare</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/anima-christi</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/bendita-sea-tu-pureza</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/oracion-a-san-miguel-arcangel</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/oracion-a-la-virgen-de-guadalupe</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/oraciones/coronilla-de-la-divina-misericordia</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<!-- ══ NOVENAS (4 novenas completas) ══ -->
+<url><loc>https://catolicosgpt.com/novenas</loc><lastmod>2026-06-05</lastmod><changefreq>weekly</changefreq><priority>0.90</priority></url>
+<url><loc>https://catolicosgpt.com/novenas/novena-a-san-jose</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/novenas/novena-de-la-divina-misericordia</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/novenas/novena-a-nuestra-senora-de-guadalupe</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/novenas/novena-de-aguinaldos-navidad</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<!-- ══ SANTORAL (directorio + 12 meses) ══ -->
+<url><loc>https://catolicosgpt.com/santos</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
+<url><loc>https://catolicosgpt.com/santos/enero</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/febrero</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/marzo</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/abril</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/mayo</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/junio</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/julio</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/agosto</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/septiembre</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/octubre</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/noviembre</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/santos/diciembre</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<!-- ══ SECCIONES PRINCIPALES ══ -->
+<url><loc>https://catolicosgpt.com/infografias</loc><lastmod>2026-06-05</lastmod><changefreq>daily</changefreq><priority>0.90</priority></url>
+<url><loc>https://catolicosgpt.com/blog</loc><lastmod>2026-06-05</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+<url><loc>https://catolicosgpt.com/podcast</loc><lastmod>2026-06-05</lastmod><changefreq>weekly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/videos</loc><lastmod>2026-06-05</lastmod><changefreq>weekly</changefreq><priority>0.80</priority></url>
+<!-- ══ 19 INFOGRAFÍAS INDIVIDUALES ══ -->
+<url><loc>https://catolicosgpt.com/infografias/la-medalla-milagrosa-de-la-virgen-maria</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/corpus-christi-cuerpo-de-cristo-eucaristia-infografias-catolicosgpt</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/enciclica-magnifica-humanitas-infografias-catolicosgpt</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/enciclica-magnifica-humanitas-capitulo-5</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/enciclica-magnifica-humanitas-capitulo-4</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/la-parabola-de-la-semilla-evangelio</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/la-parabola-del-sembrador-evangelio</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/enciclica-magnifica-humanitas-resumen</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/enciclica-magnifica-humanitas-capitulo-3</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/enciclica-magnifica-humanitas-capitulo-2</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/enciclica-magnifica-humanitas-capitulo-1</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/la-eucaristia-infografia-catolicosgpt</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/el-santo-escapulario-virgen-del-carmen</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/arcangeles-de-dios</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/los-santos-arcangeles-infografia-catolicosgpt</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/el-santo-rosario-infografia-catolicosgpt</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/medalla-san-benito</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/san-felipe-neri</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/infografias/san-jose</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
+<!-- ══ 4 BLOG POSTS (admin) ══ -->
+<url><loc>https://catolicosgpt.com/blog/la-medalla-milagrosa-significado-y-origen-de-la-devocion-mariana</loc><lastmod>2026-06-05</lastmod><changefreq>weekly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/blog/el-santo-rosario</loc><lastmod>2026-06-05</lastmod><changefreq>weekly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/blog/enciclica-magnifica-humanitas</loc><lastmod>2026-06-05</lastmod><changefreq>weekly</changefreq><priority>0.80</priority></url>
+<url><loc>https://catolicosgpt.com/blog/corpus-christi-eucaristia</loc><lastmod>2026-06-05</lastmod><changefreq>weekly</changefreq><priority>0.80</priority></url>
+<!-- ══ 11 PODCASTS ══ -->
+<url><loc>https://catolicosgpt.com/podcast/mi-pensamiento-eres-tu-senor-musica-para-orar</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/podcast/musica-para-orar-dejame-buscarte-en-el-viento</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/podcast/santa-maria-cancion-virgen-maria-dany-palacio</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/podcast/musica-para-orar-llevame-a-tu-lado-dany-palacio</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/podcast/mi-jesus-eucaristia-dany-palacio</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/podcast/archangelis-musica-para-orar</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/podcast/gloria-archangelis-musica-para-orar</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/podcast/el-tamborilero-villancico-navidad</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/podcast/novena-de-navidad</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/podcast/los-salmos-musica-para-orar-dany-palacio</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/podcast/dany-palacio-musica-catolica-magnificat</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<!-- ══ 10 VIDEOS ══ -->
+<url><loc>https://catolicosgpt.com/videos/medalla-milagrosa-historia-significado-milagros</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/videos/los-10-mandamientos-historia-transformadora</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/videos/historia-corpus-christi</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/videos/coronilla-san-jose-oracion-casos-dificiles</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/videos/rosario-san-jose-oracion-poderosa</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/videos/nueva-enciclica-papa-leon-xiv-explicada</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/videos/medalla-san-benito-proteccion-fe</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/videos/milagro-eucaristia-corpus-christi</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/videos/eucaristia-presencia-real-jesus</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+<url><loc>https://catolicosgpt.com/videos/salmos-1-9-cantados-musica-gregoriana-orar</loc><lastmod>2026-06-05</lastmod><changefreq>monthly</changefreq><priority>0.70</priority></url>
+</urlset>
