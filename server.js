@@ -2002,6 +2002,94 @@ app.delete('/api/admin/infografias/:id', auth.authenticateToken, auth.requireAdm
   res.json({ ok: true });
 });
 
+// ── Cleanup masivo: eliminar samples de Cloudinary + reagrupar carruseles ──
+app.post('/api/admin/infografias/cleanup', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  try {
+    const { loadCatalog, saveCatalog } = require('./infografias-module');
+    const catalog = loadCatalog();
+    const antes = catalog.infografias.length;
+
+    // 1. Eliminar Cloudinary samples
+    const SAMPLES = ['sample', 'analog-classic', 'cat', 'cloudinary-icon', 'cloudinary-logo-vector',
+                     'dessert', 'kitchen-bar', 'shoes', 'cld-sample', 'cld-sample-2', 'cld-sample-3',
+                     'cld-sample-4', 'cld-sample-5', 'dog'];
+    catalog.infografias = catalog.infografias.filter(i => !SAMPLES.includes(i.slug));
+    const eliminadas = antes - catalog.infografias.length;
+
+    // 2. Reagrupar: combinar slugs similares en carruseles
+    // Normalizar: "corpus-0" → "corpus", "magnifica-humanitas-carusel-1" → "magnifica-humanitas"
+    function baseSlug(s) {
+      return (s || '').replace(/[-_]?caru?sel[-_]?\w*$/i, '').replace(/[-_]\d{1,2}$/, '')
+                      .replace(/^banner-/, '').replace(/-+/g, '-').replace(/^-|-$/g, '') || s;
+    }
+
+    const grupos = {};
+    for (const inf of catalog.infografias) {
+      const base = baseSlug(inf.slug);
+      if (!grupos[base]) grupos[base] = [];
+      grupos[base].push(inf);
+    }
+
+    const reagrupadas = [];
+    let reagrupadasCount = 0;
+    for (const [base, items] of Object.entries(grupos)) {
+      if (items.length === 1) {
+        reagrupadas.push(items[0]);
+      } else {
+        // Combinar: usar el primer item como base, agregar todas las imágenes
+        const combined = { ...items[0] };
+        combined.slug = base;
+        combined.titulo = base.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        combined.tema = combined.titulo;
+        combined.imagenes = [];
+        for (const item of items) {
+          for (const img of (item.imagenes || [])) {
+            // Evitar duplicados por URL
+            if (!combined.imagenes.find(existing => existing.url === img.url)) {
+              combined.imagenes.push({ ...img, slide: combined.imagenes.length + 1 });
+            }
+          }
+        }
+        combined.totalSlides = combined.imagenes.length;
+        combined.esCarrusel = combined.imagenes.length > 1;
+        combined.id = 'inf-grouped-' + base + '-' + Date.now();
+        reagrupadas.push(combined);
+        reagrupadasCount++;
+        console.log('[Cleanup] Agrupado:', items.length, 'items →', base, '(' + combined.imagenes.length + ' slides)');
+      }
+    }
+
+    reagrupadas.sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
+    catalog.infografias = reagrupadas;
+    catalog.total = reagrupadas.length;
+    catalog.categorias = [...new Set(reagrupadas.map(i => i.categoria).filter(Boolean))];
+    saveCatalog(catalog);
+
+    console.log('[Cleanup] ✅ Samples eliminadas:', eliminadas, '— Grupos creados:', reagrupadasCount, '— Total final:', reagrupadas.length);
+    res.json({
+      ok: true,
+      antes,
+      samplesEliminadas: eliminadas,
+      gruposCreados: reagrupadasCount,
+      totalFinal: reagrupadas.length
+    });
+  } catch(e) {
+    console.error('[Cleanup]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Delete por slug (alternativo) ──
+app.delete('/api/admin/infografias/by-slug/:slug', auth.authenticateToken, auth.requireAdmin, (req, res) => {
+  const { loadCatalog, saveCatalog } = require('./infografias-module');
+  const catalog = loadCatalog();
+  const antes = catalog.infografias.length;
+  catalog.infografias = catalog.infografias.filter(i => i.slug !== req.params.slug);
+  catalog.total = catalog.infografias.length;
+  saveCatalog(catalog);
+  res.json({ ok: true, eliminada: antes !== catalog.infografias.length });
+});
+
 app.get('/api/admin/stats', auth.authenticateToken, auth.requireAdmin, (req, res) => {
   const { users } = auth.loadUsers();
   const { infografias } = require('./infografias-module').loadCatalog();
@@ -2497,6 +2585,30 @@ app.post('/api/admin/rebuild-catalog', auth.authenticateToken, auth.requireAdmin
     let recoveredViaPublicId = 0;
     let skipped = 0;
 
+    // Cloudinary sample images — excluir
+    const CLOUDINARY_SAMPLES = new Set([
+      'sample', 'cat', 'dog', 'analog-classic', 'cloudinary-icon', 
+      'cloudinary-logo-vector', 'dessert', 'kitchen-bar', 'shoes',
+      'cld-sample', 'cld-sample-2', 'cld-sample-3', 'cld-sample-4', 'cld-sample-5'
+    ]);
+
+    // Normalizar slug: agrupar variantes de la misma infografía
+    // "magnifica-humanitas-carusel-1" → "magnifica-humanitas"
+    // "corpus-0" → "corpus"  
+    // "medalla-milagrosa-2" → "medalla-milagrosa"
+    function normalizeSlug(rawSlug) {
+      let s = rawSlug;
+      // Quitar sufijos de carrusel: -carusel-N, -carusel-resumen, -carousel-N
+      s = s.replace(/[-_]?caru?sel[-_]?\w*$/i, '');
+      // Quitar sufijo numérico final: -0, -1, -2, etc.
+      s = s.replace(/[-_]\d{1,2}$/, '');
+      // Quitar "banner-" prefix si el slug base tiene más contenido
+      if (s.startsWith('banner-') && s.length > 10) s = s.replace(/^banner-/, '');
+      // Limpiar guiones dobles y extremos
+      s = s.replace(/-+/g, '-').replace(/^-|-$/g, '');
+      return s || rawSlug;
+    }
+
     for (const r of resources) {
       const ctx = (r.context && r.context.custom) || r.context || {};
       let slug = ctx.slug;
@@ -2554,6 +2666,20 @@ app.post('/api/admin/rebuild-catalog', auth.authenticateToken, auth.requireAdmin
         skipped++;
         console.warn('[Rebuild] ⚠️ Sin slug:', r.public_id);
         continue;
+      }
+
+      // Filtrar Cloudinary samples
+      if (CLOUDINARY_SAMPLES.has(slug.toLowerCase()) || CLOUDINARY_SAMPLES.has(slug)) {
+        skipped++;
+        console.log('[Rebuild] 🚫 Sample excluido:', slug);
+        continue;
+      }
+
+      // Normalizar slug para agrupar (ej: corpus-0, corpus-1 → corpus)
+      const originalSlug = slug;
+      slug = normalizeSlug(slug);
+      if (slug !== originalSlug) {
+        console.log('[Rebuild] 🔗 Agrupado:', originalSlug, '→', slug);
       }
 
       if (viaContext) recoveredViaContext++;
