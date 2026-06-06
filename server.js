@@ -4433,55 +4433,112 @@ app.get('/api/cita', (req, res) => {
 // ─── ENDPOINTS API para obtener datos de liturgia (JSON) ───
 // El chat ya usa estos datos, ahora exponemos para las rutas web
  
-app.get('/api/liturgia/evangelio', (req, res) => {
+// ════════════════════════════════════════════════════════════════════════════
+// FIX DEFINITIVO v4 — Endpoints API que devuelven datos directamente
+// REEMPLAZAR el código de /api/liturgia/* y las rutas en PARCHES_server_v3_FINAL.js
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── ENDPOINTS API — Devuelven datos JSON ───
+
+app.get('/api/liturgia/evangelio', async (req, res) => {
   try {
     const cached = liturgiaCache.get('lecturas');
-    if (!cached || !cached.lecturas) {
-      return res.json({ error: 'Sin datos', estado: 'cargando' });
+    if (!cached || !cached.lecturas || cached.lecturas.length === 0) {
+      // Intentar obtener directamente del cache memory
+      const cacheData = liturgiaCache.loadCache();
+      if (cacheData && cacheData.items && cacheData.items.lecturas) {
+        const lec = cacheData.items.lecturas;
+        const evangelio = lec.lecturas && lec.lecturas.length > 0 
+          ? lec.lecturas[lec.lecturas.length - 1] 
+          : lec;
+        return res.json({ success: true, evangelio });
+      }
+      return res.json({ error: 'Sin datos', estado: 'cargando', lecturas: [] });
     }
-    // Extraer último elemento (típicamente evangelio)
     const evangelio = cached.lecturas[cached.lecturas.length - 1] || {};
     res.json({ success: true, evangelio });
   } catch(e) {
+    console.error('[API Evangelio]', e.message);
     res.status(500).json({ error: e.message });
   }
 });
- 
-app.get('/api/liturgia/lecturas', (req, res) => {
+
+app.get('/api/liturgia/lecturas', async (req, res) => {
   try {
     const cached = liturgiaCache.get('lecturas');
     if (!cached || !cached.lecturas) {
+      // Fallback: cargar del archivo de cache
+      const cacheData = liturgiaCache.loadCache();
+      if (cacheData && cacheData.items && cacheData.items.lecturas) {
+        const lecturas = cacheData.items.lecturas.lecturas || [];
+        return res.json({ 
+          success: true, 
+          lecturas, 
+          fuente: cacheData.items.lecturas.fuente || 'cache'
+        });
+      }
       return res.json({ error: 'Sin datos', estado: 'cargando', lecturas: [] });
     }
-    res.json({ success: true, lecturas: cached.lecturas, fuente: cached.fuente });
+    res.json({ 
+      success: true, 
+      lecturas: cached.lecturas || [],
+      fuente: cached.fuente || 'cache'
+    });
   } catch(e) {
+    console.error('[API Lecturas]', e.message);
     res.status(500).json({ error: e.message });
   }
 });
- 
-app.get('/api/liturgia/santo', (req, res) => {
+
+app.get('/api/liturgia/santo', async (req, res) => {
   try {
     const cached = liturgiaCache.get('santo');
     if (!cached) {
+      const cacheData = liturgiaCache.loadCache();
+      if (cacheData && cacheData.items && cacheData.items.santo) {
+        return res.json({ success: true, santo: cacheData.items.santo });
+      }
       return res.json({ error: 'Sin datos', estado: 'cargando' });
     }
     res.json({ success: true, santo: cached });
   } catch(e) {
+    console.error('[API Santo]', e.message);
     res.status(500).json({ error: e.message });
   }
 });
- 
-app.get('/api/liturgia/oracion', (req, res) => {
+
+app.get('/api/liturgia/oracion', async (req, res) => {
   try {
     const cached = liturgiaCache.get('oracion');
     if (!cached) {
+      const cacheData = liturgiaCache.loadCache();
+      if (cacheData && cacheData.items && cacheData.items.oracion) {
+        return res.json({ success: true, oracion: cacheData.items.oracion });
+      }
       return res.json({ error: 'Sin datos', estado: 'cargando' });
     }
     res.json({ success: true, oracion: cached });
   } catch(e) {
+    console.error('[API Oracion]', e.message);
     res.status(500).json({ error: e.message });
   }
 });
+
+// ─── RUTA DEBUG ───
+app.get('/api/debug/cache', (req, res) => {
+  try {
+    const cacheData = liturgiaCache.loadCache();
+    res.json({
+      date: cacheData.date,
+      today: liturgiaCache.todayBogota(),
+      items: Object.keys(cacheData.items || {})
+    });
+  } catch(e) {
+    res.json({ error: e.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
  
 // ─── RUTAS MEJORADAS CON MEJOR RENDERIZADO ───
  
