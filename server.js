@@ -4425,6 +4425,416 @@ app.get('/api/cita', (req, res) => {
 // FIN PARCHES v2
 // ════════════════════════════════════════════════════════════════════════════
 
+// ════════════════════════════════════════════════════════════════════════════
+// PARCHES v3 — SIMPLE: API endpoints + renderizado mejorado
+// Agregar ANTES de app.get('*')
+// ════════════════════════════════════════════════════════════════════════════
+ 
+// ─── ENDPOINTS API para obtener datos de liturgia (JSON) ───
+// El chat ya usa estos datos, ahora exponemos para las rutas web
+ 
+app.get('/api/liturgia/evangelio', (req, res) => {
+  try {
+    const cached = liturgiaCache.get('lecturas');
+    if (!cached || !cached.lecturas) {
+      return res.json({ error: 'Sin datos', estado: 'cargando' });
+    }
+    // Extraer último elemento (típicamente evangelio)
+    const evangelio = cached.lecturas[cached.lecturas.length - 1] || {};
+    res.json({ success: true, evangelio });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+ 
+app.get('/api/liturgia/lecturas', (req, res) => {
+  try {
+    const cached = liturgiaCache.get('lecturas');
+    if (!cached || !cached.lecturas) {
+      return res.json({ error: 'Sin datos', estado: 'cargando', lecturas: [] });
+    }
+    res.json({ success: true, lecturas: cached.lecturas, fuente: cached.fuente });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+ 
+app.get('/api/liturgia/santo', (req, res) => {
+  try {
+    const cached = liturgiaCache.get('santo');
+    if (!cached) {
+      return res.json({ error: 'Sin datos', estado: 'cargando' });
+    }
+    res.json({ success: true, santo: cached });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+ 
+app.get('/api/liturgia/oracion', (req, res) => {
+  try {
+    const cached = liturgiaCache.get('oracion');
+    if (!cached) {
+      return res.json({ error: 'Sin datos', estado: 'cargando' });
+    }
+    res.json({ success: true, oracion: cached });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+ 
+// ─── RUTAS MEJORADAS CON MEJOR RENDERIZADO ───
+ 
+// ─── EVANGELIO DEL DÍA (/evangelio-de-hoy) ───
+app.get('/evangelio-de-hoy', async (req, res) => {
+  try {
+    const tipo = 'lecturas';
+    const cached = liturgiaCache.get(tipo);
+    
+    // Extraer evangelio (último elemento de lecturas o que contenga "Evangelio")
+    let evangelio = null;
+    if (cached && cached.lecturas && Array.isArray(cached.lecturas)) {
+      evangelio = cached.lecturas.find(l => (l.titulo || '').toLowerCase().includes('evangelio')) || 
+                  cached.lecturas[cached.lecturas.length - 1];
+    }
+    evangelio = evangelio || cached || {};
+    
+    const today = new Date().toLocaleDateString('es-ES', { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+ 
+    const evangelioContent = evangelio?.texto || evangelio?.contenido || evangelio?.text || '';
+    const evangelioTitulo = evangelio?.titulo || evangelio?.title || evangelio?.cita || 'Evangelio del día';
+ 
+    const html = `
+<div class="seo-shell">
+  <div class="seo-breadcrumb">
+    <a href="/">Inicio</a> › <strong>Evangelio de hoy</strong>
+  </div>
+  
+  <div class="seo-card">
+    <h1 style="font-family:var(--font-display);font-size:clamp(28px,4vw,42px);font-weight:700;color:var(--espresso);margin-bottom:8px">
+      📖 Evangelio de hoy
+    </h1>
+    <div style="font-size:14px;color:var(--ink-2);margin-bottom:20px">${today}</div>
+  </div>
+ 
+  <div class="seo-card" id="evangelio-content">
+    ${evangelioTitulo ? `<h2 style="color:var(--gold-deep);margin-bottom:12px">${seo.escHtml(evangelioTitulo)}</h2>` : ''}
+    ${evangelioContent ? `<blockquote style="border-left:3px solid var(--gold);padding-left:16px;color:var(--ink-2);font-style:italic;margin:20px 0;line-height:1.7">${seo.escHtml(evangelioContent).replace(/\n/g, '<br>')}</blockquote>` : '<p style="color:var(--ink-2)">Cargando evangelio del día...</p>'}
+  </div>
+ 
+  <div class="seo-card">
+    <h2>Reflexión Pastoral</h2>
+    <p style="color:var(--ink-2);line-height:1.6">Te invitamos a meditar sobre la Palabra de Dios. El Evangelio de hoy nos habla del amor de Jesús y su mensaje de salvación. Reflexiona sobre cómo esta lectura te inspira a vivir tu fe.</p>
+  </div>
+ 
+  <div class="seo-card" style="background:rgba(188,138,54,.06);border-color:var(--gold)">
+    <h3>¿Quieres profundizar?</h3>
+    <p style="color:var(--ink-2)">Habla con nuestra IA católica basada en el Magisterio</p>
+    <button onclick="document.querySelector('.chat-toggle')?.click()" style="background:var(--gold-deep);color:white;border:0;padding:12px 20px;border-radius:8px;font-weight:600;cursor:pointer">
+      💬 Hablar con CatolicosGPT
+    </button>
+  </div>
+</div>
+ 
+<script>
+// Si no hay contenido, intentar cargar vía API
+if (document.querySelector('#evangelio-content')?.textContent.includes('Cargando')) {
+  fetch('/api/liturgia/evangelio')
+    .then(r => r.json())
+    .then(data => {
+      if (data.evangelio && data.evangelio.texto) {
+        const titulo = data.evangelio.titulo || 'Evangelio del día';
+        const texto = data.evangelio.texto || data.evangelio.contenido || '';
+        document.querySelector('#evangelio-content').innerHTML = 
+          '<h2 style="color:var(--gold-deep)">' + titulo + '</h2>' +
+          '<blockquote style="border-left:3px solid var(--gold);padding-left:16px;color:var(--ink-2);font-style:italic;margin:20px 0;line-height:1.7">' + 
+          texto.replace(/\n/g, '<br>') + 
+          '</blockquote>';
+      }
+    })
+    .catch(e => console.warn('API error:', e));
+}
+</script>`;
+ 
+    res.send(seo.renderPage({
+      title: 'Evangelio de hoy · Lectura bíblica diaria · CatolicosGPT',
+      description: 'Evangelio del día ' + today + '. Reflexión y meditación del Evangelio de la Misa.',
+      canonical: '/evangelio-de-hoy',
+      keywords: 'evangelio del día, evangelio de hoy, lectura bíblica, misa del día',
+      activeNav: '/evangelio-de-hoy',
+      breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Evangelio de hoy', url: '/evangelio-de-hoy' }],
+      body: html
+    }));
+  } catch(e) {
+    console.error('[Evangelio] Error:', e.message);
+    res.status(500).send(seo.renderPage({
+      title: 'Error',
+      description: '',
+      canonical: '/evangelio-de-hoy',
+      body: '<div class="seo-shell"><div class="seo-card"><h1>Error</h1><p><a href="/">← Inicio</a></p></div></div>'
+    }));
+  }
+});
+ 
+// ─── LECTURAS DEL DÍA (/lecturas-de-hoy) ───
+app.get('/lecturas-de-hoy', async (req, res) => {
+  try {
+    const cached = liturgiaCache.get('lecturas');
+    const lecturas = cached?.lecturas || [];
+ 
+    const today = new Date().toLocaleDateString('es-ES', { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+ 
+    const lecturasHtml = Array.isArray(lecturas) && lecturas.length > 0
+      ? lecturas.map((l, idx) => `
+        <div style="margin-bottom:24px;padding-bottom:16px;${idx < lecturas.length - 1 ? 'border-bottom:1px solid var(--ink-5)' : ''}">
+          <h3 style="color:var(--gold-deep);font-weight:600;margin-bottom:4px">${seo.escHtml(l.titulo || l.title || 'Lectura ' + (idx + 1))}</h3>
+          ${l.cita ? `<p style="font-size:12px;color:var(--ink-2);margin-bottom:8px">${seo.escHtml(l.cita)}</p>` : ''}
+          <blockquote style="border-left:3px solid var(--gold);padding-left:16px;color:var(--ink-2);margin:12px 0;font-style:italic;line-height:1.6">
+            ${seo.escHtml((l.texto || l.text || l.contenido || '').slice(0, 800)).replace(/\n/g, '<br>')}
+          </blockquote>
+        </div>
+      `).join('')
+      : '<p style="color:var(--ink-2)">Cargando lecturas del día...</p>';
+ 
+    const html = `
+<div class="seo-shell">
+  <div class="seo-breadcrumb">
+    <a href="/">Inicio</a> › <strong>Lecturas de hoy</strong>
+  </div>
+  
+  <div class="seo-card">
+    <h1 style="font-family:var(--font-display);font-size:clamp(28px,4vw,42px);font-weight:700;color:var(--espresso);margin-bottom:8px">
+      📚 Lecturas de hoy
+    </h1>
+    <div style="font-size:14px;color:var(--ink-2);margin-bottom:20px">${today}</div>
+  </div>
+ 
+  <div class="seo-card" id="lecturas-content">
+    ${lecturasHtml}
+  </div>
+ 
+  <div class="seo-card" style="background:rgba(188,138,54,.06);border-color:var(--gold)">
+    <h3>Profundiza en la Palabra</h3>
+    <button onclick="document.querySelector('.chat-toggle')?.click()" style="background:var(--gold-deep);color:white;border:0;padding:12px 20px;border-radius:8px;font-weight:600;cursor:pointer">
+      💬 Consultar a CatolicosGPT
+    </button>
+  </div>
+</div>
+ 
+<script>
+if (document.querySelector('#lecturas-content')?.textContent.includes('Cargando')) {
+  fetch('/api/liturgia/lecturas')
+    .then(r => r.json())
+    .then(data => {
+      if (data.lecturas && Array.isArray(data.lecturas)) {
+        let html = '';
+        data.lecturas.forEach((l, idx) => {
+          html += '<div style="margin-bottom:24px;padding-bottom:16px;' + (idx < data.lecturas.length - 1 ? 'border-bottom:1px solid var(--ink-5)' : '') + '">' +
+                  '<h3 style="color:var(--gold-deep);font-weight:600">' + (l.titulo || 'Lectura ' + (idx+1)) + '</h3>' +
+                  (l.cita ? '<p style="font-size:12px;color:var(--ink-2)">' + l.cita + '</p>' : '') +
+                  '<blockquote style="border-left:3px solid var(--gold);padding-left:16px;color:var(--ink-2);font-style:italic;margin:12px 0">' +
+                  (l.texto || l.contenido || '').slice(0, 800).replace(/\n/g, '<br>') +
+                  '</blockquote></div>';
+        });
+        document.querySelector('#lecturas-content').innerHTML = html;
+      }
+    })
+    .catch(e => console.warn('API error:', e));
+}
+</script>`;
+ 
+    res.send(seo.renderPage({
+      title: 'Lecturas del día · Misa diaria · CatolicosGPT',
+      description: 'Lecturas bíblicas del día ' + today,
+      canonical: '/lecturas-de-hoy',
+      keywords: 'lecturas del día, misa del día, lecturas bíblicas',
+      activeNav: '/lecturas-de-hoy',
+      breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Lecturas de hoy', url: '/lecturas-de-hoy' }],
+      body: html
+    }));
+  } catch(e) {
+    console.error('[Lecturas] Error:', e.message);
+    res.status(500).send(seo.renderPage({
+      title: 'Error',
+      description: '',
+      canonical: '/lecturas-de-hoy',
+      body: '<div class="seo-shell"><div class="seo-card"><h1>Error</h1><p><a href="/">← Inicio</a></p></div></div>'
+    }));
+  }
+});
+ 
+// ─── SANTO DEL DÍA (/santo-del-dia) ───
+app.get('/santo-del-dia', async (req, res) => {
+  try {
+    const cached = liturgiaCache.get('santo');
+    const santo = cached || {};
+ 
+    const today = new Date().toLocaleDateString('es-ES', { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+ 
+    const html = `
+<div class="seo-shell">
+  <div class="seo-breadcrumb">
+    <a href="/">Inicio</a> › <strong>Santo del día</strong>
+  </div>
+  
+  <div class="seo-card">
+    <h1 style="font-family:var(--font-display);font-size:clamp(28px,4vw,42px);font-weight:700;color:var(--espresso);margin-bottom:8px">
+      ✨ Santo del día
+    </h1>
+    <div style="font-size:14px;color:var(--ink-2);margin-bottom:20px">${today}</div>
+  </div>
+ 
+  <div class="seo-card" id="santo-content">
+    ${santo.nombre ? `<h2 style="color:var(--gold-deep);font-size:24px;margin-bottom:8px">${seo.escHtml(santo.nombre)}</h2>` : ''}
+    ${santo.titulo ? `<p style="color:var(--ink-2);font-style:italic;margin-bottom:16px">${seo.escHtml(santo.titulo)}</p>` : ''}
+    ${santo.biography || santo.biography ? `<div style="color:var(--ink-2);line-height:1.7">${seo.escHtml((santo.biography || santo.biography || '').slice(0, 2000)).replace(/\n/g, '<br>')}</div>` : '<p style="color:var(--ink-2)">Cargando información...</p>'}
+  </div>
+ 
+  <div class="seo-card" style="background:rgba(188,138,54,.06);border-color:var(--gold)">
+    <h3>Reza con este Santo</h3>
+    <button onclick="document.querySelector('.chat-toggle')?.click()" style="background:var(--gold-deep);color:white;border:0;padding:12px 20px;border-radius:8px;font-weight:600;cursor:pointer">
+      💬 Conoce más en CatolicosGPT
+    </button>
+  </div>
+</div>
+ 
+<script>
+if (document.querySelector('#santo-content')?.textContent.includes('Cargando')) {
+  fetch('/api/liturgia/santo')
+    .then(r => r.json())
+    .then(data => {
+      if (data.santo && data.santo.nombre) {
+        const s = data.santo;
+        document.querySelector('#santo-content').innerHTML = 
+          '<h2 style="color:var(--gold-deep);font-size:24px;margin-bottom:8px">' + s.nombre + '</h2>' +
+          (s.titulo ? '<p style="color:var(--ink-2);font-style:italic;margin-bottom:16px">' + s.titulo + '</p>' : '') +
+          '<div style="color:var(--ink-2);line-height:1.7">' + (s.biography || s.texto || '').replace(/\n/g, '<br>') + '</div>';
+      }
+    })
+    .catch(e => console.warn('API error:', e));
+}
+</script>`;
+ 
+    res.send(seo.renderPage({
+      title: `Santo del día · CatolicosGPT`,
+      description: `Santo del día ${today}`,
+      canonical: '/santo-del-dia',
+      keywords: 'santo del día, santos católicos',
+      activeNav: '/santo-del-dia',
+      breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Santo del día', url: '/santo-del-dia' }],
+      body: html
+    }));
+  } catch(e) {
+    console.error('[Santo] Error:', e.message);
+    res.status(500).send(seo.renderPage({
+      title: 'Error',
+      description: '',
+      canonical: '/santo-del-dia',
+      body: '<div class="seo-shell"><div class="seo-card"><h1>Error</h1><p><a href="/">← Inicio</a></p></div></div>'
+    }));
+  }
+});
+ 
+// ─── ORACIÓN DEL DÍA (/oracion-del-dia) ───
+app.get('/oracion-del-dia', async (req, res) => {
+  try {
+    const cached = liturgiaCache.get('oracion');
+    const oracion = cached || {};
+ 
+    const today = new Date().toLocaleDateString('es-ES', { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+ 
+    const oracionTexto = oracion.texto || oracion.contenido || oracion.text || '';
+ 
+    const html = `
+<div class="seo-shell">
+  <div class="seo-breadcrumb">
+    <a href="/">Inicio</a> › <strong>Oración del día</strong>
+  </div>
+  
+  <div class="seo-card">
+    <h1 style="font-family:var(--font-display);font-size:clamp(28px,4vw,42px);font-weight:700;color:var(--espresso);margin-bottom:8px">
+      🙏 Oración del día
+    </h1>
+    <div style="font-size:14px;color:var(--ink-2);margin-bottom:20px">${today}</div>
+  </div>
+ 
+  <div class="seo-card" id="oracion-content">
+    ${oracionTexto ? `<blockquote style="border-left:3px solid var(--gold);padding-left:16px;color:var(--ink-2);font-style:italic;margin:20px 0;font-size:16px;line-height:1.8">${seo.escHtml(oracionTexto).replace(/\n/g, '<br>')}</blockquote>` : '<p style="color:var(--ink-2)">Cargando oración del día...</p>'}
+  </div>
+ 
+  <div class="seo-card">
+    <h2>Meditación Diaria</h2>
+    <p style="color:var(--ink-2);line-height:1.6">Tómate un momento para rezar. Abre tu corazón a Dios.</p>
+  </div>
+ 
+  <div class="seo-card" style="background:rgba(188,138,54,.06);border-color:var(--gold)">
+    <h3>Profundiza</h3>
+    <button onclick="document.querySelector('.chat-toggle')?.click()" style="background:var(--gold-deep);color:white;border:0;padding:12px 20px;border-radius:8px;font-weight:600;cursor:pointer">
+      💬 Profundizar con CatolicosGPT
+    </button>
+  </div>
+</div>
+ 
+<script>
+if (document.querySelector('#oracion-content')?.textContent.includes('Cargando')) {
+  fetch('/api/liturgia/oracion')
+    .then(r => r.json())
+    .then(data => {
+      if (data.oracion && data.oracion.texto) {
+        document.querySelector('#oracion-content').innerHTML = 
+          '<blockquote style="border-left:3px solid var(--gold);padding-left:16px;color:var(--ink-2);font-style:italic;margin:20px 0;font-size:16px;line-height:1.8">' +
+          data.oracion.texto.replace(/\n/g, '<br>') + 
+          '</blockquote>';
+      }
+    })
+    .catch(e => console.warn('API error:', e));
+}
+</script>`;
+ 
+    res.send(seo.renderPage({
+      title: 'Oración del día · CatolicosGPT',
+      description: 'Oración del día ' + today,
+      canonical: '/oracion-del-dia',
+      keywords: 'oración del día, oración diaria',
+      activeNav: '/oracion-del-dia',
+      breadcrumbs: [{ name: 'Inicio', url: '/' }, { name: 'Oración del día', url: '/oracion-del-dia' }],
+      body: html
+    }));
+  } catch(e) {
+    console.error('[Oracion] Error:', e.message);
+    res.status(500).send(seo.renderPage({
+      title: 'Error',
+      description: '',
+      canonical: '/oracion-del-dia',
+      body: '<div class="seo-shell"><div class="seo-card"><h1>Error</h1><p><a href="/">← Inicio</a></p></div></div>'
+    }));
+  }
+});
+ 
+// ════════════════════════════════════════════════════════════════════════════
+// FIN PARCHES v3
+// ════════════════════════════════════════════════════════════════════════════
+ 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
