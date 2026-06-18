@@ -25,7 +25,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/infografias', express.static(path.join(__dirname, 'public', 'infografias')));
 
 // ── Clientes IA ──
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// OpenAI — opcional, solo usado en funciones secundarias
+const openai = process.env.OPENAI_API_KEY 
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const magisterium = new OpenAI({
   apiKey: process.env.MAGISTERIUM_API_KEY,
@@ -551,7 +555,7 @@ async function generarLecturasDia() {
     const fechaStr2 = `${DIAS[now2.getDay()]} ${now2.getDate()} de ${MESES[now2.getMonth()]} de ${now2.getFullYear()}`;
     const ciclo = ['C','A','B'][(now2.getFullYear() - 2024) % 3] || 'A';
 
-    const completion = await openai.chat.completions.create({
+    const completion = await (openai || (() => { throw new Error("OpenAI no configurado") })()).chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 4000,
       temperature: 0.1,
@@ -867,7 +871,7 @@ app.get('/api/breviario', async (req, res) => {
   const fechaStr = `${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}`;
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await (openai || (() => { throw new Error("OpenAI no configurado") })()).chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 4000,
       temperature: 0.1,
@@ -943,7 +947,7 @@ app.get('/api/cic/:num', async (req, res) => {
   if (local) return res.json({ ok: true, num, texto: local, fuente: 'dataset' });
 
   try {
-    const r = await openai.chat.completions.create({
+    const r = await (openai || (() => { throw new Error("OpenAI no configurado") })()).chat.completions.create({
       model: 'gpt-4o-mini', max_tokens: 500, temperature: 0,
       messages: [
         { role: 'system', content: 'Proporciona el texto exacto del artículo del Catecismo solicitado. Solo el texto, sin introducción.' },
@@ -977,7 +981,7 @@ app.get('/api/biblia', async (req, res) => {
   if (local) return res.json({ ok: true, ref, texto: local, fuente: 'dataset' });
 
   try {
-    const r = await openai.chat.completions.create({
+    const r = await (openai || (() => { throw new Error("OpenAI no configurado") })()).chat.completions.create({
       model: 'gpt-4o-mini', max_tokens: 600, temperature: 0,
       messages: [
         { role: 'system', content: 'Proporciona el texto bíblico exacto en español (Biblia de Jerusalén). Solo el texto.' },
@@ -1029,7 +1033,7 @@ app.get('/api/homilia', async (req, res) => {
 
   // Generar homilía con GPT-4o + referencias a fuentes reales
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await (openai || (() => { throw new Error("OpenAI no configurado") })()).chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 2000,
       temperature: 0.4,
@@ -1085,7 +1089,7 @@ async function generateBlogArticle(topic) {
   if (blogCache[topic.slug]) return blogCache[topic.slug];
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await (openai || (() => { throw new Error("OpenAI no configurado") })()).chat.completions.create({
       model: 'gpt-4o-mini',
       max_tokens: 2000,
       temperature: 0.3,
@@ -1385,7 +1389,7 @@ app.get('/api/santo-del-dia', async (req, res) => {
     
     // Fallback: Buscar en Magisterium o usar GPT
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await (openai || (() => { throw new Error("OpenAI no configurado") })()).chat.completions.create({
         model: 'gpt-4o',
         messages: [{
           role: 'user',
@@ -2298,7 +2302,7 @@ app.post('/api/admin/seo-generate', auth.authenticateToken, auth.requireAdmin, a
     : `Genera 8-10 keywords SEO en español, separadas por comas, sobre "${titulo}" para una página de infografía católica. Incluye términos católicos relevantes y de búsqueda. Responde SOLO las keywords separadas por comas, sin punto final, sin explicación.`;
 
   try {
-    const r = await openai.chat.completions.create({
+    const r = await (openai || (() => { throw new Error("OpenAI no configurado") })()).chat.completions.create({
       model: 'gpt-4o-mini',
       temperature: 0.6,
       max_tokens: 200,
@@ -2804,7 +2808,7 @@ app.post('/api/admin/videos/upload', auth.authenticateToken, auth.requireAdmin, 
 
     // 2. IA enrich con GPT-4o-mini
     const OpenAI = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
     const ai = await videosModule.enrichVideoWithAI(ytMeta.title, contextHint, openai);
 
     // 3. Verificar slug único
@@ -2979,7 +2983,7 @@ app.post('/api/misas/buscar', async (req, res) => {
 
     // 2. SIEMPRE generar respuesta IA con GPT-4o (combinada)
     const OpenAI = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
     let contextoScraping = '';
     if (scraped && scraped.html_raw) {
       // Extraer texto plano del HTML scrapeado
@@ -3035,7 +3039,7 @@ async function generarInfografiasDelDia() {
     const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     const fechaHoy = `${ahora.getDate()} de ${MESES[ahora.getMonth()]}`;
 
-    const santoDia = await openai.chat.completions.create({
+    const santoDia = await (openai || (() => { throw new Error("OpenAI no configurado") })()).chat.completions.create({
       model: 'gpt-4o', max_tokens: 200, temperature: 0.3,
       messages: [{ role: 'user', content: `¿Qué santo o santa se celebra el ${fechaHoy} en el calendario litúrgico? Solo el nombre.` }]
     }).then(r => r.choices[0].message.content.trim()).catch(() => 'Santo del día');
@@ -3438,7 +3442,7 @@ app.post('/api/admin/blog/enrich', auth.authenticateToken, auth.requireAdmin, as
   if (!titulo) return res.status(400).json({ error: 'titulo requerido' });
   try {
     const OpenAI = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
     const meta = await blogModule.enrichBlogWithAI(titulo, contenidoMd, openai);
     res.json({ ok: true, ...meta });
   } catch(e) {
@@ -3647,7 +3651,7 @@ app.post('/api/admin/podcast/upload', auth.authenticateToken, auth.requireAdmin,
   if (!det) return res.status(400).json({ error: 'Plataforma no reconocida' });
   try {
     const OpenAI = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
     const ai = await podcastModule.enrichPodcastWithAI(originalTitle || '', contextHint, det.plataforma, openai);
     const existing = podcastModule.loadPodcasts();
     let finalSlug = ai.slug;
