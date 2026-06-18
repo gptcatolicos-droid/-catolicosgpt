@@ -656,7 +656,13 @@ async function buscarEnMagisterium(query, numResults = 5, modo = 'auto') {
 
 // ── Helper: formatear fuentes de búsqueda para el contexto ──
 function formatearFuentesBusqueda(resultados) {
-  if (!resultados || resultados.length === 0) return '';
+  // Blindaje: asegurar que sea array
+  if (!resultados) return '';
+  if (!Array.isArray(resultados)) {
+    // Si viene como objeto con .results o .data, extraer
+    resultados = resultados.results || resultados.data || resultados.citations || [];
+  }
+  if (!Array.isArray(resultados) || resultados.length === 0) return '';
   return resultados.map((r, i) => {
     const doc = r.document || r.source || r.title || 'Documento';
     const texto = (r.text || r.content || r.excerpt || '').slice(0, 400);
@@ -758,7 +764,7 @@ Si el usuario acepta, genera el contenido en formato HTML con el diseño de Cato
       new Promise((_, reject) => setTimeout(() => reject(new Error('Magisterium timeout')), ms))
     ]);
 
-    const [magChatText, magSearchResults] = await Promise.all([
+    const [magChatText, magSearchResultsRaw] = await Promise.all([
       magTimeout(magisterium.chat.completions.create({
         model: 'magisterium-1',
         max_tokens: 800,
@@ -772,6 +778,11 @@ Si el usuario acepta, genera el contenido en formato HTML con el diseño de Cato
         console.error('[Magisterium Search]', e.message); return [];
       })
     ]);
+
+    // Blindaje: garantizar que magSearchResults SIEMPRE sea array
+    const magSearchResults = Array.isArray(magSearchResultsRaw)
+      ? magSearchResultsRaw
+      : (magSearchResultsRaw?.results || magSearchResultsRaw?.data || magSearchResultsRaw?.citations || []);
 
     // 2. CONSTRUIR CONTEXTO ENRIQUECIDO
     let enrichedSystemPrompt = systemPrompt;
