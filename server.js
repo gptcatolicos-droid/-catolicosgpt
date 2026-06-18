@@ -788,22 +788,20 @@ Prioriza siempre la fuente más reciente y autorizada del Magisterio.
     }
 
     try {
-      const stream = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        temperature: 0.2,
+      // ══ MOTOR PRINCIPAL: ANTHROPIC (Claude) con contexto Magisterium ══
+      const stream = await anthropic.messages.stream({
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 6000,
-        stream: true,
-        messages: [{ role: 'system', content: enrichedSystemPrompt }, ...messages]
+        system: enrichedSystemPrompt,
+        messages
       });
 
       let fullReply = '';
       for await (const chunk of stream) {
-        const delta = chunk.choices[0]?.delta?.content || '';
-        if (delta) {
-          fullReply += delta;
-          res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+        if (chunk.type === 'content_block_delta' && chunk.delta?.text) {
+          fullReply += chunk.delta.text;
+          res.write(`data: ${JSON.stringify({ delta: chunk.delta.text })}\n\n`);
         }
-        if (chunk.choices[0]?.finish_reason === 'stop') break;
       }
 
       // Enviar fuentes al frontend para mostrar panel de fuentes
@@ -821,52 +819,29 @@ Prioriza siempre la fuente más reciente y autorizada del Magisterio.
         res.write(`data: ${JSON.stringify({ magisterium: magChatText, sources: fuentesPayload.fuentes, modo })}\n\n`);
       }
 
-      // Sin auto-detección de infografías — usuario debe ir a /infografias
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
 
     } catch(e) {
-      // Fallback Anthropic
-      try {
-        const stream = await anthropic.messages.stream({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 6000,
-          system: systemPrompt,
-          messages
-        });
-        for await (const chunk of stream) {
-          if (chunk.type === 'content_block_delta' && chunk.delta?.text) {
-            res.write(`data: ${JSON.stringify({ delta: chunk.delta.text })}\n\n`);
-          }
-        }
-        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-        res.end();
-      } catch(e2) {
-        res.write(`data: ${JSON.stringify({ error: 'Error al conectar con la IA.' })}\n\n`);
-        res.end();
-      }
+      console.error('[Chat Anthropic]', e.message);
+      res.write(`data: ${JSON.stringify({ error: 'Error al conectar con la IA: ' + e.message })}\n\n`);
+      res.end();
     }
 
   } else {
-    // No streaming
+    // No streaming — Anthropic como motor principal
     try {
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o', temperature: 0.2, max_tokens: 6000,
-        messages: [{ role: 'system', content: systemPrompt }, ...messages]
+      const msg = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 6000,
+        system: systemPrompt,
+        messages
       });
-      let reply = completion.choices[0].message.content;
+      let reply = msg.content[0].text;
       res.json({ reply });
     } catch(e) {
-      try {
-        const msg = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001', max_tokens: 6000,
-          system: systemPrompt, messages
-        });
-        let replyA = msg.content[0].text;
-        res.json({ reply: replyA });
-      } catch(e2) {
-        res.status(500).json({ error: 'Error al conectar con la IA.' });
-      }
+      console.error('[Chat no-stream]', e.message);
+      res.status(500).json({ error: 'Error al conectar con la IA.' });
     }
   }
 });
@@ -1628,15 +1603,14 @@ app.get('/api/auth/me', auth.authenticateToken, (req, res) => {
 
 // ── Verificar límite ──
 app.get('/api/infografias/check-limit', auth.authenticateToken, (req, res) => {
-  const check  = auth.checkInfografiaLimit(req.user.id);
-  const config = auth.loadPlanConfig();
-  const user   = auth.getUserById(req.user.id);
-  const plan   = config.planes[user?.plan || 'free'] || config.planes.free;
-  res.json({ ...check, planNombre: plan.nombre, periodo: plan.periodo, limite: plan.infografiasCount });
+  // Generación deshabilitada — solo admin sube infografías
+  res.json({ allowed: false, remaining: 0, used: 0, reason: 'La generación automática está temporalmente deshabilitada.', planNombre: 'Free', periodo: 'Diario', limite: 0 });
 });
 
-// ── Generar infografía ──
+// ── Generar infografía (DESHABILITADO — solo admin sube manualmente) ──
 app.post('/api/infografias/generar', auth.authenticateToken, async (req, res) => {
+  return res.status(403).json({ error: 'La generación automática de infografías está temporalmente deshabilitada. Solo el administrador puede subir infografías.' });
+  /* ORIGINAL DESHABILITADO:
   const { tema, formato = '9:16', tipo, estilo = 'clasico', customNombre: bodyCustomNombre, customLogo: bodyCustomLogo } = req.body;
   if (!tema) return res.status(400).json({ error: 'Tema requerido' });
 
@@ -1664,6 +1638,7 @@ app.post('/api/infografias/generar', auth.authenticateToken, async (req, res) =>
     console.error('[Generar Infografia]', e.message);
     res.status(500).json({ error: 'Error al generar: ' + e.message });
   }
+  ORIGINAL DESHABILITADO FIN */
 });
 
 // ── Listar infografías ──
@@ -2227,7 +2202,10 @@ app.get('/planes', (req, res) => {
         <li><span class="ico">✓</span> Soporte prioritario</li>
       </ul>
       <div id="paypal-button-container-P-66Y50051RX0957311NIOWYFY" class="paypal-wrap">
-        <div class="paypal-loading">⏳ Cargando opciones de pago…</div>
+        <div style="text-align:center;padding:18px;background:rgba(188,138,54,.08);border-radius:10px;color:var(--ink-2);font-size:14px">
+          🔧 Las suscripciones están temporalmente pausadas mientras mejoramos la plataforma.<br>
+          <span style="font-size:12px;color:var(--ink-3)">Contacto: gptcatolicos@gmail.com</span>
+        </div>
       </div>
     </div>
 
@@ -2243,8 +2221,8 @@ app.get('/planes', (req, res) => {
   © 2026 <a href="/" style="color:var(--gold-deep);text-decoration:none;font-weight:600">CatolicosGPT</a> · <a href="/infografias" style="color:var(--gold-deep);text-decoration:none">Infografías</a> · Fe · Conocimiento · Acción
 </footer>
 
-<!-- PayPal SDK -->
-<script src="https://www.paypal.com/sdk/js?client-id=AQYVUOfQ6kUlu7y1IXRq2ffqWuS9HtMJx2WPhdnXJT2P3DUlfGF-VWAb77xuHU9DMu2nJZJE9z3pXMGC&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+<!-- PayPal SDK DESHABILITADO temporalmente -->
+<!-- <script src="https://www.paypal.com/sdk/js?client-id=AQYVUOfQ6kUlu7y1IXRq2ffqWuS9HtMJx2WPhdnXJT2P3DUlfGF-VWAb77xuHU9DMu2nJZJE9z3pXMGC&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script> -->
 <script>
   let _ppRetries = 0;
   function initPayPalButton() {
@@ -2294,17 +2272,9 @@ app.get('/planes', (req, res) => {
 });
 
 
-// ── PayPal: activar plan premium post-suscripción ──
+// ── PayPal: DESHABILITADO temporalmente ──
 app.post('/api/paypal/subscription-approved', auth.authenticateToken, (req, res) => {
-  try {
-    const { subscriptionID } = req.body;
-    if (!subscriptionID) return res.status(400).json({ error: 'subscriptionID requerido' });
-    // Upgradear plan a premium
-    auth.upgradePlan(req.user.id, 'premium');
-    auth.updateUser(req.user.id, { paypalSubscriptionId: subscriptionID });
-    console.log('[PayPal] Suscripción activada para usuario', req.user.id, 'subID:', subscriptionID);
-    res.json({ ok: true, message: '¡Plan Premium activado!' });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  return res.status(403).json({ error: 'Las suscripciones están temporalmente pausadas.' });
 });
 
 
