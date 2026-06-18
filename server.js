@@ -752,20 +752,25 @@ Si el usuario acepta, genera el contenido en formato HTML con el diseño de Cato
     // ARQUITECTURA v3 — Chat + Search de Magisterium en paralelo
     // ════════════════════════════════════════════════════════════════
 
-    // 1. PARALELO: Magisterium Chat (modo detectado) + Magisterium Search
+    // 1. PARALELO: Magisterium Chat + Search con timeout de 8 segundos
+    const magTimeout = (promise, ms=8000) => Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Magisterium timeout')), ms))
+    ]);
+
     const [magChatText, magSearchResults] = await Promise.all([
-      // Chat de Magisterium con modo correcto
-      magisterium.chat.completions.create({
+      magTimeout(magisterium.chat.completions.create({
         model: 'magisterium-1',
         max_tokens: 800,
         stream: false,
         messages: [{ role: 'user', content: lastUserMsg }],
         ...(modo !== 'auto' ? { mode: modo } : {})
-      }).then(r => r.choices[0]?.message?.content || '').catch(e => {
+      }).then(r => r.choices[0]?.message?.content || '')).catch(e => {
         console.error('[Magisterium Chat]', e.message); return '';
       }),
-      // Search API: fragmentos de documentos reales
-      buscarEnMagisterium(lastUserMsg, 5, modo)
+      buscarEnMagisterium(lastUserMsg, 5, modo).catch(e => {
+        console.error('[Magisterium Search]', e.message); return [];
+      })
     ]);
 
     // 2. CONSTRUIR CONTEXTO ENRIQUECIDO
@@ -794,7 +799,7 @@ Prioriza siempre la fuente más reciente y autorizada del Magisterio.
     try {
       // ══ MOTOR PRINCIPAL: ANTHROPIC (Claude) con contexto Magisterium ══
       const stream = await anthropic.messages.stream({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 6000,
         system: enrichedSystemPrompt,
         messages
@@ -836,7 +841,7 @@ Prioriza siempre la fuente más reciente y autorizada del Magisterio.
     // No streaming — Anthropic como motor principal
     try {
       const msg = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 6000,
         system: systemPrompt,
         messages
