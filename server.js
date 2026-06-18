@@ -28,8 +28,8 @@ app.use('/infografias', express.static(path.join(__dirname, 'public', 'infografi
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const magisterium = new OpenAI({
-  apiKey: process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059',
-  baseURL: 'https://api.magisterium.com/v1'
+  apiKey: process.env.MAGISTERIUM_API_KEY,
+  baseURL: 'https://www.magisterium.com/api/v1'
 });
 
 // ── Cargar datasets ──
@@ -54,11 +54,11 @@ const ENCICLICA = loadJSON('enciclica_magnifica_humanitas');
 // ════════════════════════════════════════════════════════
 // LITURGIA — Detección de peticiones + pre-carga de datos
 // ════════════════════════════════════════════════════════
-const MAG_KEY = process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059';
+const MAG_KEY = process.env.MAGISTERIUM_API_KEY;
 
 async function magWidget(endpoint) {
   try {
-    const r = await fetch('https://api.magisterium.com' + endpoint, {
+    const r = await fetch('https://www.magisterium.com/api' + endpoint, {
       headers: { 'Authorization': 'Bearer ' + MAG_KEY, 'Accept': 'application/json' },
       signal: AbortSignal.timeout(7000)
     });
@@ -632,11 +632,11 @@ function detectarModoMagisterium(texto) {
 // ── Helper: llamada a la API de Búsqueda de Magisterium ──
 async function buscarEnMagisterium(query, numResults = 5, modo = 'auto') {
   try {
-    const resp = await fetch('https://api.magisterium.com/v1/search', {
+    const resp = await fetch('https://www.magisterium.com/api/v1/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059'}`
+        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY}`
       },
       body: JSON.stringify({ query, num_results: numResults, mode: modo }),
       signal: AbortSignal.timeout(5000)
@@ -1452,9 +1452,9 @@ app.post('/api/buscar', async (req, res) => {
 // ── Lecturas del día desde Magisterium (Holy Widgets) ──
 app.get('/api/lecturas-magisterium', async (req, res) => {
   try {
-    const resp = await fetch('https://api.magisterium.com/v1/widgets/daily-readings', {
+    const resp = await fetch('https://www.magisterium.com/api/v1/widgets/daily-readings', {
       headers: {
-        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059'}`,
+        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY}`,
         'Accept': 'application/json'
       },
       signal: AbortSignal.timeout(6000)
@@ -1479,9 +1479,9 @@ app.get('/api/lecturas-magisterium', async (req, res) => {
 // ── Santo del día desde Magisterium (Holy Widgets) ──
 app.get('/api/santo-magisterium', async (req, res) => {
   try {
-    const resp = await fetch('https://api.magisterium.com/v1/widgets/saint-of-the-day', {
+    const resp = await fetch('https://www.magisterium.com/api/v1/widgets/saint-of-the-day', {
       headers: {
-        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059'}`,
+        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY}`,
         'Accept': 'application/json'
       },
       signal: AbortSignal.timeout(6000)
@@ -1503,9 +1503,9 @@ app.get('/api/santo-magisterium', async (req, res) => {
 // ── Oración del día desde Magisterium ──
 app.get('/api/oracion-magisterium', async (req, res) => {
   try {
-    const resp = await fetch('https://api.magisterium.com/v1/widgets/prayer-of-the-day', {
+    const resp = await fetch('https://www.magisterium.com/api/v1/widgets/prayer-of-the-day', {
       headers: {
-        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY || 'sk_catoli_e251f77cac31729961706b5c17d5a517a38e00756facc8f85c7a542115021059'}`,
+        'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY}`,
         'Accept': 'application/json'
       },
       signal: AbortSignal.timeout(6000)
@@ -3349,7 +3349,7 @@ app.post('/api/admin/blog/generate', auth.authenticateToken, auth.requireAdmin, 
     let fuentesContexto = '';
     let fuentesCitadas = [];
     try {
-      const searchResp = await fetch('https://api.magisterium.com/v1/search', {
+      const searchResp = await fetch('https://www.magisterium.com/api/v1/search', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + MAG_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ query: tema, limit: 6 }),
