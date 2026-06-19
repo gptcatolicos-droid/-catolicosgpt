@@ -755,21 +755,21 @@ Si el usuario acepta, genera el contenido en formato HTML con el diseño de Cato
     res.setHeader('X-Accel-Buffering', 'no');
 
     // ════════════════════════════════════════════════════════════════
-    // ARQUITECTURA v3 — Chat + Search de Magisterium en paralelo
+    // ARQUITECTURA v4 — Magisterium RESPONDE, Anthropic FORMATEA
     // ════════════════════════════════════════════════════════════════
 
-    // 1. PARALELO: Magisterium Chat + Search con timeout de 8 segundos
-    const magTimeout = (promise, ms=8000) => Promise.race([
+    const magTimeout = (promise, ms=20000) => Promise.race([
       promise,
       new Promise((_, reject) => setTimeout(() => reject(new Error('Magisterium timeout')), ms))
     ]);
 
+    // 1. MAGISTERIUM = MOTOR DE RESPUESTA (contenido completo) + Search en paralelo
     const [magChatText, magSearchResultsRaw] = await Promise.all([
       magTimeout(magisterium.chat.completions.create({
         model: 'magisterium-1',
-        max_tokens: 800,
+        max_tokens: 3000,
         stream: false,
-        messages: [{ role: 'user', content: lastUserMsg }],
+        messages: [...messages.slice(-6)],  // Contexto conversacional
         ...(modo !== 'auto' ? { mode: modo } : {})
       }).then(r => r.choices[0]?.message?.content || '')).catch(e => {
         console.error('[Magisterium Chat]', e.message); return '';
@@ -779,86 +779,122 @@ Si el usuario acepta, genera el contenido en formato HTML con el diseño de Cato
       })
     ]);
 
-    // Blindaje: garantizar que magSearchResults SIEMPRE sea array
     const magSearchResults = Array.isArray(magSearchResultsRaw)
       ? magSearchResultsRaw
       : (magSearchResultsRaw?.results || magSearchResultsRaw?.data || magSearchResultsRaw?.citations || []);
 
-    // 2. CONSTRUIR CONTEXTO ENRIQUECIDO
-    let enrichedSystemPrompt = systemPrompt;
     const fuentesBusqueda = formatearFuentesBusqueda(magSearchResults);
 
-    if (magChatText.length > 50 || fuentesBusqueda.length > 50) {
-      enrichedSystemPrompt += `
-
-════════════════════════════════════════════════════
-FUENTES PRIMARIAS — MAGISTERIUM.COM (MODO: ${modo.toUpperCase()})
-════════════════════════════════════════════════════
-
-${magChatText.length > 50 ? `RESPUESTA MAGISTERIUM:
-${magChatText}
-
-` : ''}${fuentesBusqueda.length > 50 ? `FRAGMENTOS DE DOCUMENTOS ORIGINALES:
-${fuentesBusqueda}` : ''}
-
-INSTRUCCIÓN: Usa estas fuentes primarias como base de tu respuesta.
-Cita los documentos con su referencia exacta. Integra de forma fluida y pastoral.
-Prioriza siempre la fuente más reciente y autorizada del Magisterio.
-════════════════════════════════════════════════════`;
-    }
+    // 2. ¿Magisterium respondió? → Anthropic SOLO REFORMATEA
+    const magisteriumRespondio = magChatText && magChatText.length > 80;
 
     try {
-      // ══ MOTOR PRINCIPAL: ANTHROPIC (Claude) con contexto Magisterium ══
+      let promptParaAnthropic;
+      let systemParaAnthropic;
+
+      if (magisteriumRespondio) {
+        // ── Magisterium tiene la respuesta. Anthropic solo mejora presentación. ──
+        systemParaAnthropic = `Eres un editor de contenido católico. Tu ÚNICA tarea es REFORMATEAR y PRESENTAR mejor la respuesta que te doy, SIN cambiar el contenido teológico ni agregar información nueva.
+
+REGLAS ESTRICTAS:
+- NO inventes datos, citas ni referencias que no estén en el texto original.
+- NO cambies el significado teológico.
+- SÍ mejora: estructura con ## subtítulos, **negritas**, tablas markdown cuando ayude, listas, > para citas bíblicas o del Magisterio.
+- SÍ agrega claridad pastoral en el tono, pero sin inventar doctrina.
+- Responde SIEMPRE en español.
+- Mantén TODAS las citas y referencias del texto original (CIC, encíclicas, versículos).
+- Si hay fragmentos de documentos, intégralos de forma fluida.`;
+
+        promptParaAnthropic = `Reformatea y presenta mejor esta respuesta del Magisterio católico a la pregunta del usuario.
+
+PREGUNTA DEL USUARIO:
+${lastUserMsg}
+
+RESPUESTA DE MAGISTERIUM (esta es la fuente — NO la cambies, solo mejórala visualmente):
+${magChatText}
+${fuentesBusqueda.length > 50 ? `\nFRAGMENTOS DE DOCUMENTOS ORIGINALES (para citar con referencia exacta):\n${fuentesBusqueda}` : ''}
+${contextoLiturgico ? `\nCONTEXTO LITÚRGICO:\n${contextoLiturgico}` : ''}
+
+Presenta la respuesta final bien estructurada, pastoral y clara.`;
+      } else {
+        // ── Magisterium no respondió. Anthropic responde con las fuentes de búsqueda. ──
+        systemParaAnthropic = systemPrompt;
+        if (fuentesBusqueda.length > 50) {
+          systemParaAnthropic += `\n\n════════════════════════════════════════════════════\nFUENTES PRIMARIAS — MAGISTERIUM.COM (MODO: ${modo.toUpperCase()})\n════════════════════════════════════════════════════\n\nFRAGMENTOS DE DOCUMENTOS ORIGINALES:\n${fuentesBusqueda}\n\nINSTRUCCIÓN: Usa estas fuentes primarias como base. Cita los documentos con su referencia exacta. Integra de forma fluida y pastoral. NO inventes citas que no estén en las fuentes.\n════════════════════════════════════════════════════`;
+        }
+        promptParaAnthropic = null; // Usa los messages normales
+      }
+
+      // ── ANTHROPIC: streaming de la respuesta final ──
       const stream = await anthropic.messages.stream({
         model: 'claude-sonnet-4-5',
         max_tokens: 6000,
-        system: enrichedSystemPrompt,
-        messages
+        system: systemParaAnthropic,
+        messages: promptParaAnthropic
+          ? [{ role: 'user', content: promptParaAnthropic }]
+          : messages
       });
 
-      let fullReply = '';
       for await (const chunk of stream) {
         if (chunk.type === 'content_block_delta' && chunk.delta?.text) {
-          fullReply += chunk.delta.text;
           res.write(`data: ${JSON.stringify({ delta: chunk.delta.text })}\n\n`);
         }
       }
 
-      // Enviar fuentes al frontend para mostrar panel de fuentes
-      const fuentesPayload = {
-        magisteriumChat: magChatText.length > 50 ? magChatText : null,
-        fuentes: magSearchResults.length > 0 ? magSearchResults.slice(0, 5).map(r => ({
-          titulo: r.document || r.source || r.title || 'Documento',
-          referencia: r.reference || r.citation || '',
-          fragmento: (r.text || r.content || r.excerpt || '').slice(0, 300),
-          url: r.url || null,
-          modo
-        })) : null
-      };
-      if (fuentesPayload.magisteriumChat || fuentesPayload.fuentes) {
-        res.write(`data: ${JSON.stringify({ magisterium: magChatText, sources: fuentesPayload.fuentes, modo })}\n\n`);
+      // Panel de fuentes
+      const fuentes = magSearchResults.length > 0 ? magSearchResults.slice(0, 5).map(r => ({
+        titulo: r.document || r.source || r.title || 'Documento',
+        referencia: r.reference || r.citation || '',
+        fragmento: (r.text || r.content || r.excerpt || '').slice(0, 300),
+        url: r.url || null,
+        modo
+      })) : null;
+      if (fuentes) {
+        res.write(`data: ${JSON.stringify({ sources: fuentes, modo })}\n\n`);
       }
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
 
     } catch(e) {
-      console.error('[Chat Anthropic]', e.message);
-      res.write(`data: ${JSON.stringify({ error: 'Error al conectar con la IA: ' + e.message })}\n\n`);
+      console.error('[Chat]', e.message);
+      // Si Anthropic falla pero Magisterium respondió, enviar Magisterium crudo
+      if (magisteriumRespondio) {
+        res.write(`data: ${JSON.stringify({ delta: magChatText })}\n\n`);
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      } else {
+        res.write(`data: ${JSON.stringify({ error: 'Error al conectar con la IA: ' + e.message })}\n\n`);
+      }
       res.end();
     }
 
   } else {
-    // No streaming — Anthropic como motor principal
+    // No streaming — Magisterium responde, Anthropic formatea
     try {
-      const msg = await anthropic.messages.create({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 6000,
-        system: systemPrompt,
-        messages
-      });
-      let reply = msg.content[0].text;
-      res.json({ reply });
+      const magResp = await magisterium.chat.completions.create({
+        model: 'magisterium-1',
+        max_tokens: 3000,
+        messages: [...messages.slice(-6)],
+        ...(modo !== 'auto' ? { mode: modo } : {})
+      }).then(r => r.choices[0]?.message?.content || '').catch(() => '');
+
+      if (magResp && magResp.length > 80) {
+        const msg = await anthropic.messages.create({
+          model: 'claude-sonnet-4-5',
+          max_tokens: 6000,
+          system: 'Eres un editor de contenido católico. Reformatea y presenta mejor la respuesta, SIN cambiar el contenido teológico. Usa ## subtítulos, **negritas**, tablas y listas. Responde en español. Mantén todas las citas.',
+          messages: [{ role: 'user', content: `Reformatea esta respuesta del Magisterio:\n\nPREGUNTA: ${lastUserMsg}\n\nRESPUESTA:\n${magResp}` }]
+        });
+        res.json({ reply: msg.content[0].text });
+      } else {
+        const msg = await anthropic.messages.create({
+          model: 'claude-sonnet-4-5',
+          max_tokens: 6000,
+          system: systemPrompt,
+          messages
+        });
+        res.json({ reply: msg.content[0].text });
+      }
     } catch(e) {
       console.error('[Chat no-stream]', e.message);
       res.status(500).json({ error: 'Error al conectar con la IA.' });
