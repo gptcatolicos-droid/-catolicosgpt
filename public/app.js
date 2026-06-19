@@ -223,6 +223,34 @@ async function send() {
             bubble.innerHTML = parseMarkdown(fullText) + '<span class="typing-cursor">▋</span>';
             inner.scrollTop = inner.scrollHeight;
           }
+          if (d.citations && Array.isArray(d.citations) && d.citations.length > 0) {
+            // Renderizar panel de citas verificables
+            let citasHtml = '<div class="mag-citations" style="margin-top:16px;padding:14px;background:rgba(201,146,58,0.06);border:1px solid rgba(201,146,58,0.15);border-radius:12px">';
+            citasHtml += '<div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">📚 Fuentes del Magisterio</div>';
+            d.citations.forEach((c, i) => {
+              citasHtml += `<div style="margin-bottom:8px;padding:8px 10px;background:rgba(255,255,255,0.6);border-radius:8px;font-size:12px;border-left:3px solid var(--gold)">`;
+              citasHtml += `<div style="font-weight:600;color:var(--brown)">${c.document || 'Documento'}`;
+              if (c.reference) citasHtml += ` <span style="color:var(--gold);font-size:11px">${c.reference}</span>`;
+              citasHtml += `</div>`;
+              if (c.author) citasHtml += `<div style="font-size:11px;color:var(--ink4);font-style:italic">${c.author}${c.year ? ' (' + c.year + ')' : ''}</div>`;
+              if (c.citedText) citasHtml += `<div style="font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.4">"${c.citedText.slice(0, 200)}${c.citedText.length > 200 ? '…' : ''}"</div>`;
+              if (c.url) citasHtml += `<a href="${c.url}" target="_blank" rel="noopener" style="font-size:10px;color:var(--gold);text-decoration:none;display:inline-block;margin-top:4px">Ver fuente ↗</a>`;
+              citasHtml += `</div>`;
+            });
+            citasHtml += '</div>';
+            fullText += '\n\n<!-- citations -->';
+            bubble.innerHTML = parseMarkdown(fullText.replace('<!-- citations -->', '')) + citasHtml;
+          }
+          if (d.relatedQuestions && Array.isArray(d.relatedQuestions) && d.relatedQuestions.length > 0) {
+            // Renderizar preguntas relacionadas como chips clickeables
+            let rqHtml = '<div class="related-questions" style="margin-top:14px;display:flex;flex-wrap:wrap;gap:6px">';
+            rqHtml += '<div style="width:100%;font-size:11px;font-weight:600;color:var(--ink4);margin-bottom:2px">Preguntas relacionadas</div>';
+            d.relatedQuestions.forEach(q => {
+              rqHtml += `<button onclick="sendChip('${q.replace(/'/g, "\\'")}')" style="background:rgba(201,146,58,0.08);border:1px solid rgba(201,146,58,0.2);color:var(--brown);font-size:12px;padding:6px 12px;border-radius:20px;cursor:pointer;font-family:'Lora',serif;transition:all 0.2s" onmouseover="this.style.background='rgba(201,146,58,0.15)'" onmouseout="this.style.background='rgba(201,146,58,0.08)'">${q}</button>`;
+            });
+            rqHtml += '</div>';
+            bubble.insertAdjacentHTML('afterend', rqHtml);
+          }
           if (d.magisterium) magText = d.magisterium;
           if (d.sources) sources = d.sources;
           if (d.modo) modoMag = d.modo;
