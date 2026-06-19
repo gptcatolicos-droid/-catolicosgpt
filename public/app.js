@@ -151,7 +151,7 @@ async function send() {
         <line x1="27" y1="20" x2="53" y2="20" stroke="#C9923A" stroke-width="2.8" stroke-linecap="round"/>
       </svg>
     </div>
-    <div class="bubble bubble-bot" id="bot-bubble-${Date.now()}"><span class="typing-cursor">▋</span></div>`;
+    <div class="bubble bubble-bot" id="bot-bubble-${Date.now()}"><span class="thinking-status" style="color:var(--ink4);font-style:italic;font-size:14px">Consultando el Magisterio<span class="thinking-dots">.</span></span></div>`;
   // Inyectar badge del modo si no es 'auto'
   const _modoActivo = window.chatMode || 'auto';
   if (_modoActivo !== 'auto') {
@@ -163,6 +163,25 @@ async function send() {
   inner.appendChild(botRow);
   inner.scrollTop = inner.scrollHeight;
   const bubble = botRow.querySelector('.bubble-bot');
+
+  // Animación de progreso mientras Magisterium responde
+  const thinkingMsgs = [
+    'Consultando el Magisterio',
+    'Buscando en documentos oficiales',
+    'Revisando el Catecismo',
+    'Preparando la respuesta'
+  ];
+  let thinkingIdx = 0;
+  let dotCount = 1;
+  let firstTokenReceived = false;
+  const thinkingTimer = setInterval(() => {
+    if (firstTokenReceived) return;
+    const statusEl = bubble.querySelector('.thinking-status');
+    if (!statusEl) return;
+    dotCount = (dotCount % 3) + 1;
+    if (dotCount === 1) thinkingIdx = (thinkingIdx + 1) % thinkingMsgs.length;
+    statusEl.innerHTML = thinkingMsgs[thinkingIdx] + '<span class="thinking-dots">' + '.'.repeat(dotCount) + '</span>';
+  }, 700);
 
   const sBtn = document.getElementById('send-btn'); if (sBtn) sBtn.style.display = 'none';
 
@@ -195,6 +214,11 @@ async function send() {
         try {
           const d = JSON.parse(line.slice(6));
           if (d.delta) {
+            if (!firstTokenReceived) {
+              firstTokenReceived = true;
+              clearInterval(thinkingTimer);
+              fullText = '';
+            }
             fullText += d.delta;
             bubble.innerHTML = parseMarkdown(fullText) + '<span class="typing-cursor">▋</span>';
             inner.scrollTop = inner.scrollHeight;
@@ -297,11 +321,13 @@ async function send() {
     }
 
   } catch(e) {
+    clearInterval(thinkingTimer);
     if (e.name !== 'AbortError') {
       bubble.innerHTML = '<em style="color:var(--red)">Error al conectar. Intenta de nuevo.</em>';
     }
   }
 
+  clearInterval(thinkingTimer);
   isLoading = false;
   currentStream = null;
   document.getElementById('send-btn').style.display = 'flex';
