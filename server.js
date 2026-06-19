@@ -754,30 +754,41 @@ Si el usuario acepta, genera el contenido en formato HTML con el diseño de Cato
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
+    // Feedback inmediato: avisar al frontend que estamos procesando
+    res.write(`data: ${JSON.stringify({ status: 'thinking' })}\n\n`);
+    res.flushHeaders?.();
+
     // ════════════════════════════════════════════════════════════════
     // ARQUITECTURA v4 — Magisterium RESPONDE, Anthropic FORMATEA
     // ════════════════════════════════════════════════════════════════
 
-    const magTimeout = (promise, ms=20000) => Promise.race([
+    const magTimeout = (promise, ms=15000) => Promise.race([
       promise,
       new Promise((_, reject) => setTimeout(() => reject(new Error('Magisterium timeout')), ms))
     ]);
 
-    // 1. MAGISTERIUM = MOTOR DE RESPUESTA (contenido completo) + Search en paralelo
+    // 1. MAGISTERIUM = MOTOR DE RESPUESTA + Search en paralelo
+    // Heartbeat cada 2s para que la conexión no parezca muerta
+    const heartbeat = setInterval(() => {
+      try { res.write(`: keepalive\n\n`); } catch(e) {}
+    }, 2000);
+
     const [magChatText, magSearchResultsRaw] = await Promise.all([
       magTimeout(magisterium.chat.completions.create({
         model: 'magisterium-1',
-        max_tokens: 3000,
+        max_tokens: 1500,
         stream: false,
-        messages: [...messages.slice(-6)],  // Contexto conversacional
+        messages: [...messages.slice(-4)],
         ...(modo !== 'auto' ? { mode: modo } : {})
       }).then(r => r.choices[0]?.message?.content || '')).catch(e => {
         console.error('[Magisterium Chat]', e.message); return '';
       }),
-      buscarEnMagisterium(lastUserMsg, 5, modo).catch(e => {
+      buscarEnMagisterium(lastUserMsg, 4, modo).catch(e => {
         console.error('[Magisterium Search]', e.message); return [];
       })
     ]);
+
+    clearInterval(heartbeat);
 
     const magSearchResults = Array.isArray(magSearchResultsRaw)
       ? magSearchResultsRaw
