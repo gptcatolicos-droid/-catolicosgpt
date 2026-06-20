@@ -93,7 +93,7 @@
       "tipo": "Exorcismo menor / Oración de protección",
       "autor": "Papa León XIII, 1886",
       "texto_es": "San Miguel Arcángel, defiéndenos en la batalla.\nSé nuestro amparo contra la perversidad y acechanzas del diablo.\nQue Dios le reprima, pedimos suplicantes,\ny tú, Príncipe de la Milicia Celestial,\ncon el poder divino,\nencadena en el infierno a Satanás\ny a los otros espíritus malignos\nque vagan por el mundo para la perdición de las almas. Amén.",
-      "cuando_rezar": "Después de la misa (tradición preconciliar, hoy optativa), en momentos de tentación o peligro espiritual."
+      "cuando_rezar": "Después de la mesa (tradición preconciliar, hoy optativa), en momentos de tentación o peligro espiritual."
     },
     {
       "nombre": "Magnificat",
@@ -106,37 +106,8 @@
       "nombre": "Benedictus",
       "tipo": "Cántico de Zacarías",
       "origen": "Lc 1,68-79",
-      "texto_es": "Bendito sea el Señor, Dios de Israel,\nporque ha visitado y redimido a su pueblo,\nsuscitándonos una fuerza de salvación\nen la casa de David su siervo,\nsegún lo que había anunciado desde antiguo\npor boca de sus santos profetas.\nSalvación que nos libra de nuestros enemigos\ny de la mano de todos los que nos odian;\nrealizando la misericordia que tuvo con nuestros padres,\nrecordando su santa alianza\ny el juramento que juró a nuestro padre Abrahán.\nPara concedernos que, libres del temor,\narrebatados de la mano de los enemigos,\nle sirvamos con santidad y justicia\nen su presencia todos nuestros días.\nY a ti, niño, te llamarán profeta del Altísimo,\nporque irás delante del Señor\na preparar sus caminos,\nanunciando a su pueblo la salvación,\nel perdón de sus pecados.\nPor la entrañable misericordia de nuestro Dios,\nnos visitará el sol que nace de lo alto,\npara iluminar a los que viven en tinieblas\ny en sombra de muerte,\npara guiar nuestros pasos\nby el camino de la paz.",
+      "texto_es": "Bendito sea el Señor, Dios de Israel,\nporque ha visitado y redimido a su pueblo,\nsuscitándonos una fuerza de salvación\nen la casa de David su siervo,\nsegún lo que había anunciado desde antiguo\nby boca de sus santos profetas.\nSalvación que nos libra de nuestros enemigos\ny de la mano de todos los que nos odian;\nrealizando la misericordia que tuvo con nuestros padres,\nrecordando su santa alianza\ny el juramento que juró a nuestro padre Abrahán.\nPara concedernos que, libres del temor,\narrebatados de la mano de los enemigos,\nle sirvamos con santidad y justicia\nen su presencia todos nuestros días.\nY a ti, niño, te llamarán profeta del Altísimo,\nporque irás delante del Señor\na preparar sus caminos,\nanunciando a su pueblo la salvación,\nel perdón de sus pecados.\nPor la entrañable misericordia de nuestro Dios,\nnos visitará el sol que nace de lo alto,\npara iluminar a los que viven en tinieblas\ny en sombra de muerte,\npara guiar nuestros pasos\nen el camino de la paz.",
       "cuando_rezar": "En los Laudes diariamente."
-    }
-  ],
-  "novenas_populares": [
-    {
-      "nombre": "Novena a la Divina Misericordia",
-      "origen": "Revelada a Santa Faustina Kowalska (1937)",
-      "estructura": "9 días, cada día una intención especial encomendada por Jesús",
-      "dias": [
-        "Día 1: Toda la humanidad y especialmente los pecadores",
-        "Día 2: Las almas sacerdotales y religiosas",
-        "Día 3: Las almas devotas y fieles",
-        "Día 4: Los que no creen en Dios y los que aún no conocen a Cristo",
-        "Día 5: Las almas de los herejes y apóstatas",
-        "Día 6: Las almas mansas y humildes y las de los niños pequeños",
-        "Día 7: Las almas que veneran y glorifican la misericordia de Dios",
-        "Día 8: Las almas del Purgatorio",
-        "Día 9: Las almas tibias"
-      ],
-      "oracion_diaria": "Oh Jesús eterno, te ofrezco hoy...\n[intención del día]\n...por los méritos de tu Pasión, Muerte y Resurrección."
-    },
-    {
-      "nombre": "Novena a San José",
-      "dias_inicio": "10 de marzo (para terminar el 19, solemnidad)",
-      "oracion": "Oh San José, cuya protección es tan grande, tan fuerte, tan inmediata ante el trono de Dios, yo te encomiendo todos mis intereses y deseos. Oh San José, asísteme con tu poderosa intercesión y obtén de tu Divino Hijo todas las gracias espirituales y temporales que yo necesito..."
-    },
-    {
-      "nombre": "Novena de Aguinaldos",
-      "descripcion": "Novena de Navidad hispanoamericana. Del 16 al 24 de diciembre.",
-      "caracteristica": "Mezcla de canto, oración y celebración popular. Muy practicada en Colombia, Venezuela y Ecuador."
     }
   ]
 }

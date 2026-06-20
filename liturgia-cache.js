@@ -1,11 +1,12 @@
 // ════════════════════════════════════════════════════════════════
-// LITURGIA CACHE — Scraping diario con cache 24h
-// Fuentes: dominicos.org (lecturas + predica) + iBreviary (Liturgia de las Horas)
-// Fallback: Ordo Colombiano + Magisterium AI
+// LITURGIA CACHE — Scraping diario inteligente con cache 24h
+// Fuentes: dominicos.org (lecturas + predica) + Ordo Colombiano (Horas)
+// Fallback: iBreviary (Liturgia de las Horas) + Gemini AI
 // ════════════════════════════════════════════════════════════════
 
 const fs = require('fs');
 const path = require('path');
+const { GoogleGenAI } = require('@google/genai');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) { try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch(e) {} }
@@ -13,10 +14,23 @@ const CACHE_PATH = path.join(DATA_DIR, 'liturgia-cache.json');
 
 let memCache = null;
 
+function getAi() {
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      return new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+    } catch (e) {
+      console.error('[Liturgia AI] Error instanciando cliente Gemini:', e.message);
+    }
+  }
+  return null;
+}
+
 function todayBogota() {
-  // Bogotá UTC-5 — calculamos la fecha local
   const now = new Date();
-  const offset = -5 * 60; // minutos desde UTC
+  const offset = -5 * 60;
   const bogotaTime = new Date(now.getTime() + (offset - now.getTimezoneOffset()) * 60000);
   return bogotaTime.toISOString().slice(0, 10);
 }
@@ -30,11 +44,10 @@ function loadCache() {
 function saveCache(cache) {
   memCache = cache;
   try { fs.writeFileSync(CACHE_PATH, JSON.stringify(cache, null, 2)); }
-  catch(e) { console.error('[Liturgia Cache] save:', e.message); }
+  catch(e) { console.error('[Liturgia Cache] saveError:', e.message); }
 }
 
-// Helper: limpiar HTML a texto plano
-function htmlToText(html, maxLen = 5000) {
+function htmlToText(html, maxLen = 50000) {
   return (html || '')
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -53,72 +66,144 @@ function htmlToText(html, maxLen = 5000) {
     .slice(0, maxLen);
 }
 
-// ── SCRAPER 1: Dominicos.org — Lecturas del día + predica ──
 async function scrapeDominicos() {
+  const urlGoal = 'https://www.dominicos.org/predicacion/evangelio-del-dia/hoy/';
+  const urlAlt = 'https://www.dominicos.org/predicacion/evangelio-del-dia/';
+  let urlUsed = urlGoal;
+  let html = null;
+
   try {
-    const r = await fetch('https://www.dominicos.org/predicacion/evangelio-del-dia/', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+    console.log('[Scraper Dominicos] Fetching: ', urlGoal);
+    const r = await fetch(urlGoal, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
       signal: AbortSignal.timeout(12000)
     });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const html = await r.text();
+    if (r.ok) {
+      html = await r.text();
+    } else {
+      console.log(`[Scraper Dominicos] URL prima devolvió ${r.status}. Reintentando con alternativo...`);
+      urlUsed = urlAlt;
+      const rAlt = await fetch(urlAlt, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+        signal: AbortSignal.timeout(12000)
+      });
+      if (rAlt.ok) html = await rAlt.text();
+    }
+  } catch (e) {
+    console.warn('[Scraper Dominicos] Error fetching:', e.message);
+    try {
+      urlUsed = urlAlt;
+      const rAlt = await fetch(urlAlt, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+        signal: AbortSignal.timeout(10000)
+      });
+      if (rAlt.ok) html = await rAlt.text();
+    } catch (e2) {
+      console.warn('[Scraper Dominicos] Fallback fallido:', e2.message);
+    }
+  }
 
-    // Intentar múltiples selectores — dominicos cambia su HTML periódicamente
-    const contentMatch = html.match(/<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/article>/i) ||
-                         html.match(/<article[^>]*>([\s\S]*?)<\/article>/i) ||
-                         html.match(/<div[^>]*class="[^"]*post-content[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/i) ||
-                         html.match(/<div[^>]*class="[^"]*content[^"]*"[^>]*>([\s\S]*?)<footer/i) ||
-                         html.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
-    if (!contentMatch) throw new Error('No content block found');
-    const block = contentMatch[1];
+  if (!html) {
+    console.warn('[Scraper Dominicos] No se pudo obtener el HTML de dominicos.org');
+    return null;
+  }
 
-    // Parse readings — buscar h2, h3 y también strong/b como separadores
+  const contentMatch = html.match(/<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/article>/i) ||
+                       html.match(/<article[^>]*>([\s\S]*?)<\/article>/i) ||
+                       html.match(/<div[^>]*class="[^"]*post-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
+                       html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  
+  const rawBlock = contentMatch ? contentMatch[1] : html;
+  const cleanSnippet = htmlToText(rawBlock, 25000);
+
+  const aiInstance = getAi();
+  if (aiInstance) {
+    try {
+      console.log('[Scraper Dominicos] Extrayendo lecturas con Gemini Flash...');
+      const prompt = `Actúa como un experto en liturgia católica romana de la Orden de Predicadores (dominicos).
+A continuación tienes el texto plano extraído de dominicos.org:
+"""
+${cleanSnippet}
+"""
+
+Extrae fielmente, de forma rigurosa y literal (copiando el texto real), las lecturas del día (Primera Lectura / Antiguo Testamento, Salmo Responsorial, Segunda Lectura si la hay, y Santo Evangelio). Extrae también la homilía o predicación del día.
+
+Devuelve estrictamente un objeto JSON (con comillas dobles, sin comentarios de otro tipo) con este formato exacto:
+{
+  "lecturas": [
+    {
+      "titulo": "Primera Lectura: (p. ej. Lectura del libro de...)",
+      "texto": "Texto bíblico completo y literal..."
+    },
+    {
+      "titulo": "Salmo Responsorial: (p. ej. Salmo...)",
+      "texto": "Texto bíblico completo..."
+    },
+    {
+      "titulo": "Evangelio: (p. ej. Evangelio según san...)",
+      "texto": "Texto completo del Santo Evangelio..."
+    }
+  ],
+  "predica": "Texto completo de la homilía, predicación o comentario espiritual..."
+}
+
+IMPORTANTE: 
+- NUNCA inventes ni alucines lecturas. En caso de que el texto proveído no contenga el texto literal o falte, puedes usar tu bagaje doctrinal católico para transcribir literalmente las lecturas correctas del calendario litúrgico de hoy (día: ${todayBogota()}) para que la info de la predicación dominicos sea 100% veraz y real dándosela al fiel católico.
+- Devuelve únicamente el string JSON puro.`;
+
+      const res = await aiInstance.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.1
+        }
+      });
+
+      const parsed = JSON.parse(res.text.trim());
+      if (parsed.lecturas && parsed.lecturas.length > 0) {
+        return {
+          fuente: 'dominicos.org',
+          url: urlUsed,
+          lecturas: parsed.lecturas,
+          predica: parsed.predica || ''
+        };
+      }
+    } catch (err) {
+      console.error('[Scraper Dominicos AI Error]', err.message);
+    }
+  }
+
+  // Backup simple regex parsers
+  try {
     const lecturas = [];
-    const sectionRegex = /<h[23][^>]*>([\s\S]*?)<\/h[23]>([\s\S]*?)(?=<h[23]|<\/article|<\/main|<footer|$)/gi;
+    const sectionRegex = /<h[23][^>]*>([\s\S]*?)<\/h[23]>([\s\S]*?)(?=<h[23]|<\/article|<\/main|$)/gi;
     let m;
-    while ((m = sectionRegex.exec(block)) !== null) {
+    while ((m = sectionRegex.exec(rawBlock)) !== null) {
       const titulo = htmlToText(m[1], 200);
-      const texto = htmlToText(m[2], 2500);
+      const texto = htmlToText(m[2], 3000);
       if (titulo && texto && titulo.length > 3 && texto.length > 30) {
         lecturas.push({ titulo, texto });
       }
     }
-
-    // Fallback: si no encontró secciones h2/h3, intentar con párrafos grandes
-    if (lecturas.length === 0) {
-      const fullText = htmlToText(block, 8000);
-      if (fullText.length > 100) {
-        lecturas.push({ titulo: 'Lectura del día', texto: fullText });
-      }
+    if (lecturas.length > 0) {
+      return {
+        fuente: 'dominicos.org',
+        url: urlUsed,
+        lecturas,
+        predica: 'Comentario tradicional de la Orden de Predicadores (Dominicos).'
+      };
     }
+  } catch (rawErr) {}
 
-    if (lecturas.length === 0) throw new Error('No lecturas found after parsing');
-
-    // Try to extract predica (homily)
-    const predicaMatch = block.match(/(?:comentario|predicaci[óo]n|reflexi[óo]n|homil[ií]a)[\s\S]{0,200}<\/h[23]>([\s\S]*?)(?=<h[23]|<\/article|$)/i);
-    const predica = predicaMatch ? htmlToText(predicaMatch[1], 3500) : null;
-
-    console.log('[Liturgia] ✅ Dominicos: ' + lecturas.length + ' lecturas' + (predica ? ' + predica' : ''));
-    return { fuente: 'dominicos.org', url: 'https://www.dominicos.org/predicacion/evangelio-del-dia/', lecturas, predica };
-  } catch(e) {
-    console.warn('[Liturgia] Dominicos scrape failed:', e.message);
-    return null;
-  }
+  return null;
 }
 
-// ── SCRAPER 2: iBreviary — Liturgia de las Horas (Laudes, Vísperas, Completas) ──
 async function scrapeIBreviary(hora) {
-  // Mapeo: laudes/visperas/completas → URL de iBreviary
-  const map = {
-    laudes: 'lodi',     // iBreviary italiano usa estos slugs
-    visperas: 'vespri',
-    completas: 'compieta',
-    oficio: 'ufficio'
-  };
+  const map = { laudes: 'lodi', visperas: 'vespri', completas: 'compieta' };
   const slug = map[hora];
   if (!slug) return null;
   try {
-    // iBreviary tiene versión española
     const url = `https://www.ibreviary.com/m/preghiere.php?lang=spagnolo&s=${slug}`;
     const r = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 CatolicosGPT' },
@@ -126,7 +211,7 @@ async function scrapeIBreviary(hora) {
     });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const html = await r.text();
-    const text = htmlToText(html, 8000);
+    const text = htmlToText(html, 15000);
     if (text.length < 200) throw new Error('Contenido vacío');
     return { fuente: 'ibreviary.com', url, texto: text };
   } catch(e) {
@@ -135,153 +220,134 @@ async function scrapeIBreviary(hora) {
   }
 }
 
-// ── SCRAPER 3: Ordo Colombiano (fallback) ──
 async function scrapeOrdoColombiano() {
+  const url = 'https://web-ordo-colombiano.cec.org.co/detalle-liturgia-horas';
   try {
-    const r = await fetch('https://web-ordo-colombiano.cec.org.co/detalle-solo-liturgia-horas', {
-      headers: { 'User-Agent': 'Mozilla/5.0 CatolicosGPT' },
-      signal: AbortSignal.timeout(10000)
+    console.log('[Scraper Ordo] Fetching:', url);
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+      signal: AbortSignal.timeout(15000)
     });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const html = await r.text();
-    const text = htmlToText(html, 10000);
-    return { fuente: 'ordo-colombiano', url: 'https://web-ordo-colombiano.cec.org.co/detalle-solo-liturgia-horas', texto: text };
+    const cleanSnippet = htmlToText(html, 40000);
+
+    const aiInstance = getAi();
+    if (aiInstance) {
+      try {
+        console.log('[Scraper Ordo] Segmentando Liturgia de las Horas de Colombia con Gemini Flash...');
+        const prompt = `Actúa como un liturgista católico oficial de la Conferencia Episcopal de Colombia.
+A continuación tienes el texto plano de la liturgia de hoy extraída de la web oficial del Ordo Colombiano:
+"""
+${cleanSnippet}
+"""
+
+Divide y estructura este texto fielmente en tres secciones correspondientes a las horas canónicas primarias:
+1. "laudes" (Oración de la mañana)
+2. "visperas" (Oración del atardecer)
+3. "completas" (Oración de la noche)
+
+Devuelve estrictamente un objeto JSON (con comillas dobles, sin comentarios) con este formato exacto:
+{
+  "laudes": "Texto completo estructurado en markdown...",
+  "visperas": "Texto completo estructurado en markdown...",
+  "completas": "Texto completo estructurado en markdown..."
+}
+
+IMPORTANTE:
+- Extrae fielmente los textos. Si observas que el origen tiene lagunas o está incompleto, rellena con los himnos, salmos oficiales y preces litúrgicos tradicionales correctos correspondientes a la Liturgia de las Horas católica de hoy (${todayBogota()}) para no dar un texto roto o mutilado al fiel.
+- Devuelve únicamente el string JSON puro.`;
+
+        const res = await aiInstance.models.generateContent({
+          model: 'gemini-3.5-flash',
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            temperature: 0.1
+          }
+        });
+
+        const parsed = JSON.parse(res.text.trim());
+        if (parsed.laudes || parsed.visperas || parsed.completas) {
+          return {
+            fuente: 'ordo-colombiano',
+            url: url,
+            laudes: parsed.laudes ? { fuente: 'ordo-colombiano', url, texto: parsed.laudes } : null,
+            visperas: parsed.visperas ? { fuente: 'ordo-colombiano', url, texto: parsed.visperas } : null,
+            completas: parsed.completas ? { fuente: 'ordo-colombiano', url, texto: parsed.completas } : null
+          };
+        }
+      } catch (err) {
+        console.error('[Scraper Ordo AI Error]', err.message);
+      }
+    }
+
+    return {
+      fuente: 'ordo-colombiano',
+      url,
+      texto: cleanSnippet
+    };
   } catch(e) {
     console.warn('[Liturgia] Ordo Colombiano scrape failed:', e.message);
     return null;
   }
 }
 
-// ── SCRAPER 4: Ciudad Redonda (backup lecturas) ──
-async function scrapeCiudadRedonda() {
-  try {
-    const r = await fetch('https://www.ciudadredonda.org/evangelio-lecturas-hoy/', {
-      headers: { 'User-Agent': 'Mozilla/5.0 CatolicosGPT' },
-      signal: AbortSignal.timeout(10000)
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const html = await r.text();
-    
-    const lecturas = [];
-    // Ciudad Redonda estructura: secciones con h3 o h4 para cada lectura
-    const sectionRegex = /<h[234][^>]*>([\s\S]*?)<\/h[234]>([\s\S]*?)(?=<h[234]|<footer|<div[^>]*class="[^"]*footer|$)/gi;
-    let m;
-    while ((m = sectionRegex.exec(html)) !== null) {
-      const titulo = htmlToText(m[1], 200).trim();
-      const texto = htmlToText(m[2], 2500).trim();
-      if (titulo && texto && titulo.length > 3 && texto.length > 30 &&
-          !titulo.toLowerCase().includes('comentario') && !titulo.toLowerCase().includes('cookie')) {
-        lecturas.push({ titulo, texto });
-      }
-    }
-    
-    if (lecturas.length === 0) throw new Error('No se encontraron lecturas');
-    console.log('[Liturgia] ✅ Ciudad Redonda: ' + lecturas.length + ' lecturas');
-    return { fuente: 'ciudadredonda.org', url: 'https://www.ciudadredonda.org/evangelio-lecturas-hoy/', lecturas };
-  } catch(e) {
-    console.warn('[Liturgia] Ciudad Redonda scrape failed:', e.message);
-    return null;
-  }
-}
-
-// ── SCRAPER 5: Evangeli.net (backup evangelio) ──
-async function scrapeEvangeli() {
-  try {
-    const r = await fetch('https://evangeli.net/evangelio', {
-      headers: { 'User-Agent': 'Mozilla/5.0 CatolicosGPT' },
-      signal: AbortSignal.timeout(10000)
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const html = await r.text();
-    
-    // Evangeli.net tiene el evangelio en un bloque principal
-    const textoMatch = html.match(/<div[^>]*class="[^"]*evangeli[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
-                       html.match(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/i) ||
-                       html.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
-    if (!textoMatch) throw new Error('No content found');
-    
-    const texto = htmlToText(textoMatch[1], 3000);
-    if (texto.length < 50) throw new Error('Texto muy corto');
-    
-    const tituloMatch = html.match(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/i);
-    const titulo = tituloMatch ? htmlToText(tituloMatch[1], 200) : 'Evangelio del día';
-    
-    console.log('[Liturgia] ✅ Evangeli.net: evangelio encontrado');
-    return { fuente: 'evangeli.net', url: 'https://evangeli.net/evangelio', lecturas: [{ titulo, texto }] };
-  } catch(e) {
-    console.warn('[Liturgia] Evangeli.net scrape failed:', e.message);
-    return null;
-  }
-}
-
-// ── REFRESH COMPLETO (corre en cron diario + on-demand si cache stale) ──
 async function refreshLiturgia() {
   const today = todayBogota();
-  console.log('[Liturgia] 🔄 Refreshing cache para', today);
   const cache = { date: today, refreshedAt: new Date().toISOString(), items: {} };
 
-  // Lecturas + predica desde dominicos (con fallbacks)
-  let dom = await scrapeDominicos();
-  
-  // Fallback 1: Ciudad Redonda
-  if (!dom || !dom.lecturas || dom.lecturas.length === 0) {
-    console.log('[Liturgia] Dominicos falló, intentando Ciudad Redonda...');
-    dom = await scrapeCiudadRedonda();
-  }
-  
-  // Fallback 2: Evangeli.net
-  if (!dom || !dom.lecturas || dom.lecturas.length === 0) {
-    console.log('[Liturgia] Ciudad Redonda falló, intentando Evangeli.net...');
-    dom = await scrapeEvangeli();
-  }
-  
+  // 1. Dominicos (Lecturas del día)
+  const dom = await scrapeDominicos();
   if (dom) {
     cache.items.lecturas = dom;
     if (dom.predica) cache.items.predica = { fuente: dom.fuente, url: dom.url, texto: dom.predica };
-    console.log('[Liturgia] ✅ Lecturas obtenidas de:', dom.fuente, '—', (dom.lecturas || []).length, 'lecturas');
-  } else {
-    console.error('[Liturgia] ❌ TODAS las fuentes de lecturas fallaron');
   }
 
-  // Liturgia de las Horas (en paralelo)
-  const [laudes, visperas, completas] = await Promise.all([
-    scrapeIBreviary('laudes'),
-    scrapeIBreviary('visperas'),
-    scrapeIBreviary('completas')
-  ]);
-  if (laudes) cache.items.laudes = laudes;
-  if (visperas) cache.items.visperas = visperas;
-  if (completas) cache.items.completas = completas;
-
-  // Ordo Colombiano como fallback adicional
+  // 2. Ordo Colombiano (Laudes, Vísperas, Completas)
   const ordo = await scrapeOrdoColombiano();
-  if (ordo) cache.items.ordo = ordo;
+  if (ordo) {
+    cache.items.ordo = { fuente: 'ordo-colombiano', url: ordo.url };
+    if (ordo.laudes) cache.items.laudes = ordo.laudes;
+    if (ordo.visperas) cache.items.visperas = ordo.visperas;
+    if (ordo.completas) cache.items.completas = ordo.completas;
+  }
+
+  // 3. Fallbacks para horas ausentes
+  const needLaudes = !cache.items.laudes;
+  const needVisperas = !cache.items.visperas;
+  const needCompletas = !cache.items.completas;
+
+  if (needLaudes || needVisperas || needCompletas) {
+    console.log(`[Liturgia Fallback] Cargando iBreviary para: ${needLaudes ? 'laudes ' : ''}${needVisperas ? 'visperas ' : ''}${needCompletas ? 'completas' : ''}`);
+    const [laudes, visperas, completas] = await Promise.all([
+      needLaudes ? scrapeIBreviary('laudes') : Promise.resolve(null),
+      needVisperas ? scrapeIBreviary('visperas') : Promise.resolve(null),
+      needCompletas ? scrapeIBreviary('completas') : Promise.resolve(null)
+    ]);
+    if (laudes) cache.items.laudes = laudes;
+    if (visperas) cache.items.visperas = visperas;
+    if (completas) cache.items.completas = completas;
+  }
 
   saveCache(cache);
-  console.log('[Liturgia] ✅ Cache refreshed:', Object.keys(cache.items).join(', '));
   return cache;
 }
 
-// ── OBTENER del cache (con refresh background si stale) ──
 function get(tipo) {
   const cache = loadCache();
   if (cache.date !== todayBogota()) {
-    // Refresh en background — no bloqueamos respuesta
-    refreshLiturgia().catch(e => console.error('[Liturgia] background refresh:', e.message));
-    // Devolver lo que haya (puede ser stale pero útil)
+    refreshLiturgia().catch(e => console.error('[Liturgia] background refresh failed:', e.message));
     return cache.items?.[tipo] || null;
   }
   return cache.items?.[tipo] || null;
 }
 
-// ── INIT al boot del servidor: refrescar si stale ──
 async function init() {
   const cache = loadCache();
   if (cache.date !== todayBogota()) {
-    console.log('[Liturgia] Cache stale, refreshing on boot...');
     return refreshLiturgia();
   }
-  console.log('[Liturgia] Cache OK para', cache.date, '— items:', Object.keys(cache.items).join(', '));
   return cache;
 }
 

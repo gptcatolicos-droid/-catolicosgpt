@@ -46,17 +46,9 @@ function slugify(text) {
 // Enrichment con IA — genera título SEO, descripción, keywords desde contenido
 async function enrichBlogWithAI(title, contentMd, openai) {
   try {
+    if (!openai) throw new Error('Client IA no configurado');
     const preview = (contentMd || '').slice(0, 2500);
-    const r = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 800,
-      temperature: 0.3,
-      messages: [{
-        role: 'system',
-        content: 'Eres experto en SEO católico. Generas metadata optimizada para artículos de blog católicos en español, basándote en el Magisterio.'
-      }, {
-        role: 'user',
-        content: `Genera metadata SEO para este artículo de blog católico.
+    const promptContent = `Genera metadata SEO para este artículo de blog católico.
 
 TÍTULO ORIGINAL: "${title}"
 
@@ -71,10 +63,37 @@ Responde SOLO JSON válido en español (sin markdown, sin backticks):
   "altText": "Texto alt SEO para la imagen destacada",
   "extracto": "Extracto / lead del artículo en 30-50 palabras (para preview en lista de blog)",
   "categoria": "una sola de: catequesis, doctrina, espiritualidad, santos, liturgia, magisterio, familia, oracion, biblia, apologetica"
-}`
-      }]
-    });
-    let text = r.choices[0].message.content.trim();
+}`;
+
+    let text = '';
+    
+    if (openai.models && typeof openai.models.generateContent === 'function') {
+      // Gemini GoogleGenAI
+      const r = await openai.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: promptContent,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.3
+        }
+      });
+      text = r.text || '';
+    } else {
+      // Legacy OpenAI compat
+      const r = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        max_tokens: 800,
+        temperature: 0.3,
+        messages: [{
+          role: 'system',
+          content: 'Eres experto en SEO católico. Generas metadata optimizada para artículos de blog católicos en español, basándote en el Magisterio.'
+        }, {
+          role: 'user',
+          content: promptContent
+        }]
+      });
+      text = r.choices[0].message.content.trim();
+    }
     text = text.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
     const start = text.indexOf('{');
     const end = text.lastIndexOf('}');
@@ -172,7 +191,7 @@ function renderShortcodes(html, opts = {}) {
     const inf = getInfografia && getInfografia(slug);
     if (!inf) return `<div class="shortcode-error" style="padding:14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-size:13px">⚠️ Infografía "${slug}" no encontrada</div>`;
     const img = inf.imagenes?.[0]?.url || '';
-    return `<figure class="embed-infografia" style="margin:24px 0;padding:0;border:1px solid var(--hairline);border-radius:14px;overflow:hidden;background:#fff">
+    return `<figure class="embed-infografia" style="margin:24px 0;padding:0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff">
       <a href="/infografias/${inf.slug}" style="text-decoration:none;color:inherit;display:block">
         ${img ? `<img src="${img}" alt="${inf.altText || inf.titulo || ''}" style="width:100%;display:block">` : ''}
         <figcaption style="padding:14px 18px;background:var(--cream-2)">
@@ -242,7 +261,6 @@ function deletePost(slug) {
   saveBlog(catalog);
   return before !== catalog.posts.length;
 }
-
 
 function escapeHtml(s) {
   return (s || '').toString()

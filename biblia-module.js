@@ -6,13 +6,19 @@
 const fs = require('fs');
 const path = require('path');
 
-// Cargar datos bíblicos (debe existir data/biblia.json con estructura: { "Mateo": { "5": {...} } })
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+
+// Cargar datos bíblicos (debe existir data/biblia.json con estructura)
 function loadBiblia() {
   try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/biblia.json'), 'utf8'));
+    return JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'biblia.json'), 'utf8'));
   } catch(e) {
-    console.warn('[Biblia] No se pudo cargar data/biblia.json:', e.message);
-    return {};
+    try {
+      return JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'biblia.json'), 'utf8'));
+    } catch(e2) {
+      console.warn('[Biblia] No se pudo cargar data/biblia.json:', e2.message);
+      return {};
+    }
   }
 }
 
@@ -29,16 +35,17 @@ function normalizarLibro(nombre) {
 
 // Buscar libro en BIBLIA
 function buscarLibro(nombre) {
-  const norm = normalizarLibro(nombre);
+  const n = normalizarLibro(nombre);
   
   // Búsqueda exacta
-  for (const libro of Object.keys(BIBLIA)) {
-    if (normalizarLibro(libro) === norm) return libro;
+  const keys = Object.keys(BIBLIA);
+  for (const libro of keys) {
+    if (normalizarLibro(libro) === n) return libro;
   }
   
   // Búsqueda parcial (contiene)
-  for (const libro of Object.keys(BIBLIA)) {
-    if (normalizarLibro(libro).includes(norm) || norm.includes(normalizarLibro(libro))) {
+  for (const libro of keys) {
+    if (normalizarLibro(libro).includes(n) || n.includes(normalizarLibro(libro))) {
       return libro;
     }
   }
@@ -78,9 +85,10 @@ function obtenerCita(cita) {
   
   const { libro, capitulo, verVer, verHasta } = parsed;
   
-  if (!BIBLIA[libro]) return null;
+  const bib = loadBiblia();
+  if (!bib[libro]) return null;
   
-  const cap = BIBLIA[libro][capitulo.toString()];
+  const cap = bib[libro][capitulo.toString()];
   if (!cap) return null;
   
   // Si no especifica versículos, devolver todo el capítulo
@@ -127,8 +135,8 @@ function renderizarCita(cita, esChat = false) {
     if (tipo === 'capitulo_completo') {
       // Mostrar primeros 5 versículos y botón "Ver más"
       const vers = Object.entries(versiculos).slice(0, 5);
-      vers.forEach(([num, texto]) => {
-        html += `<p style="margin:4px 0"><sup>${num}</sup> <em>${texto}</em></p>`;
+      vers.forEach(([num, de]) => {
+        html += `<p style="margin:4px 0"><sup>${num}</sup> <em>${de}</em></p>`;
       });
       
       if (Object.keys(versiculos).length > 5) {
@@ -138,8 +146,8 @@ function renderizarCita(cita, esChat = false) {
       }
     } else {
       // Versículos específicos
-      Object.entries(versiculos).forEach(([num, texto]) => {
-        html += `<p style="margin:4px 0"><sup>${num}</sup> <em>${texto}</em></p>`;
+      Object.entries(versiculos).forEach(([num, de]) => {
+        html += `<p style="margin:4px 0"><sup>${num}</sup> <em>${de}</em></p>`;
       });
     }
     
@@ -151,8 +159,8 @@ function renderizarCita(cita, esChat = false) {
       <h2>${titulo}</h2>
       <div style="color:var(--ink-2);line-height:1.8">`;
     
-    Object.entries(versiculos).forEach(([num, texto]) => {
-      html += `<p><sup style="font-weight:600;color:var(--gold-deep)">${num}</sup> ${texto}</p>`;
+    Object.entries(versiculos).forEach(([num, de]) => {
+      html += `<p><sup style="font-weight:600;color:var(--gold-deep)">${num}</sup> ${de}</p>`;
     });
     
     html += `</div></div>`;
@@ -172,7 +180,7 @@ function detectarSolicitudBiblica(texto) {
 function crearSistemaBiblia() {
   return `
 Cuando el usuario pida una cita bíblica (ej: "Muestra Mateo 5", "Versículo Jn 3:16", "Capítulo 5 de Romanos"):
-1. Busca el passaje en la Biblia disponible
+1. Busca el pasaje en la Biblia disponible
 2. Si es un capítulo completo, muestra los primeros 5 versículos y ofrece botón para ver todo
 3. Si son versículos específicos, muéstralos todos
 4. Siempre proporciona contexto teológico y pastoral sobre el pasaje

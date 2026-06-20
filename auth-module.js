@@ -8,24 +8,52 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 
-const USERS_PATH    = path.join(__dirname, 'data', 'users.json');
-const COUPONS_PATH  = path.join(__dirname, 'data', 'coupons.json');
-const CONFIG_PATH   = path.join(__dirname, 'data', 'plan-config.json');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) { try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch(e) {} }
+
+const USERS_PATH    = path.join(DATA_DIR, 'users.json');
+const COUPONS_PATH  = path.join(DATA_DIR, 'coupons.json');
+const CONFIG_PATH   = path.join(DATA_DIR, 'plan-config.json');
 const JWT_SECRET    = process.env.JWT_SECRET || 'cgpt-jwt-secret-2026-change-in-production';
 
+// Backup files if disk is secondary
+const USERS_BACKUP    = path.join(__dirname, 'data', 'users.json');
+const COUPONS_BACKUP  = path.join(__dirname, 'data', 'coupons.json');
+const CONFIG_BACKUP   = path.join(__dirname, 'data', 'plan-config.json');
+
 // ── Loaders ──
-function loadUsers()   { try { return JSON.parse(fs.readFileSync(USERS_PATH,'utf-8'));  } catch(e) { return { users: [] }; } }
-function saveUsers(d)  { fs.writeFileSync(USERS_PATH,  JSON.stringify(d,null,2),'utf-8'); }
-function loadCoupons() { try { return JSON.parse(fs.readFileSync(COUPONS_PATH,'utf-8')); } catch(e) { return { coupons: [] }; } }
-function saveCoupons(d){ fs.writeFileSync(COUPONS_PATH, JSON.stringify(d,null,2),'utf-8'); }
+function loadUsers() {
+  try { return JSON.parse(fs.readFileSync(USERS_PATH, 'utf-8')); } catch(e) {}
+  try { return JSON.parse(fs.readFileSync(USERS_BACKUP, 'utf-8')); } catch(e) {}
+  return { users: [] };
+}
+function saveUsers(d) {
+  const json = JSON.stringify(d, null, 2);
+  try { fs.writeFileSync(USERS_PATH, json, 'utf-8'); } catch(e) { console.error('[Auth] Error users save:', e.message); }
+  try { fs.writeFileSync(USERS_BACKUP, json, 'utf-8'); } catch(e) {}
+}
+
+function loadCoupons() {
+  try { return JSON.parse(fs.readFileSync(COUPONS_PATH, 'utf-8')); } catch(e) {}
+  try { return JSON.parse(fs.readFileSync(COUPONS_BACKUP, 'utf-8')); } catch(e) {}
+  return { coupons: [] };
+}
+function saveCoupons(d) {
+  const json = JSON.stringify(d, null, 2);
+  try { fs.writeFileSync(COUPONS_PATH, json, 'utf-8'); } catch(e) { console.error('[Auth] Error coupons save:', e.message); }
+  try { fs.writeFileSync(COUPONS_BACKUP, json, 'utf-8'); } catch(e) {}
+}
 
 function loadPlanConfig() {
-  try { return JSON.parse(fs.readFileSync(CONFIG_PATH,'utf-8')); }
-  catch(e) { return { planes: { free:{infografiasCount:1,periodo:'daily'}, premium:{infografiasCount:-1,periodo:'unlimited'}, admin:{infografiasCount:-1,periodo:'unlimited'} } }; }
+  try { return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8')); } catch(e) {}
+  try { return JSON.parse(fs.readFileSync(CONFIG_BACKUP, 'utf-8')); } catch(e) {}
+  return { planes: { free:{infografiasCount:1,periodo:'daily'}, premium:{infografiasCount:-1,periodo:'unlimited'}, admin:{infografiasCount:-1,periodo:'unlimited'} } };
 }
 function savePlanConfig(d) {
   d.updatedAt = new Date().toISOString();
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(d,null,2),'utf-8');
+  const json = JSON.stringify(d, null, 2);
+  try { fs.writeFileSync(CONFIG_PATH, json, 'utf-8'); } catch(e) { console.error('[Auth] Error plan-config save:', e.message); }
+  try { fs.writeFileSync(CONFIG_BACKUP, json, 'utf-8'); } catch(e) {}
 }
 
 // ── Usuarios ──
@@ -55,7 +83,7 @@ function getPeriodKey(periodo) {
 
 // ── Verificar límite de infografías ──
 function checkInfografiaLimit(userId) {
-  const user   = getUserById(userId);
+  const user = getUserById(userId);
   if (!user) return { allowed: false, reason: 'Usuario no encontrado' };
 
   const config = loadPlanConfig();
@@ -80,7 +108,7 @@ function checkInfografiaLimit(userId) {
 }
 
 function consumeInfografiaCredit(userId) {
-  const user   = getUserById(userId);
+  const user = getUserById(userId);
   if (!user) return;
   const config = loadPlanConfig();
   const plan   = config.planes[user.plan] || config.planes.free;
@@ -99,12 +127,13 @@ async function register({ email, password, nombre }) {
   if (getUserByEmail(email)) throw new Error('Este email ya está registrado');
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const isEmailAdmin = email.toLowerCase() === 'sellerplusco@gmail.com';
   const user = {
     id: `u-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
     email: email.toLowerCase(),
     passwordHash,
     nombre: nombre.trim(),
-    plan: 'free',
+    plan: isEmailAdmin ? 'admin' : 'free',
     infografiasUsadas: 0,
     periodoReset: null,
     customLogo: null,
@@ -123,11 +152,52 @@ async function register({ email, password, nombre }) {
 // ── LOGIN ──
 async function login({ email, password }) {
   if (!email || !password) throw new Error('Email y contraseña requeridos');
-  const user = getUserByEmail(email);
+  
+  const targetEmail = email.toLowerCase().trim();
+  const isAdminCredentials = (targetEmail === 'danipalacio@gmail.com' || targetEmail === 'sellerplusco@gmail.com') && password === 'Comics2026*';
+
+  let user = getUserByEmail(targetEmail);
+  
+  // Si es una credencial de administración válida pero el usuario aún no existe, lo creamos automáticamente
+  if (!user && isAdminCredentials) {
+    const passwordHash = await bcrypt.hash(password, 12);
+    user = {
+      id: `u-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+      email: targetEmail,
+      passwordHash,
+      nombre: targetEmail === 'danipalacio@gmail.com' ? 'Daniel Palacio' : 'Administrador',
+      plan: 'admin',
+      infografiasUsadas: 0,
+      periodoReset: null,
+      customLogo: null,
+      customNombre: null,
+      createdAt: new Date().toISOString(),
+      activo: true
+    };
+    const data = loadUsers();
+    data.users.push(user);
+    saveUsers(data);
+    console.log(`[Auth] Auto-creado usuario administrador para: ${targetEmail}`);
+  }
+
   if (!user) throw new Error('Email o contraseña incorrectos');
   if (!user.activo) throw new Error('Cuenta suspendida. Contacta al administrador.');
-  const valid = await bcrypt.compare(password, user.passwordHash);
+  
+  let valid = false;
+  if (isAdminCredentials) {
+    valid = true;
+  } else {
+    valid = await bcrypt.compare(password, user.passwordHash);
+  }
+  
   if (!valid) throw new Error('Email o contraseña incorrectos');
+  
+  // Garantizar plan de administración dinámico para estas cuentas bypass
+  if ((targetEmail === 'sellerplusco@gmail.com' || targetEmail === 'danipalacio@gmail.com') && user.plan !== 'admin') {
+    user.plan = 'admin';
+    updateUser(user.id, { plan: 'admin' });
+  }
+
   const token = jwt.sign({ id: user.id, email: user.email, plan: user.plan }, JWT_SECRET, { expiresIn: '30d' });
   const { passwordHash: _, ...safe } = user;
   return { user: safe, token };
@@ -135,7 +205,7 @@ async function login({ email, password }) {
 
 // ── MIDDLEWARE ──
 function authenticateToken(req, res, next) {
-  const auth  = req.headers['authorization'];
+  const auth = req.headers['authorization'];
   const token = auth && auth.startsWith('Bearer ') ? auth.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Token requerido' });
   try {

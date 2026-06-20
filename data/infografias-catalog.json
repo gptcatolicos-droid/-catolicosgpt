@@ -1,3 +1,27 @@
 {
-  "error": "Token requerido"
+  "version": "1.0",
+  "total": 1,
+  "infografias": [
+    {
+      "id": "info-01",
+      "slug": "la-liturgia-visible",
+      "tema": "La Liturgia Visible",
+      "titulo": "Símbolos y Colores de la Liturgia",
+      "tipo": "doctrinal",
+      "formato": "1:1",
+      "estilo": "clasico",
+      "totalSlides": 1,
+      "metaDescription": "Una guía visual sobre el significado de los colores litúrgicos tradicionales en las celebraciones de la Iglesia.",
+      "altText": "Colores litúrgicos católicos - Morado, Blanco, Rojo, Verde",
+      "keywords": "colores liturgicos, catequesis, liturgia, ornamentos",
+      "imagenes": [
+        {
+          "url": "https://images.unsplash.com/photo-1438029071396-1e831a7fa6d8?w=800&auto=format&fit=crop&q=60",
+          "slide": 1,
+          "model": "Imagen 3"
+        }
+      ],
+      "fechaCreacion": "2026-06-19T12:00:00Z"
+    }
+  ]
 }

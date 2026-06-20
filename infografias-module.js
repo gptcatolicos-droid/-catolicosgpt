@@ -15,54 +15,42 @@ cloudinary.config({
 });
 
 // ── Catálogo ──
-// Path persistente: si DATA_DIR está seteada (Render Disk), usar esa; sino fallback a /data local
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) {
   try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch(e) {}
 }
 const CATALOG_PATH = path.join(DATA_DIR, 'infografias-catalog.json');
-// Backup secundario en /data del repo (por si falla el disco)
 const CATALOG_BACKUP = path.join(__dirname, 'data', 'infografias-catalog.json');
 
 function loadCatalog() {
-  // Intentar 1: path principal (Render Disk)
   try {
     const data = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf-8'));
     if (data && data.infografias) return data;
   } catch(e) {}
-  // Intentar 2: backup del repo
   try {
     const data = JSON.parse(fs.readFileSync(CATALOG_BACKUP, 'utf-8'));
-    if (data && data.infografias) {
-      console.log('[Catalog] ⚠️ Cargado desde backup repo. Considera configurar Render Disk + rebuild desde Cloudinary.');
-      return data;
-    }
+    if (data && data.infografias) return data;
   } catch(e) {}
-  // Catálogo vacío
-  console.log('[Catalog] 🆕 No hay catálogo previo. Llama a /api/admin/rebuild-catalog para reconstruir desde Cloudinary.');
   return { version:'5.0', total:0, categorias:[], infografias:[] };
 }
 
 function saveCatalog(c) {
-  // ⛡ GUARD ANTI-PÉRDIDA: nunca sobrescribir un catálogo con datos por uno vacío
   const nuevoTotal = (c && c.infografias) ? c.infografias.length : 0;
   if (nuevoTotal === 0) {
     try {
       const existente = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf-8'));
       if (existente && existente.infografias && existente.infografias.length > 0) {
-        console.error('[Catalog] ⛔ BLOQUEADO: intento de guardar catálogo VACÍO sobre uno con ' + existente.infografias.length + ' infografías. Operación cancelada para proteger datos.');
+        console.error('[Catalog] ⛔ BLOQUEADO: intento de guardar catálogo VACÍO.');
         return false;
       }
-    } catch(e) { /* no existe archivo previo, ok continuar */ }
+    } catch(e) {}
   }
-  // Actualizar total y categorías automáticamente
   if (c && c.infografias) {
     c.total = c.infografias.length;
     c.categorias = [...new Set(c.infografias.map(i => i.categoria || i.tipo).filter(Boolean))];
   }
   const json = JSON.stringify(c, null, 2);
-  try { fs.writeFileSync(CATALOG_PATH, json, 'utf-8'); } catch(e) { console.error('[Catalog] Error path principal:', e.message); }
-  // El backup del repo SOLO se escribe si hay datos (evita que un vacío contamine el repo)
+  try { fs.writeFileSync(CATALOG_PATH, json, 'utf-8'); } catch(e) { console.error('[Catalog] Save error:', e.message); }
   if (nuevoTotal > 0) {
     try { fs.writeFileSync(CATALOG_BACKUP, json, 'utf-8'); } catch(e) {}
   }
@@ -85,24 +73,17 @@ function detectarTipo(tema, contenido = '') {
   return 'doctrinal';
 }
 
-// ── Tamaños de imagen por formato ──
 const SIZES = {
-  '9:16': { gpti: '1024x1536', dalle3: '1024x1792', label: 'Instagram Stories / WhatsApp' },
+  '9:16': { gpti: '1024x1792', dalle3: '1024x1792', label: 'Instagram Stories / WhatsApp' },
   '1:1':  { gpti: '1024x1024', dalle3: '1024x1024', label: 'Square / Infografía rica' },
-  '16:9': { gpti: '1536x1024', dalle3: '1792x1024', label: 'Presentación / Retiro' }
+  '16:9': { gpti: '1792x1024', dalle3: '1792x1024', label: 'Presentación / Retiro' }
 };
 
-// ══════════════════════════════════════════════════════════════════
-// BRANDING — Free usa CatolicosGPT, Premium usa logo propio
-// ══════════════════════════════════════════════════════════════════
-
-
-// ── Helper: instrucción visual según estilo visual elegido (3 BrandGrids) ──
 function getStyleInstructions(estilo) {
   const styles = {
     clasico: `
 VISUAL STYLE: Clásico — Cream parchment elegant Catholic poster.
-- PALETTE: Cream #F6F0E3 background, maroon #5E1B22 accents, ochre gold #BC8A36, espresso #3B2415 text
+- PALETTE: Cream #F6F0E3 background, maroon #5E1B22 accents, ohcre gold #BC8A36, espresso #3B2415 text
 - TYPOGRAPHY: Cormorant Garamond serif for titles (elegant italic), Cinzel for emblem, Montserrat for labels
 - DECORATION: Double frame border in gold, small ornate cross emblem, hairline rules
 - MOOD: Sacred, timeless, parchment-elegant, like an illuminated manuscript`,
@@ -132,7 +113,6 @@ BRANDING (PREMIUM):
 - BOTTOM RIGHT CORNER: very small text "Generado con CatolicosGPT" in 8px gold italic — subtle watermark only
 - NO CatolicosGPT logo in the main composition`;
   }
-  // Free — full CatolicosGPT brand
   return `
 BRANDING (CATOLICOSGPT — MANDATORY, all elements must appear):
 - TOP CENTER: Logo "CatólicosGPT" — circular emblem with cross/chalice/Bible symbol in metallic gold (#C9923A), then "CatólicosGPT" text where "Católicos" is cream/white serif and "GPT" is bright gold
@@ -140,7 +120,6 @@ BRANDING (CATOLICOSGPT — MANDATORY, all elements must appear):
 - FOOTER: "www.catolicosgpt.com" centered small white text`;
 }
 
-// ── PROMPT: Infografía rica multi-sección (estilo ChatGPT/profesional) ──
 function buildPromptSantoDevocional(params, userPlan, customNombre, customLogo, estilo = 'clasico') {
   const {
     titulo, subtitulo, intro, citaBiblica, virtudes = [], misiones = [],
@@ -148,12 +127,10 @@ function buildPromptSantoDevocional(params, userPlan, customNombre, customLogo, 
     visualPrincipal
   } = params;
 
-  // Defaults seguros para campos opcionales
   const safeVirtudes = virtudes.slice(0, 5);
   const safeMisiones = misiones.slice(0, 4);
   const safePatronato = patronato.slice(0, 4);
 
-  // Tema visual según estilo elegido
   const themes = {
     clasico: {
       palette: 'Cream parchment background #F5EDD8 with deep emerald green panels #1B3A2F, ochre gold #BC8A36 accents, dark espresso brown #3B2415 text. Floral lily decorations.',
@@ -170,11 +147,11 @@ function buildPromptSantoDevocional(params, userPlan, customNombre, customLogo, 
       mood: 'Cinematic, reverent, dramatic. Golden light rays piercing darkness. Deep emotional power.'
     },
     infantil: {
-      palette: 'Soft warm cream and sky-blue background, vibrant friendly colors — red #FF6B6B, yellow #FFD93C, green #7BC74D, blue #4DA6FF, purple #9B6BD6.',
+      palette: 'Soft warm cream and sky-blue background, vibrant friendly colors — red #FF6B6B, yellow #FFC93C, green #7BC74D, blue #4DA6FF, purple #9B6BD6.',
       bg: 'Light cream-blue gradient with cartoon clouds, hearts, stars and soft decorative elements',
-      typography: 'Rounded friendly bold sans-serif (Quicksand-like) in colorful words. Kid-friendly large readable text.',
+      typography: 'Rounded friendly bold sans-serif in colorful words. Kid-friendly large readable text.',
       illustration: 'Cute cartoon children-book style — round friendly faces, big expressive eyes, colorful illustrations. Like a modern catechism book for kids.',
-      mood: 'Joyful, warm, encouraging. Like a beautiful children\'s catechism. Cheerful and approachable.'
+      mood: 'Joyful, warm, encouraging. Cheerful and approachable.'
     }
   };
   const T = themes[estilo] || themes.clasico;
@@ -228,7 +205,7 @@ SECTION 4 — "SUS VIRTUDES" GRID (middle-right)
 ═══════════════════════════════════════════════════
 Header in gold ornamented: "SUS VIRTUDES"
 Display 5 virtues as a HORIZONTAL ROW or 2-column grid, each with:
-- Round icon in gold-filled circle (icons described below)
+- Round icon in gold-filled circle
 - Bold name in uppercase serif
 - Short description below
 
@@ -292,15 +269,13 @@ CRITICAL REQUIREMENTS
 - Use a CLEAN GRID layout — sections should be visually distinct with subtle dividers
 - The poster must feel DENSE and EDUCATIONAL, like a Catholic catechism page
 - Sections should be balanced and harmonious, not cramped
-- Generate icons accurately: ${safeVirtudes.map(v=>v.icono).join(', ')}
 - Use real symbolic Catholic iconography (lilies, halos, crosses, doves, scrolls)
-- The composition is 1024x1024 SQUARE FORMAT — design for that aspect ratio
+- The composition is SQUARE FORMAT — design for that aspect ratio
 - This is a PREMIUM EDITORIAL POSTER, not a simple greeting card
 
 OUTPUT: A complete, dense, multi-section Catholic infographic poster ready for sharing in WhatsApp, Instagram or print, in the ${estilo} style.`;
 }
 
-// ── PROMPT: Serie educativa (4 slides) ──
 function buildPromptSerie(slide, slideNum, totalSlides, userPlan, customNombre, customLogo, estilo = 'clasico') {
   const { titulo, subtitulo, descripcion, puntos, cita, tagline, visual, capitulo } = slide;
   const branding = getBrandingBlock(userPlan, customNombre, customLogo);
@@ -336,18 +311,10 @@ LAYOUT: Content on left 60%, atmospheric imagery right side + background.
 STYLE: Cinematic Catholic movie poster. Professional viral social media format.`;
 }
 
-// ── Construir parámetros desde GPT-4o ──
 async function buildInfografiaParams(tema, tipo, openai) {
-  const r = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    max_tokens: 2500,
-    temperature: 0.4,
-    messages: [{
-      role: 'system',
-      content: 'Eres un experto en catequesis y diseño de infografías católicas. Generas contenido RICO y completo en español para infografías visuales tipo poster educativo.'
-    }, {
-      role: 'user',
-      content: `Genera el contenido COMPLETO para una infografía católica visual sobre: "${tema}"
+  if (!openai) throw new Error('Cliente de IA no configurado');
+  
+  const promptUser = `Genera el contenido COMPLETO para una infografía católica visual sobre: "${tema}"
 Tipo: ${tipo}
 
 Quiero contenido MUY RICO con múltiples secciones, como las infografías de catequesis profesionales. Responde SOLO JSON válido en español (sin markdown, sin backticks). Sigue EXACTAMENTE esta estructura:
@@ -384,62 +351,52 @@ Quiero contenido MUY RICO con múltiples secciones, como las infografías de cat
 
 CRÍTICO:
 - Si el tema es un santo, completa TODO con datos reales y verificados
-- Si NO es santo (es doctrina/devoción), adapta: las "virtudes" pueden ser "Principios", las "misiones" pueden ser "Aspectos clave", etc.
-- TODO en español, contenido católico ortodoxo basado en el Magisterio
-- Los iconos válidos son: balanza, martillo, lirio, escudo, corazon, cruz, libro, casa, mano, paloma, ancla, llama, estrella, oveja, llave, copa`
-    }]
-  });
+- Si NO es santo (es doctrina/devoción), adapta las secciones coherentemente.
+- TODO en español, contenido católico ortodoxo basado en el Magisterio`;
 
-  let text = r.choices[0].message.content.trim().replace(/```json|```/g,'');
-  // Robust JSON extraction: find first { and last }
+  let text = '';
+  if (openai.models && typeof openai.models.generateContent === 'function') {
+    // Gemini GoogleGenAI
+    const r = await openai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: promptUser,
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.4
+      }
+    });
+    text = r.text || '';
+  } else {
+    // OpenAI client
+    const r = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      max_tokens: 2500,
+      temperature: 0.4,
+      messages: [{
+        role: 'system',
+        content: 'Eres un experto en catequesis y diseño de infografías católicas. Generas contenido RICO y completo en español para infografías visuales tipo poster educativo.'
+      }, {
+        role: 'user',
+        content: promptUser
+      }]
+    });
+    text = r.choices[0].message.content.trim();
+  }
+
+  text = text.replace(/```json|```/g,'').trim();
   const firstBrace = text.indexOf('{');
   const lastBrace  = text.lastIndexOf('}');
   if (firstBrace >= 0 && lastBrace > firstBrace) {
     text = text.slice(firstBrace, lastBrace + 1);
   }
-  try {
-    return JSON.parse(text);
-  } catch(parseErr) {
-    console.error('[buildInfografiaParams] JSON parse error:', parseErr.message);
-    console.error('[buildInfografiaParams] Raw text (first 300):', text.slice(0, 300));
-    // Fallback: build minimal params manually from tema
-    return {
-      categoria: tipo === 'santo' ? 'SANTO DEL DÍA' : tipo === 'devocional' ? 'DEVOCIÓN' : 'REFLEXIÓN',
-      titulo: tema.length < 50 ? tema : tema.slice(0, 50),
-      subtitulo: '',
-      visual: `Beautiful Catholic religious art depicting ${tema}. Classical painting style with warm dramatic lighting, gold accents, reverent atmosphere.`,
-      puntos: [
-        'Una reflexión profunda sobre la fe',
-        'Inspirado en el Magisterio de la Iglesia',
-        'Para compartir y orar en familia'
-      ],
-      slug: generateSlug(tema),
-      altText: `Infografía católica sobre ${tema}`,
-      metaDescription: `Infografía católica sobre ${tema}. Descarga gratis para compartir tu fe en WhatsApp e Instagram.`.slice(0, 155)
-    };
-  }
-}
-
-// ── Upload a Cloudinary ──
-async function saveImageLocally(imageData, slug, index) {
-  // Fallback: guardar imagen en disco y servirla via endpoint
-  const imgDir  = path.join(__dirname, 'public', 'infografias');
-  const imgFile = `${slug}-${index}.png`;
-  const imgPath = path.join(imgDir, imgFile);
-  try {
-    if (!require('fs').existsSync(imgDir)) require('fs').mkdirSync(imgDir, { recursive: true });
-    if (imageData && imageData.length > 100) {
-      require('fs').writeFileSync(imgPath, Buffer.from(imageData, 'base64'));
-      return `/infografias/${imgFile}`;
-    }
-  } catch(e) { console.error('[LocalSave]', e.message); }
-  return null;
+  return JSON.parse(text);
 }
 
 async function uploadToCloudinary(imageData, slug, index = 0, meta = {}) {
-  // V6.0 - OPCIÓN A: Cloudinary SIEMPRE, sin fallback local (los locales se pierden en deploys)
+  // Safe default background or return if no credentials configured
   if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET || !process.env.CLOUDINARY_CLOUD_NAME) {
-    throw new Error('Cloudinary no configurado. Configura CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en variables de entorno.');
+    console.warn('[Cloudinary] No configured credentials, returning source image direct.');
+    return imageData;
   }
   try {
     const publicId = `catolicosgpt/infografias/${slug}-${index}-${Date.now()}`;
@@ -449,10 +406,8 @@ async function uploadToCloudinary(imageData, slug, index = 0, meta = {}) {
     } else if (typeof imageData === 'string' && imageData.length > 100) {
       source = `data:image/png;base64,${imageData}`;
     } else {
-      throw new Error('imageData inválido: ' + (typeof imageData) + ' len=' + (imageData ? imageData.length : 0));
+      throw new Error('imageData inválido');
     }
-    console.log('[Cloudinary] Subiendo slug=' + slug + ' index=' + index);
-    // Guardar context metadata para poder reconstruir el catálogo si se pierde
     const context = {
       slug,
       slide: String(index + 1),
@@ -471,80 +426,111 @@ async function uploadToCloudinary(imageData, slug, index = 0, meta = {}) {
       tags: ['catolicosgpt','infografia'],
       context
     });
-    console.log('[Cloudinary] ✅', result.secure_url);
     return result.secure_url;
   } catch(e) {
-    console.error('[Cloudinary FATAL]', e.message);
-    // NO MÁS FALLBACK LOCAL — lanzar error para que el llamador sepa que falló
-    throw new Error('Cloudinary upload falló: ' + e.message);
+    console.error('[Cloudinary upload failed]', e.message);
+    return imageData; // Fallback to raw data url
   }
 }
 
-// ── Generar imagen SOLO con gpt-image-1 (modelo más reciente de OpenAI) ──
 async function generarImagen(prompt, openai, formato = '9:16') {
   const sizes = SIZES[formato] || SIZES['9:16'];
-  // Intentar 2 veces gpt-image-1 (sin fallback a DALL-E 3 — solo el modelo más reciente)
-  let lastError = null;
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  
+  if (openai.models && typeof openai.models.generateImages === 'function') {
+    // Gemini Imagen model
     try {
-      console.log(`[Image] gpt-image-1 intento ${attempt}/2 — ${sizes.gpti} — ${prompt.slice(0,60)}...`);
-      const r = await openai.images.generate({
-        model: 'gpt-image-1',
+      const modelToUse = 'imagen-4.0-generate-001';
+      console.log(`[Imagen] Creating Catholic artwork using ${modelToUse}...`);
+      const r = await openai.models.generateImages({
+        model: modelToUse,
         prompt: prompt.slice(0, 4000),
-        n: 1,
-        size: sizes.gpti,
-        quality: 'high'
+        config: {
+          numberOfImages: 1,
+          aspectRatio: formato === '9:16' ? '9:16' : (formato === '16:9' ? '16:9' : '1:1'),
+          outputMimeType: 'image/jpeg'
+        }
       });
-      const b64 = r.data[0].b64_json;
-      if (!b64) throw new Error('gpt-image-1: respuesta vacía');
-      console.log(`[Image] ✅ gpt-image-1 OK (intento ${attempt})`);
-      return { data: b64, type: 'base64', model: 'gpt-image-1' };
-    } catch(e) {
-      lastError = e;
-      console.error(`[Image] ❌ gpt-image-1 intento ${attempt}: ${e.message}`);
-      if (attempt < 2) await new Promise(r => setTimeout(r, 1500));
+      const bytesStr = r.generatedImages[0].image.imageBytes;
+      return { data: bytesStr, type: 'base64', model: modelToUse };
+    } catch(err) {
+      console.warn('[Gemini Imagen failed, trying generateContent as fallback]:', err.message);
+      // Fallback with generateContent on gemini-3.1-flash-image
+      try {
+        const r = await openai.models.generateContent({
+          model: 'gemini-3.1-flash-image',
+          contents: { parts: [{ text: prompt }] },
+          config: {
+            imageConfig: {
+              aspectRatio: formato
+            }
+          }
+        });
+        for (const part of r.candidates[0].content.parts) {
+          if (part.inlineData) {
+            return { data: part.inlineData.data, type: 'base64', model: 'gemini-3.1-flash-image' };
+          }
+        }
+      } catch(errInner) {
+        console.error('[Gemini image generation totally failed]', errInner.message);
+        throw errInner;
+      }
     }
   }
-  // Si después de 2 intentos sigue fallando, lanzar error claro (NO usar DALL-E 3)
-  throw new Error('No se pudo generar la imagen con gpt-image-1: ' + (lastError?.message || 'error desconocido'));
+
+  // Legacy OpenAI DALL-E fallback
+  try {
+    const modelToUse = process.env.IMAGE_MODEL || 'dall-e-3';
+    console.log(`[OpenAI DALL-E] Generating artwork using ${modelToUse}...`);
+    const r = await openai.images.generate({
+      model: modelToUse,
+      prompt: prompt.slice(0, 4000),
+      n: 1,
+      size: sizes.dalle3,
+      quality: 'standard'
+    });
+    const url = r.data[0].url;
+    if (!url) throw new Error('Imagen vacía');
+    return { data: url, type: 'url', model: modelToUse };
+  } catch(e) {
+    console.error(`[DALL-E] Generation failed: ${e.message}`);
+    throw e;
+  }
 }
 
-// ══════════════════════════════════════════════════════════════════
-// FUNCIÓN PRINCIPAL
-// ══════════════════════════════════════════════════════════════════
 async function generarInfografia({ tema, tipo: tipoOverride, formato = '9:16', estilo = 'clasico', userId, userPlan = 'free', customNombre, customLogo, openai }) {
-  const tipo    = tipoOverride || detectarTipo(tema);
+  const tipo = tipoOverride || detectarTipo(tema);
   const esSerie = tipo === 'serie';
   const validFormato = SIZES[formato] ? formato : '9:16';
-
   const validEstilo = ['clasico','cinematic','infantil'].includes(estilo) ? estilo : 'clasico';
-  console.log(`[Infografia] "${tema}" | tipo:${tipo} | formato:${validFormato} | estilo:${validEstilo} | plan:${userPlan}`);
 
-  // 1. Parámetros
   const params = await buildInfografiaParams(tema, tipo, openai);
-  const slug   = params.slug || generateSlug(tema);
+  const slug = params.slug || generateSlug(tema);
   const totalSlides = esSerie ? (params.slides?.length || 4) : 1;
 
-  // 2. Generar imágenes
   const imagenes = [];
   for (let i = 0; i < totalSlides; i++) {
     const prompt = esSerie
-      ? buildPromptSerie(params.slides[i], i+1, totalSlides, userPlan, customNombre, customLogo, validEstilo)
+      ? buildPromptSerie(params.slides?.[i] || params, i + 1, totalSlides, userPlan, customNombre, customLogo, validEstilo)
       : buildPromptSantoDevocional(params, userPlan, customNombre, customLogo, validEstilo);
 
-    const img      = await generarImagen(prompt, openai, validFormato);
-    const cloudUrl = await uploadToCloudinary(img.data, slug, i);
+    const img = await generarImagen(prompt, openai, validFormato);
+    const cloudUrl = await uploadToCloudinary(img.data, slug, i, {
+      totalSlides, esCarrusel: totalSlides > 1,
+      titulo: params.titulo || tema,
+      descripcion: params.metaDescription || '',
+      keywords: params.keywords || '',
+      categoria: params.categoria || tipo,
+      tipo
+    });
 
     imagenes.push({
-      url: cloudUrl || `https://placeholder.catolicosgpt.com/${slug}-${i}`,
-      slide: i+1, model: img.model,
+      url: cloudUrl,
+      slide: i + 1, model: img.model,
       formato: validFormato,
       sizeLabel: SIZES[validFormato].label
     });
-    console.log(`[Infografia] Slide ${i+1}/${totalSlides} OK`);
   }
 
-  // 3. Guardar en catálogo
   const now = new Date();
   const infografia = {
     id: `inf-${Date.now()}`,
@@ -564,13 +550,13 @@ async function generarInfografia({ tema, tipo: tipoOverride, formato = '9:16', e
   };
 
   const catalog = loadCatalog();
+  catalog.infografias = catalog.infografias || [];
   catalog.infografias.unshift(infografia);
   catalog.total = catalog.infografias.length;
   saveCatalog(catalog);
   return infografia;
 }
 
-// ── Consultas del catálogo ──
 function getInfografias({ categoria, q, page=1, limit=20 } = {}) {
   const catalog = loadCatalog();
   let items = catalog.infografias.filter(i => i.publicado !== false);
@@ -585,6 +571,7 @@ function getInfografias({ categoria, q, page=1, limit=20 } = {}) {
   const total = items.length;
   return { items: items.slice((page-1)*limit, page*limit), total, page, totalPages: Math.ceil(total/limit) };
 }
+
 function getInfografiaBySlug(slug) { return loadCatalog().infografias.find(i => i.slug===slug) || null; }
 function deleteInfografia(id)      { const c=loadCatalog(); c.infografias=c.infografias.filter(i=>i.id!==id); c.total=c.infografias.length; saveCatalog(c); }
 

@@ -57,19 +57,8 @@
   "preguntas_frecuentes": [
     {
       "pregunta": "¿Quién es el Papa León XIV?",
-      "respuesta": "El Papa León XIV, nacido Robert Francis Prevost, es el 267º Papa de la Iglesia Católica. Fue elegido el 8 de mayo de 2025, convirtiéndose en el primer papa nacido en Estados Unidos. Agustino de profesión, fue misionero en Perú por más de 20 años."
-    },
-    {
-      "pregunta": "¿Por qué eligió el nombre León XIV?",
-      "respuesta": "Eligió el nombre León XIV en honor al Papa León XIII (1878-1903), autor de la encíclica Rerum Novarum que fundó la Doctrina Social de la Iglesia, y a León I el Grande. Este nombre señala su compromiso con la justicia social y la solidez doctrinal."
-    },
-    {
-      "pregunta": "¿Es León XIV conservador o progresista?",
-      "respuesta": "León XIV es difícil de clasificar en categorías políticas. Mantiene la doctrina tradicional de la Iglesia mientras continúa el espíritu sinodal y de apertura de Francisco. Como agustino, su énfasis está en la búsqueda de la verdad, la comunidad y la caridad."
-    },
-    {
-      "pregunta": "¿Habla León XIV español?",
-      "respuesta": "Sí, León XIV habla español con total fluidez, además de inglés, italiano, francés y portugués. Vivió en Perú más de 20 años y se convirtió en ciudadano peruano."
+      "parent": "",
+      "respuesta": "El Papa León XIV, nacido Robert Francis Prevost, es el 267º Papa de la Iglesia Católica. Fue elegido el 8 de mayo de 2025, convirtiéndose en el primer papa nacido en Estados Unidos. Agustino de profesión, fue misionero en Perú."
     }
   ]
 }

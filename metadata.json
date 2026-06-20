@@ -1,0 +1,6 @@
+{
+  "name": "CatólicosGPT",
+  "description": "Asistente católico con inteligencia artificial basado en el Magisterio de la Iglesia y generador de infografías",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

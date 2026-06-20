@@ -1,5 +1,4 @@
 {
-  "titulo": "Moral Católica y Escatología — Dataset CatolicosGPT",
   "moral_sexual_y_vida": {
     "aborto": {
       "posicion_oficial": "El aborto directo es siempre un desorden moral grave",
@@ -79,33 +78,10 @@
       "base_biblica": "'Meditaré tus preceptos' (Sal 119,15)"
     },
     "noche_oscura_alma": {
-      "que_es": "Proceso místico de purificación descrito por San Juan de la Cruz",
-      "fases": "Noche de los sentidos (purificación exterior) + Noche del espíritu (purificación interior profunda)",
-      "proposito": "Unión mística con Dios. Desprendimiento total del yo.",
-      "obra": "Noche Oscura del Alma, San Juan de la Cruz (s. XVI)"
-    },
-    "oracion_contemplativa": {
-      "que_es": "Forma de oración silenciosa que va más allá de las palabras. Presencia ante Dios.",
-      "metodos": ["Hesicasmo oriental", "Oración centrante (Thomas Keating)", "Método carmelitano"],
-      "base": "'Estad quietos y sabed que yo soy Dios' (Sal 46,11)"
-    }
-  },
-  "demonologia_exorcismo": {
-    "diablo": {
-      "existencia": "La Iglesia enseña la existencia real del diablo, ángel caído",
-      "poder": "Puede tentar, pero no puede obligar a pecar. No tiene poder sobre quienes están unidos a Dios",
-      "fundamento": "Gn 3, Jb 1-2, Lc 10,18, Ap 12,9"
-    },
-    "exorcismo": {
-      "solemne": "Rito litúrgico oficial. Solo puede realizarlo un sacerdote con permiso del obispo",
-      "menor": "Oraciones de protección que cualquier fiel puede usar",
-      "discernimiento": "Requiere peritaje psicológico previo. La mayoría de casos tienen explicación natural.",
-      "ritual": "Rituale Romanum, Título XI (actualizado 1998)"
-    },
-    "oracion_proteccion": {
-      "san_miguel": "Oración de León XIII (1886). La más usada para protección espiritual.",
-      "consagracion_maria": "Consagración al Inmaculado Corazón como protección.",
-      "nombre_jesus": "'Al nombre de Jesús toda rodilla se doble' (Flp 2,10)"
+      "que_es": "Proceso místico de purificación de San Juan de la Cruz",
+      "fases": "Noche de los sentidos + Noche del espíritu",
+      "proposito": "Unión mística con Dios.",
+      "obra": "Noche Oscura del Alma, San Juan de la Cruz"
     }
   }
 }
