@@ -1,36 +1,7 @@
 {
-  "version": "1.1",
-  "total": 2,
+  "version": "1.0",
+  "total": 1,
   "infografias": [
-    {
-      "id": "inf-exaltacion-santa-cruz-20260914",
-      "slug": "exaltacion-de-la-santa-cruz",
-      "tema": "La Exaltación de la Santa Cruz",
-      "titulo": "La Exaltación de la Santa Cruz — La Cruz de Jesús y su historia",
-      "tipo": "doctrinal",
-      "categoria": "fiestas-liturgicas",
-      "formato": "9:16",
-      "estilo": "cinematic",
-      "totalSlides": 10,
-      "metaDescription": "Carrusel católico sobre la Exaltación de la Santa Cruz: la Pasión de Jesús, santa Elena y la Vera Cruz, el Santo Sepulcro, el regreso de la Cruz a Jerusalén y su sentido espiritual.",
-      "altText": "Carrusel CatolicosGPT sobre la Exaltación de la Santa Cruz, 14 de septiembre",
-      "keywords": "Exaltación de la Santa Cruz, Santa Cruz, Vera Cruz, Santa Elena, Santo Sepulcro, Jerusalén, 14 de septiembre, Jesucristo, cruz de Jesús, CatolicosGPT",
-      "imagenes": [
-        { "url": "https://drive.google.com/uc?export=view&id=1EWlRGfAXmPZJRDasmF1XpovBSQc-3NkV", "slide": 1, "model": "GPT Image", "formato": "9:16", "driveId": "1EWlRGfAXmPZJRDasmF1XpovBSQc-3NkV" },
-        { "url": "https://drive.google.com/uc?export=view&id=1UMrm8zpe-lioRopMqil-ERmvjDDaK9wY", "slide": 2, "model": "GPT Image", "formato": "9:16", "driveId": "1UMrm8zpe-lioRopMqil-ERmvjDDaK9wY" },
-        { "url": "https://drive.google.com/uc?export=view&id=1te5PQCpI6YR_EsoDPQMXjWmu9EObUEiS", "slide": 3, "model": "GPT Image", "formato": "9:16", "driveId": "1te5PQCpI6YR_EsoDPQMXjWmu9EObUEiS" },
-        { "url": "https://drive.google.com/uc?export=view&id=1p7WR0fBihw2nz5qudWsJkGJJ587YK-lD", "slide": 4, "model": "GPT Image", "formato": "9:16", "driveId": "1p7WR0fBihw2nz5qudWsJkGJJ587YK-lD" },
-        { "url": "https://drive.google.com/uc?export=view&id=184NlAHnrVlc3ee2y_NevMBq-AWc8CJYi", "slide": 5, "model": "GPT Image", "formato": "9:16", "driveId": "184NlAHnrVlc3ee2y_NevMBq-AWc8CJYi" },
-        { "url": "https://drive.google.com/uc?export=view&id=1echW1NPCJ8_IqYYdXiOoZlFztaNvbPRM", "slide": 6, "model": "GPT Image", "formato": "9:16", "driveId": "1echW1NPCJ8_IqYYdXiOoZlFztaNvbPRM" },
-        { "url": "https://drive.google.com/uc?export=view&id=1CgJAYXF69Gy7jco_4ZDGs0U6gFSSGMWM", "slide": 7, "model": "GPT Image", "formato": "9:16", "driveId": "1CgJAYXF69Gy7jco_4ZDGs0U6gFSSGMWM" },
-        { "url": "https://drive.google.com/uc?export=view&id=1vQ--Syx-zDZg_rJN1oFFx_BZMmz2kmsE", "slide": 8, "model": "GPT Image", "formato": "9:16", "driveId": "1vQ--Syx-zDZg_rJN1oFFx_BZMmz2kmsE" },
-        { "url": "https://drive.google.com/uc?export=view&id=1dzeTzEv2IKfWg0DJ1pgEMMeqyvHFvmPa", "slide": 9, "model": "GPT Image", "formato": "9:16", "driveId": "1dzeTzEv2IKfWg0DJ1pgEMMeqyvHFvmPa" },
-        { "url": "https://drive.google.com/uc?export=view&id=1dk3WEmoUZmWcyAEFukM5L3d7JOgGd-Sr", "slide": 10, "model": "GPT Image", "formato": "9:16", "driveId": "1dk3WEmoUZmWcyAEFukM5L3d7JOgGd-Sr" }
-      ],
-      "fechaCreacion": "2026-09-14T16:35:00Z",
-      "fechaISO": "2026-09-14",
-      "publicado": true
-    },
     {
       "id": "info-01",
       "slug": "la-liturgia-visible",
