@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "infografias": [
+    {
+      "id": "inf-santa-bernardita-soubirous-20260915",
+      "slug": "santa-bernardita-soubirous",
+      "tema": "Santa Bernardita Soubirous",
+      "titulo": "Santa Bernardita Soubirous — Vida, apariciones de Lourdes y legado espiritual",
+      "tipo": "santo",
+      "categoria": "santo",
+      "formato": "9:12",
+      "estilo": "cinematic",
+      "totalSlides": 10,
+      "metaDescription": "Carrusel sobre la vida de Santa Bernardita Soubirous: infancia en Lourdes, apariciones de 1858, vida religiosa en Nevers, muerte, canonización y legado espiritual.",
+      "altText": "Carrusel CatolicosGPT sobre la vida de Santa Bernardita Soubirous y las apariciones de Nuestra Señora de Lourdes",
+      "keywords": "Santa Bernardita Soubirous, Bernadette Soubirous, Lourdes, Nuestra Señora de Lourdes, Massabielle, Inmaculada Concepción, Nevers, santa católica, apariciones marianas, CatolicosGPT",
+      "imagenes": [
+        { "url": "https://drive.google.com/uc?export=view&id=1yq_mzXcSSbMHZHDfo30L4k_kjoqeBeI7", "slide": 1, "model": "GPT Image", "formato": "9:12", "driveId": "1yq_mzXcSSbMHZHDfo30L4k_kjoqeBeI7" },
+        { "url": "https://drive.google.com/uc?export=view&id=1NgUqJVlGn36kCpyv-pvExqC0Ceug8MXo", "slide": 2, "model": "GPT Image", "formato": "9:12", "driveId": "1NgUqJVlGn36kCpyv-pvExqC0Ceug8MXo" },
+        { "url": "https://drive.google.com/uc?export=view&id=14vJSXyM2nYtLSmp_xW2ndk0WyzyCo0Vn", "slide": 3, "model": "GPT Image", "formato": "9:12", "driveId": "14vJSXyM2nYtLSmp_xW2ndk0WyzyCo0Vn" },
+        { "url": "https://drive.google.com/uc?export=view&id=1SvQ8oTylRSXTuDh5ObsCIAsq-Mf5kr3N", "slide": 4, "model": "GPT Image", "formato": "9:12", "driveId": "1SvQ8oTylRSXTuDh5ObsCIAsq-Mf5kr3N" },
+        { "url": "https://drive.google.com/uc?export=view&id=1n4lJ-4yRQ7CLAhhM8SQicIyVupk9Qo85", "slide": 5, "model": "GPT Image", "formato": "9:12", "driveId": "1n4lJ-4yRQ7CLAhhM8SQicIyVupk9Qo85" },
+        { "url": "https://drive.google.com/uc?export=view&id=1tbtFsjp0MQMUstK93J83R2IAe9EHRRLI", "slide": 6, "model": "GPT Image", "formato": "9:12", "driveId": "1tbtFsjp0MQMUstK93J83R2IAe9EHRRLI" },
+        { "url": "https://drive.google.com/uc?export=view&id=1_GTC9ldvl0i7Qi0vGGv67P4kMWGNboHi", "slide": 7, "model": "GPT Image", "formato": "9:12", "driveId": "1_GTC9ldvl0i7Qi0vGGv67P4kMWGNboHi" },
+        { "url": "https://drive.google.com/uc?export=view&id=17GCbx8ZYAZ_s3_zeLDwwfez_BX0htHbD", "slide": 8, "model": "GPT Image", "formato": "9:12", "driveId": "17GCbx8ZYAZ_s3_zeLDwwfez_BX0htHbD" },
+        { "url": "https://drive.google.com/uc?export=view&id=1klPYe7GTj6Onw-RMtorIIxEtvJ1ady8o", "slide": 9, "model": "GPT Image", "formato": "9:12", "driveId": "1klPYe7GTj6Onw-RMtorIIxEtvJ1ady8o" },
+        { "url": "https://drive.google.com/uc?export=view&id=1ed5FRQZoeHUaOMpx1-qhWRj6EA1bQnXM", "slide": 10, "model": "GPT Image", "formato": "9:12", "driveId": "1ed5FRQZoeHUaOMpx1-qhWRj6EA1bQnXM" }
+      ],
+      "driveFolderId": "1NaYlDAqxeYD3bte-Jbbym9QfPFBrksAp",
+      "driveZipId": "1te_tYfoMQ-2epOahcSyyW58NsaRMmk0n",
+      "fechaCreacion": "2026-09-15T10:05:00Z",
+      "fechaISO": "2026-09-15",
+      "publicado": true
+    }
+  ]
+}
