@@ -1,0 +1,21 @@
+# Dependencias y artefactos locales
+node_modules/
+dist/
+build/
+coverage/
+*.log
+npm-debug.log*
+
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+
+# Cachés/runtime generados por el servidor
+data/liturgia-cache.json
+data/seo_cache/
+
+# Sistema operativo y editores
+.DS_Store
+.vscode/
+.idea/

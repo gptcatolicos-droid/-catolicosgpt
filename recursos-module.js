@@ -226,4 +226,155 @@ function consultarRecursosLocales(query) {
   return resultados;
 }
 
-module.exports = { leerDataset, consultarRecursosLocales, DATASETS };
+// ── Corpus local de respaldo ────────────────────────────────────────────────
+// Este índice no sustituye la API de Magisterium. Sólo permite una respuesta
+// prudente cuando las credenciales o la red no están disponibles. Incluye
+// únicamente fragmentos cuyo origen está identificado en el dataset local.
+let corpusRespaldo = null;
+
+function normalizarParaBusqueda(value) {
+  return String(value || '')
+    .toLocaleLowerCase('es')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9áéíóúüñ]+/gi, ' ')
+    .trim();
+}
+
+function tokensDeConsulta(query) {
+  const stopWords = new Set([
+    'que', 'como', 'cual', 'cuál', 'para', 'sobre', 'desde', 'donde', 'dónde',
+    'cuando', 'quien', 'quién', 'esto', 'esta', 'este', 'los', 'las', 'una',
+    'uno', 'del', 'con', 'por', 'the', 'and', 'catolico', 'catolica', 'iglesia'
+  ]);
+  return [...new Set(normalizarParaBusqueda(query).split(/\s+/).filter(token => token.length > 2 && !stopWords.has(token)))];
+}
+
+function crearCorpusRespaldo() {
+  const entradas = [];
+  const agregar = ({ tipo, titulo, contenido, referencia, url, metadata = {} }) => {
+    const cleanTitle = String(titulo || '').trim();
+    const cleanContent = String(contenido || '').trim();
+    if (!cleanTitle || !cleanContent) return;
+    entradas.push({
+      tipo: tipo || 'recurso_local',
+      titulo: cleanTitle,
+      contenido: cleanContent,
+      referencia: referencia || null,
+      url: url || null,
+      metadata
+    });
+  };
+
+  // Catecismo: recorremos su estructura para no perder los numerales.
+  const catecismo = DATASETS.catecismo;
+  const recorrerCatecismo = (node, trail = []) => {
+    if (Array.isArray(node)) {
+      node.forEach(item => recorrerCatecismo(item, trail));
+      return;
+    }
+    if (!node || typeof node !== 'object') return;
+    const siguienteTrail = node.titulo ? [...trail, node.titulo] : trail;
+    if (node.cic && node.texto) {
+      agregar({
+        tipo: 'catecismo',
+        titulo: `${siguienteTrail[siguienteTrail.length - 1] || 'Catecismo'} · CIC ${node.cic}`,
+        contenido: node.texto,
+        referencia: `CIC ${node.cic}`,
+        url: 'https://www.vatican.va/archive/catechism_sp/index_sp.html',
+        metadata: { fuente: 'Catecismo de la Iglesia Católica', cic: node.cic }
+      });
+    }
+    Object.entries(node).forEach(([key, value]) => {
+      if (!['cic', 'texto', 'titulo'].includes(key)) recorrerCatecismo(value, siguienteTrail);
+    });
+  };
+  recorrerCatecismo(catecismo);
+
+  // Biblia: el dataset actual contiene pasajes clave de los Evangelios.
+  const evangelios = DATASETS.biblia?.evangelios || {};
+  Object.values(evangelios).forEach(libro => {
+    (libro.pasajes_clave || []).forEach(pasaje => {
+      agregar({
+        tipo: 'biblia',
+        titulo: `${libro.nombre || 'Sagrada Escritura'} · ${pasaje.ref || ''}`.trim(),
+        contenido: pasaje.texto,
+        referencia: pasaje.ref || null,
+        url: 'https://www.vatican.va/archive/bible/index_sp.htm',
+        metadata: { fuente: 'Sagrada Escritura', pasaje: pasaje.nombre || null }
+      });
+    });
+  });
+
+  // Documentos pontificios identificados. Se excluye cualquier título que no
+  // tenga una fuente oficial verificable en esta base local.
+  const documentos = DATASETS.docVaticano || {};
+  ['encíclicas_sociales', 'encíclicas_doctrinales'].forEach(grupo => {
+    (documentos[grupo] || []).forEach(documento => {
+      if (normalizarParaBusqueda(documento.nombre).includes('magnifica humanitas')) return;
+      agregar({
+        tipo: 'documento_pontificio',
+        titulo: documento.nombre,
+        contenido: [documento.tema, documento.resumen, ...(documento.citas_clave || [])].filter(Boolean).join('\n'),
+        referencia: documento.año ? String(documento.año) : null,
+        url: 'https://www.vatican.va/content/vatican/es.html',
+        metadata: { fuente: 'Vatican.va', papa: documento.papa || null, año: documento.año || null }
+      });
+    });
+  });
+
+  // Oraciones y preguntas locales conservan siempre la atribución disponible.
+  (DATASETS.oraciones?.oraciones_principales || []).forEach(oracion => {
+    agregar({
+      tipo: 'oracion',
+      titulo: oracion.nombre,
+      contenido: oracion.texto_es,
+      referencia: oracion.origen || null,
+      metadata: { fuente: oracion.origen || 'Tradición católica', tipo: oracion.tipo || null }
+    });
+  });
+  Object.entries(DATASETS.faq?.categorias || {}).forEach(([categoria, preguntas]) => {
+    (preguntas || []).forEach(pregunta => {
+      agregar({
+        tipo: 'faq',
+        titulo: pregunta.q,
+        contenido: pregunta.a,
+        referencia: pregunta.fuente || null,
+        metadata: { fuente: pregunta.fuente || 'Corpus FAQ local', categoria }
+      });
+    });
+  });
+
+  return entradas;
+}
+
+function buscarRecursosDeRespaldo(query, { limit = 4 } = {}) {
+  const consulta = normalizarParaBusqueda(query);
+  const tokens = tokensDeConsulta(query);
+  if (!consulta || !tokens.length) return [];
+  if (!corpusRespaldo) corpusRespaldo = crearCorpusRespaldo();
+
+  return corpusRespaldo
+    .map(entrada => {
+      const titulo = normalizarParaBusqueda(entrada.titulo);
+      const contenido = normalizarParaBusqueda(entrada.contenido);
+      let score = (titulo.includes(consulta) || contenido.includes(consulta)) ? 14 : 0;
+      tokens.forEach(token => {
+        if (titulo.includes(token)) score += 7;
+        if (contenido.includes(token)) score += 2;
+      });
+      return { ...entrada, score };
+    })
+    .filter(entrada => entrada.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.max(1, Math.min(Number(limit) || 4, 8)))
+    .map(({ score, ...entrada }) => entrada);
+}
+
+module.exports = {
+  leerDataset,
+  consultarRecursosLocales,
+  buscarRecursosDeRespaldo,
+  crearCorpusRespaldo,
+  DATASETS
+};

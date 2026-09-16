@@ -1,17 +1,16 @@
 {
-  "name": "CatolicosGPT",
-  "short_name": "CatolicosGPT",
-  "description": "Asistente teológico católico con IA",
+  "name": "CatólicosGPT — IA Católica",
+  "short_name": "CatólicosGPT",
+  "description": "Asistente católico en español para explorar Biblia, Catecismo, Magisterio y catequesis con fuentes identificables.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FAF7F0",
-  "theme_color": "#5C3D1E",
+  "background_color": "#F9F6F0",
+  "theme_color": "#5E1B22",
   "orientation": "portrait-primary",
   "icons": [
-    { "src": "/favicon-16.png", "sizes": "16x16", "type": "image/png" },
-    { "src": "/favicon-32.png", "sizes": "32x32", "type": "image/png" },
-    { "src": "/apple-touch-icon.png", "sizes": "48x48", "type": "image/png" },
-    { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/favicon-48.png", "sizes": "48x48", "type": "image/png" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "categories": ["religion", "education", "lifestyle"],
   "lang": "es",
