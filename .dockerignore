@@ -1,0 +1,18 @@
+# Dependencias y metadatos locales
+node_modules
+.git
+.gitignore
+.DS_Store
+npm-debug.log*
+
+# Secretos: el proveedor los inyecta como variables de entorno.
+.env
+.env.*
+!.env.example
+
+# Runtime/cache regenerable
+data/liturgia-cache.json
+data/seo_cache
+coverage
+dist
+build

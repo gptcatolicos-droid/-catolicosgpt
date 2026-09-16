@@ -25,6 +25,17 @@ npm run dev
 
 El servidor queda disponible en `http://localhost:3000`. Nunca añadas `.env` al control de versiones.
 
+## Despliegue de producción
+
+El repositorio incluye un `Dockerfile` reproducible para cualquier plataforma compatible con contenedores. Configura el servicio con `npm start` o construye la imagen:
+
+```bash
+docker build -t catolicosgpt .
+docker run --rm -p 3000:3000 --env-file .env catolicosgpt
+```
+
+Configura en el proveedor, como mínimo, `MAGISTERIUM_API_KEY`, `APP_URL` y un `JWT_SECRET` único. Añade `OPENAI_API_KEY` si se desea la capa de presentación. Usa `GET /healthz` como comprobación de vida del contenedor y `GET /readyz` como comprobación de que Magisterium quedó configurado. **No es recomendable desplegar la versión pública del chat sin `MAGISTERIUM_API_KEY`**, porque entonces sólo ofrecerá el respaldo local etiquetado.
+
 ### Variables principales
 
 | Variable | Uso |

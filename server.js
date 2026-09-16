@@ -49,6 +49,23 @@ app.use((req, res, next) => {
   return publicStatic(req, res, next);
 });
 
+// Liveness y readiness separados: la plataforma puede mantener el proceso vivo
+// mientras readiness deja claro si la fuente doctrinal primaria fue configurada.
+app.get('/healthz', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  return res.json({ status: 'ok', service: 'catolicosgpt' });
+});
+
+app.get('/readyz', (req, res) => {
+  const magisteriumConfigured = magisteriumAgent.isConfigured();
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(magisteriumConfigured ? 200 : 503).json({
+    status: magisteriumConfigured ? 'ready' : 'degraded',
+    magisterium: magisteriumConfigured ? 'configured' : 'missing_configuration',
+    openaiPresentation: openaiPresentation.isConfigured() ? 'configured' : 'optional_not_configured'
+  });
+});
+
 // Servidor de medios y estáticos locales
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) {
