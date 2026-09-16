@@ -1,4 +1,12 @@
 /* CatólicosGPT Agent Home — presentation-only shell for the main chat route. */
+/* Esta hoja sólo se carga en "/", así que estas reglas de html/body/main son
+   seguras: evitan que <main> (overflow-y-auto en el layout compartido) abra un
+   segundo scroll por encima de .agent-stream cuando el alto real del móvil
+   (barra de direcciones, notch) no calza con los 57px fijos del header. Sin
+   esto, el móvil mostraba scroll doble: el de la página y el del chat. */
+html, body { height: 100%; overflow: hidden; }
+main { overflow: hidden; min-height: 0; }
+
 .agent-home {
   --agent-paper: #fffdf9;
   --agent-canvas: #f9f6f0;
@@ -258,6 +266,10 @@
 .agent-bubble blockquote { margin: 13px 0; padding: 10px 13px; border-left: 3px solid var(--agent-gold); border-radius: 0 9px 9px 0; color: #5b5047 !important; background: #fff9ef; font-style: italic; }
 .agent-bubble strong { color: inherit !important; font-weight: 700 !important; }
 .agent-bubble code { padding: 1px 4px; color: #544034 !important; background: #f3ede4; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; font-size: .88em; }
+.agent-bubble table { display: block; width: 100%; margin: 4px 0 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; border-collapse: collapse; font-size: .92em; }
+.agent-bubble th, .agent-bubble td { padding: 8px 11px; border: 1px solid var(--agent-line); text-align: left; vertical-align: top; }
+.agent-bubble th { color: var(--agent-maroon) !important; background: #fff8ea; font-weight: 700 !important; white-space: nowrap; }
+.agent-bubble tr:nth-child(even) td { background: rgba(249, 246, 240, .6); }
 .agent-thinking { display: inline-flex; align-items: center; gap: 8px; color: var(--agent-muted) !important; font-size: 13px; font-style: italic; }
 .agent-thinking::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--agent-gold); box-shadow: 0 0 0 4px rgba(168,120,39,.11); animation: agent-pulse 1.2s ease infinite; }
 

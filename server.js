@@ -1419,9 +1419,14 @@ app.post('/api/chat', async (req, res) => {
   const wantsStream = !legacyRequest && req.body?.stream === true;
 
   try {
-    // Sin OpenAI activo podemos retransmitir el flujo oficial de Magisterium
-    // inmediatamente y conservar sus citas/preguntas del bloque final.
-    if (wantsStream && magisteriumAgent.isConfigured() && !openaiPresentation.isConfigured()) {
+    // Retransmitimos el flujo oficial de Magisterium en tiempo real (SSE nativo)
+    // en cuanto llegan los primeros tokens, sin esperar a que OpenAI reescriba la
+    // respuesta completa. La etapa de presentación de OpenAI requiere la respuesta
+    // íntegra de Magisterium, así que forzarla antes de transmitir convertía cada
+    // consulta en dos llamadas secuenciales completas (~20-30s de silencio). El
+    // usuario recibe primero la fuente autoritativa citada; conservamos citas y
+    // preguntas relacionadas del bloque final igual que antes.
+    if (wantsStream && magisteriumAgent.isConfigured()) {
       return streamMagisteriumSource(res, messages, mode);
     }
 

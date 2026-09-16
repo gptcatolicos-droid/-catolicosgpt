@@ -60,6 +60,17 @@
     return text;
   }
 
+  function splitTableRow(line) {
+    return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(cell => cell.trim());
+  }
+
+  function isTableSeparatorRow(line) {
+    const cells = splitTableRow(line);
+    return cells.length > 0 && cells.every(cell => /^:?-{2,}:?$/.test(cell));
+  }
+
+  // Soporta tablas de cronología, cuadros y cuadros sinópticos en formato
+  // Markdown (pipes) tal como los produce Magisterium/OpenAI.
   function markdownToSafeHTML(value) {
     const lines = String(value || '').replace(/\r/g, '').split('\n');
     const html = [];
@@ -77,23 +88,41 @@
       list = null;
     };
 
-    lines.forEach(line => {
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
       const trimmed = line.trim();
+      const isTableHeader = trimmed.includes('|') && index + 1 < lines.length && isTableSeparatorRow(lines[index + 1]);
+      if (isTableHeader) {
+        flushParagraph(); closeList();
+        const headerCells = splitTableRow(trimmed);
+        const bodyRows = [];
+        let cursor = index + 2;
+        while (cursor < lines.length && lines[cursor].trim().includes('|')) {
+          bodyRows.push(splitTableRow(lines[cursor]));
+          cursor += 1;
+        }
+        const thead = `<thead><tr>${headerCells.map(cell => `<th>${inlineMarkdown(cell)}</th>`).join('')}</tr></thead>`;
+        const tbody = `<tbody>${bodyRows.map(row => `<tr>${row.map(cell => `<td>${inlineMarkdown(cell)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+        html.push(`<table>${thead}${tbody}</table>`);
+        index = cursor - 1;
+        continue;
+      }
+
       const unordered = trimmed.match(/^[-*•]\s+(.+)$/);
       const ordered = trimmed.match(/^\d+[.)]\s+(.+)$/);
       const heading = trimmed.match(/^(#{1,4})\s+(.+)$/);
       const quote = trimmed.match(/^>\s?(.+)$/);
-      if (!trimmed) { flushParagraph(); closeList(); return; }
+      if (!trimmed) { flushParagraph(); closeList(); continue; }
       if (heading) {
         flushParagraph(); closeList();
         const level = Math.min(4, heading[1].length + 1);
         html.push(`<h${level}>${inlineMarkdown(heading[2])}</h${level}>`);
-        return;
+        continue;
       }
       if (quote) {
         flushParagraph(); closeList();
         html.push(`<blockquote>${inlineMarkdown(quote[1])}</blockquote>`);
-        return;
+        continue;
       }
       if (unordered || ordered) {
         flushParagraph();
@@ -101,11 +130,11 @@
         if (list && list.type !== type) closeList();
         if (!list) list = { type, items: [] };
         list.items.push((unordered || ordered)[1]);
-        return;
+        continue;
       }
       closeList();
       paragraph.push(trimmed);
-    });
+    }
     flushParagraph();
     closeList();
     return html.join('') || '<p></p>';
