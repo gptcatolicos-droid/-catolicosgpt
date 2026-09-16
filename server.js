@@ -1,6 +1,6 @@
 // ════════════════════════════════════════════════════════════════════════════
-// CATÓLICOSGPT V77 — SERVIDOR CENTRAL MULTI-MÓDULO
-// Integración con Magisterium API, Gemini @google/genai, e Infografías
+// CATÓLICOSGPT — SERVIDOR CENTRAL MULTI-MÓDULO
+// Agente Magisterium + capa de presentación OpenAI y secciones existentes
 // ════════════════════════════════════════════════════════════════════════════
 
 require('dotenv').config();
@@ -22,14 +22,49 @@ const recursos      = require('./recursos-module');
 const seo           = require('./seo-module');
 const seoTopics     = require('./seo-topics');
 const biblia        = require('./biblia-module');
+const magisteriumAgent = require('./magisterium-agent');
+const openaiPresentation = require('./openai-presentation');
 const { GoogleGenAI } = require('@google/genai');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+const PUBLIC_DIR = path.join(__dirname, 'public');
 
 app.use(cors());
-app.use(express.json({ limit: '30mb' }));
-app.use(express.urlencoded({ extended: true, limit: '30mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// La aplicación SSR sigue teniendo prioridad para las rutas. Los activos se
+// sirven explícitamente para que favicon, manifest y la nueva UI no
+// dependan de un proxy externo de producción.
+const publicStatic = express.static(PUBLIC_DIR, {
+  index: false,
+  maxAge: process.env.NODE_ENV === 'production' ? '7d' : 0,
+  setHeaders(res, filePath) {
+    if (/\.(?:html?|xml|txt)$/i.test(filePath)) res.setHeader('Cache-Control', 'no-cache');
+  }
+});
+app.use((req, res, next) => {
+  // sitemap.xml se genera dinámicamente más abajo para incluir el catálogo actual.
+  if (req.path === '/sitemap.xml') return next();
+  return publicStatic(req, res, next);
+});
+
+// Liveness y readiness separados: la plataforma puede mantener el proceso vivo
+// mientras readiness deja claro si la fuente doctrinal primaria fue configurada.
+app.get('/healthz', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  return res.json({ status: 'ok', service: 'catolicosgpt' });
+});
+
+app.get('/readyz', (req, res) => {
+  const magisteriumConfigured = magisteriumAgent.isConfigured();
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(magisteriumConfigured ? 200 : 503).json({
+    status: magisteriumConfigured ? 'ready' : 'degraded',
+    magisterium: magisteriumConfigured ? 'configured' : 'missing_configuration',
+    openaiPresentation: openaiPresentation.isConfigured() ? 'configured' : 'optional_not_configured'
+  });
+});
 
 // Servidor de medios y estáticos locales
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
@@ -186,30 +221,102 @@ Devuelve exclusivamente un JSON válido y legible en español con la estructura 
 // VISTAS HTML SSR (Branding "Magnifica Humanitas": Cream, Gold, Maroon, Espresso)
 // ════════════════════════════════════════════════════════════════════════════
 
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function canonicalPath(value) {
+  try {
+    const parsed = new URL(String(value || '/'), 'https://catolicosgpt.invalid');
+    return parsed.pathname.startsWith('/') ? parsed.pathname : '/';
+  } catch (_) {
+    return '/';
+  }
+}
+
+function absoluteSiteUrl(value, appUrl) {
+  const raw = String(value || '').trim();
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `${appUrl}${raw.startsWith('/') ? raw : `/${raw}`}`;
+}
+
 function renderPage(title, contentHtml, req, metaTags = {}) {
   const user = getAuthedUser(req);
   const activePlan = user ? user.plan : 'free';
   const customNombre = user ? (user.customNombre || user.nombre) : 'Católico';
 
   const defaultMetaTags = {
-    description: "CatólicosGPT es la Inteligencia Artificial Católica #1 en español con fidelidad del 100% al Magisterio. Explora la Biblia de Navarra, el Catecismo, oraciones, y genera infografías pastorales interactivas.",
-    keywords: "ia catolica, inteligencia artificial catolica, catolicosgpt, catolicos gpt, magisterio de la iglesia, biblia de navarra, catecismo, oraciones catolicas, papa leon xiv, apologetica catolica, oracion del dia, evangelio del dia",
-    canonical: req.originalUrl || '/'
+    description: "CatólicosGPT es una inteligencia artificial católica en español que ayuda a explorar Biblia, Catecismo, Magisterio, liturgia, oración y catequesis con fuentes identificables.",
+    keywords: "ia catolica, catolicosgpt, chatgpt catolico, inteligencia artificial catolico, inteligencia artificial catolica, inteligencia artificial para catolicos, catecismo, biblia, magisterio de la iglesia, oraciones catolicas",
+    canonical: req.originalUrl || '/',
+    robots: 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
   };
 
   const M = { ...defaultMetaTags, ...metaTags };
-  const APP_URL = process.env.APP_URL || 'https://www.catolicosgpt.com';
+  const APP_URL = String(process.env.APP_URL || 'https://www.catolicosgpt.com').replace(/\/+$/, '');
+  const canonical = canonicalPath(M.canonical);
+  const canonicalUrl = absoluteSiteUrl(canonical, APP_URL);
+  const pageTitle = escapeHtml(title);
+  const pageDescription = escapeHtml(M.description);
+  const pageKeywords = escapeHtml(M.keywords);
+  const pageImage = escapeHtml(absoluteSiteUrl(M.image || '/logo.png', APP_URL));
+  const extraStyles = (Array.isArray(M.styles) ? M.styles : [])
+    .filter(href => typeof href === 'string' && href.startsWith('/'))
+    .map(href => `<link rel="stylesheet" href="${escapeHtml(href)}">`)
+    .join('\n  ');
+  const defaultStructuredData = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      '@id': `${APP_URL}/#website`,
+      name: 'CatólicosGPT',
+      url: `${APP_URL}/`,
+      inLanguage: 'es',
+      description: String(M.description || ''),
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: `${APP_URL}/?query={search_term_string}`,
+        'query-input': 'required name=search_term_string'
+      }
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      '@id': `${APP_URL}/#organization`,
+      name: 'CatólicosGPT',
+      url: `${APP_URL}/`,
+      logo: `${APP_URL}/logo.png`,
+      sameAs: []
+    }
+  ];
+  const structuredData = Array.isArray(M.structuredData)
+    ? [...defaultStructuredData, ...M.structuredData]
+    : M.structuredData ? [...defaultStructuredData, M.structuredData] : defaultStructuredData;
+  const structuredDataJson = JSON.stringify(structuredData).replace(/</g, '\\u003c');
 
   return `<!DOCTYPE html>
 <html lang="es" class="h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>${title} — CatólicosGPT | La IA Católica #1 en Español</title>
-  
-  <meta name="description" content="${M.description}">
-  <meta name="keywords" content="${M.keywords}">
-  <link rel="canonical" href="${APP_URL}${M.canonical}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>${pageTitle} — CatólicosGPT | IA Católica en Español</title>
+  <meta name="description" content="${pageDescription}">
+  <meta name="keywords" content="${pageKeywords}">
+  <meta name="robots" content="${escapeHtml(M.robots)}">
+  <meta name="theme-color" content="#5E1B22">
+  <link rel="canonical" href="${canonicalUrl}">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  ${extraStyles}
+  <script type="application/ld+json">${structuredDataJson}</script>
   
   <!-- Google Search Console Ownership Verification -->
   <meta name="google-site-verification" content="google5d1cd7dcadcb13f0" />
@@ -227,13 +334,19 @@ function renderPage(title, contentHtml, req, metaTags = {}) {
     });
   </script>
   
-  <!-- Open Graph -->
-  <meta property="og:title" content="${title} — CatólicosGPT | La IA Católica #1 en Español">
-  <meta property="og:description" content="${M.description}">
+  <!-- Open Graph / X -->
+  <meta property="og:title" content="${pageTitle} — CatólicosGPT | IA Católica en Español">
+  <meta property="og:description" content="${pageDescription}">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="${APP_URL}${M.canonical}">
-  <meta property="og:image" content="${M.image || 'https://res.cloudinary.com/df9vdt2da/image/upload/v1714498302/catolicosgpt_hero.png'}">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:url" content="${canonicalUrl}">
+  <meta property="og:image" content="${pageImage}">
+  <meta property="og:image:alt" content="CatólicosGPT, inteligencia artificial católica en español">
   <meta property="og:site_name" content="CatólicosGPT">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${pageTitle} — CatólicosGPT">
+  <meta name="twitter:description" content="${pageDescription}">
+  <meta name="twitter:image" content="${pageImage}">
   
   <!-- Google Fonts & Tailwind -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -802,202 +915,91 @@ function renderPage(title, contentHtml, req, metaTags = {}) {
 // ════════════════════════════════════════════════════════════════════════════
 
 app.get('/', (req, res) => {
-  const lit = liturgia.get('lecturas');
-  const dSanto = liturgia.get('santo_hoy');
-
-  // HTML principal del Chat Centrado (al estilo ChatGPT / Gemini)
   const html = `
-    <div class="max-w-4xl mx-auto w-full px-4 py-4 sm:py-6 flex flex-col h-[calc(100vh-80px)] overflow-hidden">
-      
-      <!-- ELEMENTO DE CHAT PRINCIPAL -->
-      <div class="flex-1 flex flex-col bg-white border border-[#E6DFD4] rounded-2xl shadow-sm overflow-hidden h-full">
-        
-        <!-- CHAT HEADER -->
-        <div class="px-5 py-3 border-b border-border bg-cream2/20 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gold font-semibold flex items-center gap-1.5 uppercase font-mono tracking-wider">
-              <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-              CatolicosGPT IA
+    <div class="agent-home">
+      <section class="agent-frame" aria-label="Asistente católico con fuentes verificables">
+        <header class="agent-topbar">
+          <div class="agent-identity">
+            <span class="agent-seal" aria-hidden="true">✦</span>
+            <div>
+              <strong class="agent-product-name">CatólicosGPT</strong>
+              <span class="agent-product-caption">Agente de estudio católico</span>
+            </div>
+          </div>
+          <div class="agent-inline-actions">
+            <span id="agent-provider-status" class="agent-provider" data-status="checking" role="status" aria-live="polite">
+              <i class="agent-provider-dot" aria-hidden="true"></i><span id="agent-provider-text" class="agent-provider-text">Comprobando fuentes…</span>
             </span>
+            <button id="agent-clear" type="button" class="agent-icon-button" title="Limpiar esta conversación">Limpiar</button>
           </div>
-          <button onclick="clearChat()" class="text-xs text-ink2 hover:text-maroon flex items-center gap-2 font-semibold transition" title="Limpiar conversación">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-            <span class="hidden sm:inline">Vaciar Conversación</span>
-            <span class="inline sm:hidden">Vaciar</span>
-          </button>
-        </div>
-        
-        <!-- CHAT BOX MESSAGES -->
-        <div id="chat-box" class="flex-1 overflow-y-auto p-5 flex flex-col gap-4 bg-[#FAF9F5]">
-          <!-- PANTALLA DE BIENVENIDA -->
-          <div id="welcome-screen" class="flex-1 flex flex-col items-center justify-center text-center py-6 max-w-2xl mx-auto gap-6 my-auto">
-            <div class="h-16 w-16 border-2 border-gold/35 rounded-3xl p-4 bg-white text-gold text-2xl shadow-sm flex items-center justify-center font-bold">
-              ✝
-            </div>
-            <div class="flex flex-col gap-1.5 px-4">
-              <h1 class="font-display font-medium text-2xl sm:text-3xl text-espresso tracking-wide">
-                ¿En qué puedo ayudarte hoy, <span class="italic text-gold font-serif font-normal">hermano</span>?
-              </h1>
-              <p class="font-serif text-ink2 text-sm sm:text-base italic">
-                Consulta sobre apologética, teología, santos, liturgia o la encíclica "Magnifica Humanitas".
-              </p>
-            </div>
-            
-            <!-- ATAJOS RAPIDOS -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full mt-4 px-4 max-w-xl">
-              <button onclick="enviarAtajo('¿Qué es CatólicosGPT y de dónde obtiene las respuestas?')" class="text-left p-3.5 bg-white border border-border rounded-xl hover:bg-cream hover:border-gold/30 text-xs text-ink transition shadow-sm font-sans flex flex-col gap-1">
-                <span class="font-bold text-maroon">¿Qué es CatólicosGPT?</span>
-                <span class="text-ink2 text-[10px]">Origen de datos y fidelidad doctrinal</span>
-              </button>
-              <button onclick="enviarAtajo('Explícanos la encíclica Magnifica Humanitas sobre la IA')" class="text-left p-3.5 bg-white border border-border rounded-xl hover:bg-cream hover:border-gold/30 text-xs text-ink transition shadow-sm font-sans flex flex-col gap-1">
-                <span class="font-bold text-maroon">La encíclica del Papa León XIV</span>
-                <span class="text-ink2 text-[10px]">Ética, bioética cristiana y transhumanismo</span>
-              </button>
-              <button onclick="enviarAtajo('¿Cuáles son los sacramentos de la Iglesia Católica?')" class="text-left p-3.5 bg-white border border-border rounded-xl hover:bg-cream hover:border-gold/30 text-xs text-ink transition shadow-sm font-sans flex flex-col gap-1">
-                <span class="font-bold text-maroon">Doctrina Católica</span>
-                <span class="text-ink2 text-[10px]">Los 7 sacramentos y dogmas</span>
-              </button>
-              <button onclick="enviarAtajo('Muéstrame la Oración del Padre Nuestro en Español y Latín')" class="text-left p-3.5 bg-white border border-border rounded-xl hover:bg-cream hover:border-gold/30 text-xs text-ink transition shadow-sm font-sans flex flex-col gap-1">
-                <span class="font-bold text-maroon">Oraciones principales</span>
-                <span class="text-ink2 text-[10px]">Padrenuestro, Avemaría, Salve y Credo</span>
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- CHAT INPUT WRAP -->
-        <div class="p-4 border-t border-border bg-white shadow-inner">
-          <form id="chat-form" onsubmit="enviarMensaje(event)" class="max-w-3xl mx-auto flex gap-2 items-center">
-            <input type="text" id="chat-input" placeholder="Pregunta sobre fe, liturgia, moral cristiana..." required class="flex-1 border border-border rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent bg-[#FAF9F5]/40" autocomplete="off">
-            <button type="submit" class="bg-maroon hover:bg-gold text-white p-3.5 rounded-full transition duration-300 shadow-md transform hover:scale-105 active:scale-95 flex-shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal"><path d="m3 3 3 9-3 9 19-9Z"/><path d="M6 12h16"/></svg>
-            </button>
-          </form>
-          <div class="text-center text-[10px] text-ink2 mt-2 select-none italic font-serif">
-            CatólicosGPT • Conforme al Magisterio constante de la Iglesia • Puede contener imprecisiones
-          </div>
-        </div>
-        
-      </div>
-    </div>
-    
-    <script>
-      const chatBox = document.getElementById('chat-box');
-      const chatInput = document.getElementById('chat-input');
-      
-      function enviarAtajo(texto) {
-        chatInput.value = texto;
-        document.getElementById('chat-form').dispatchEvent(new Event('submit'));
-      }
-      
-      function appendMessage(sender, text, isHtml = false) {
-        const bubble = document.createElement('div');
-        bubble.className = 'chat-bubble ' + (sender === 'bot' ? 'bot bot-content' : 'user') + ' shadow-sm';
-        
-        if (sender === 'bot') {
-          try {
-            bubble.innerHTML = window.marked ? window.marked.parse(text) : text;
-          } catch(e) {
-            bubble.innerHTML = text;
-          }
-        } else if (isHtml) {
-          bubble.innerHTML = text;
-        } else {
-          bubble.textContent = text;
-        }
-        
-        chatBox.appendChild(bubble);
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }
-      
-      function clearChat() {
-        chatBox.querySelectorAll('.chat-bubble').forEach(b => b.remove());
-        const welcome = document.getElementById('welcome-screen');
-        if (welcome) welcome.classList.remove('hidden');
-      }
-      
-      async function enviarMensaje(e) {
-        if(e) e.preventDefault();
-        const text = chatInput.value.trim();
-        if(!text) return;
-        
-        // Ocultar la pantalla de bienvenida si existe
-        const welcome = document.getElementById('welcome-screen');
-        if (welcome) welcome.classList.add('hidden');
-        
-        appendMessage('user', text);
-        chatInput.value = '';
-        
-        // Agregar burbuja de cargando...
-        const loading = document.createElement('div');
-        loading.className = 'chat-bubble bot italic text-ink2 flex items-center gap-2';
-        loading.id = 'loading-indicator';
-        loading.innerHTML = 'Consultando las Sagradas Escrituras y el Magisterio <span class="animate-pulse">...</span>';
-        chatBox.appendChild(loading);
-        chatBox.scrollTop = chatBox.scrollHeight;
-        
-        try {
-          const res = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: text })
-          });
-          
-          document.getElementById('loading-indicator')?.remove();
-          
-          if (!res.ok) {
-            appendMessage('bot', '⚠️ Error: No se pudo obtener respuesta del servidor pastoral.');
-            return;
-          }
-          
-          // Crear la burbuja del bot vacía
-          const bubble = document.createElement('div');
-          bubble.className = 'chat-bubble bot bot-content shadow-sm';
-          chatBox.appendChild(bubble);
-          
-          const reader = res.body.getReader();
-          const decoder = new TextDecoder();
-          let fullResponse = '';
-          
-          while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            fullResponse += chunk;
-            try {
-              bubble.innerHTML = window.marked ? window.marked.parse(fullResponse) : fullResponse;
-            } catch(e) {
-              bubble.innerHTML = fullResponse;
-            }
-            chatBox.scrollTop = chatBox.scrollHeight;
-          }
-        } catch(err) {
-          document.getElementById('loading-indicator')?.remove();
-          appendMessage('bot', '⚠️ No se pudo conectar con el servidor.');
-        }
-      }
+        </header>
 
-      // Atajo automático para parámetros url
-      window.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const query = urlParams.get('query');
-        if (query) {
-          let text = '';
-          if (query === 'oracion-del-dia') text = 'Por favor hazme la Oración del Día de hoy basada en el Santoral o las lecturas del día.';
-          else if (query === 'laudes') text = 'Deseo rezar el oficio litúrgico de Laudes del día de hoy.';
-          else if (query === 'visperas') text = 'Deseo rezar el oficio litúrgico de Vísperas del día de hoy.';
-          else if (query === 'completas') text = 'Deseo rezar el oficio litúrgico de Completas de hoy.';
-          
-          if (text) {
-            chatInput.value = text;
-            enviarMensaje();
-          }
-        }
-      });
-    </script>
+        <div id="agent-stream" class="agent-stream" role="log" aria-live="polite" aria-relevant="additions text" tabindex="0">
+          <div id="agent-welcome" class="agent-welcome">
+            <span class="agent-kicker">✦ Fuentes antes que ocurrencias</span>
+            <h1>Pregunta con calma.<br><em>Estudia con fundamento.</em></h1>
+            <p>CatólicosGPT es una inteligencia artificial católica en español para explorar la Biblia, el Catecismo, el Magisterio, la liturgia y la vida de fe con fuentes identificables.</p>
+            <div class="agent-trust-row" aria-label="Ámbitos de consulta">
+              <span>Biblia y Evangelio</span>
+              <span>Magisterio y Catecismo</span>
+              <span>Liturgia y oración</span>
+            </div>
+            <div class="agent-prompt-grid" aria-label="Preguntas sugeridas">
+              <button type="button" class="agent-prompt" data-agent-prompt="¿Qué enseña el Catecismo sobre la Eucaristía?">
+                <strong>Comprender la Eucaristía</strong><span>Una explicación con apoyo documental.</span>
+              </button>
+              <button type="button" class="agent-prompt" data-agent-prompt="Ayúdame a meditar el Evangelio de este domingo.">
+                <strong>Meditar el Evangelio</strong><span>Una lectura serena para la semana.</span>
+              </button>
+              <button type="button" class="agent-prompt" data-agent-prompt="Prepara una actividad catequética sencilla sobre el Buen Pastor para niños.">
+                <strong>Preparar catequesis</strong><span>Ideas claras para familias y docentes.</span>
+              </button>
+              <button type="button" class="agent-prompt" data-agent-prompt="Busca fuentes sobre la dignidad de la persona humana.">
+                <strong>Explorar fuentes</strong><span>Documentos para seguir investigando.</span>
+              </button>
+            </div>
+          </div>
+          <div id="agent-messages" class="agent-messages"></div>
+        </div>
+
+        <div class="agent-composer-zone">
+          <div class="agent-mode-switch" role="group" aria-label="Modo de consulta">
+            <button type="button" class="agent-mode" data-agent-mode="auto" aria-pressed="true">Conversación</button>
+            <button type="button" class="agent-mode" data-agent-mode="study" aria-pressed="false">Estudio</button>
+            <button type="button" class="agent-mode" data-agent-mode="children" aria-pressed="false">Niños y catequesis</button>
+            <button type="button" class="agent-mode" data-agent-mode="sources" aria-pressed="false">Buscar fuentes</button>
+          </div>
+          <form id="agent-form" class="agent-composer">
+            <textarea id="agent-input" class="agent-input" rows="1" maxlength="4000" autocomplete="off" placeholder="Pregunta sobre fe, Biblia, liturgia o vida cristiana…" aria-label="Tu pregunta para CatólicosGPT"></textarea>
+            <button id="agent-stop" type="button" class="agent-stop" aria-label="Detener respuesta">■</button>
+            <button id="agent-send" type="submit" class="agent-send" aria-label="Enviar pregunta">↑</button>
+          </form>
+          <p class="agent-composer-note">Las respuestas muestran sus fuentes cuando están disponibles. Para temas médicos, jurídicos o urgentes, busca ayuda profesional.</p>
+        </div>
+      </section>
+    </div>
+    <noscript><div style="padding:1rem;text-align:center">Activa JavaScript para usar el asistente.</div></noscript>
+    <script src="/agent-home.js" defer></script>
   `;
 
-  res.send(renderPage('Asistente Magisterial Inteligente', html, req));
+  res.send(renderPage('CatólicosGPT: IA católica con fuentes verificables', html, req, {
+    description: 'CatólicosGPT es una inteligencia artificial católica en español para consultar Biblia, Catecismo, Magisterio, santos, sacramentos, Evangelio y liturgia con fuentes identificables.',
+    keywords: 'ia catolica, catolicosgpt, chatgpt catolico, inteligencia artificial catolico, inteligencia artificial catolica, asistente catolico, catecismo, biblia, magisterio',
+    canonical: '/',
+    image: '/logo.png',
+    styles: ['/agent-home.css'],
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'CatólicosGPT',
+      url: `${String(process.env.APP_URL || 'https://www.catolicosgpt.com').replace(/\/+$/, '')}/`,
+      applicationCategory: 'EducationalApplication',
+      operatingSystem: 'Web',
+      inLanguage: 'es',
+      description: 'Asistente de inteligencia artificial católica en español con respuestas basadas en fuentes identificables.',
+      featureList: ['Consulta de fuentes católicas', 'Biblia y Evangelio', 'Catecismo y Magisterio', 'Liturgia y catequesis']
+    }
+  }));
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1235,274 +1237,277 @@ Devuelve todo estructurado de forma sumamente hermosa, ordenada, sobria, místic
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// RUTA DE CHAT CENTRAL CON INTEGRACIÓN DE MAGISTERIUM E IA DUAL-ENGINE
+// RUTA DE CHAT CENTRAL: MAGISTERIUM COMO FUENTE Y OPENAI COMO PRESENTACIÓN
 // ════════════════════════════════════════════════════════════════════════════
 
-app.post('/api/chat', async (req, res) => {
-  try {
-    const { query } = req.body;
-    if (!query) {
-      res.statusCode = 400;
-      res.write("Falta la consulta");
-      return res.end();
-    }
+function safeAgentMode(value) {
+  return ['auto', 'study', 'children'].includes(value) ? value : 'auto';
+}
 
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Transfer-Encoding', 'chunked');
+function normalizeAgentMessages(body = {}) {
+  const incoming = Array.isArray(body.messages)
+    ? body.messages
+    : [{ role: 'user', content: body.query || body.message || body.prompt || '' }];
+  return magisteriumAgent.sanitizeMessages(incoming);
+}
 
-    // ── INTERCEPTOR PRE-CHECK DE TEMAS AJENOS / SECULARES (OFF-TOPIC) ──
-    const lowerQuery = query.toLowerCase().trim();
-    const cleanNoAccents = lowerQuery.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+function latestAgentQuestion(messages) {
+  const latest = [...messages].reverse().find(message => message.role === 'user');
+  return latest ? latest.content : '';
+}
 
-    const offTopicKeywords = [
-      'arroz con pollo', 'receta', 'como cocinar', 'ingredientes para', 'messi', 'cristiano ronaldo', 
-      'cr7', 'futbol', 'real madrid', 'fc barcelona', 'champions league', 'formula 1',
-      'videojuegos', 'minecraft', 'playstation', 'xbox', 'gta'
-    ];
+function citationFromLocalResource(resource) {
+  return {
+    title: resource.titulo,
+    author: resource.metadata?.fuente || 'Corpus local de respaldo',
+    year: resource.metadata?.año || null,
+    reference: resource.referencia || null,
+    quote: String(resource.contenido || '').replace(/\s+/g, ' ').trim().slice(0, 420),
+    source_url: resource.url || null
+  };
+}
 
-    let isOffTopicQuery = false;
-    for (const kw of offTopicKeywords) {
-      if (cleanNoAccents.includes(kw)) {
-        isOffTopicQuery = true;
-        break;
-      }
-    }
-
-    if (isOffTopicQuery) {
-      res.write("CatólicosGPT es una Inteligencia Artificial católica dedicada exclusivamente a temas de fe, doctrina, liturgia, moral cristiana y espiritualidad de la Iglesia. Por ello, solo respondemos consultas relacionadas con la doctrina y la vida de fe de nuestra Santa Iglesia. Te invitamos a realizar preguntas teológicas o espirituales.");
-      return res.end();
-    }
-
-    // ── INTERCEPTOR LITURGIA DE LAS HORAS (LAUDES, VÍSPERAS, COMPLETAS) ──
-    let horaLiturgica = null;
-    if (lowerQuery.includes('laude')) {
-      horaLiturgica = 'laudes';
-    } else if (lowerQuery.includes('vispera') || lowerQuery.includes('víspera')) {
-      horaLiturgica = 'visperas';
-    } else if (lowerQuery.includes('completa')) {
-      horaLiturgica = 'completas';
-    }
-
-    if (horaLiturgica) {
-      console.log(`[Liturgia Interceptor] Solicitud de hora litúrgica detectada: ${horaLiturgica}`);
-      const data = await getOrGenerateLiturgia(horaLiturgica);
-      if (data) {
-        const titleLabel = {
-          laudes: '🌅 Laudes — Oficio Diario de la Mañana',
-          visperas: '🌇 Vísperas — Oficio Diario del Atardecer',
-          completas: '🌌 Completas — Oficio Diario de la Noche'
-        }[horaLiturgica];
-
-        let formattedText = `### ${titleLabel}\n\n`;
-        formattedText += `*Texto litúrgico oficial correspondiente al día de hoy, obtenido de ${data.fuente} (${liturgia.todayBogota()})*\n\n`;
-        formattedText += `---\n\n`;
-        formattedText += data.texto;
-
-        // Añadir descubrimiento de recursos complementarios pastorales
-        const recomendados = obtenerRecursosRelacionados(query);
-        const htmlCards = renderRelacionadosHtml(recomendados);
-        if (htmlCards) {
-          formattedText += "\n\n" + htmlCards;
-        }
-
-        res.write(formattedText);
-        return res.end();
-      }
-    }
-
-    // 1. Detectar si es una cita bíblica directa
-    const solicitada = biblia.detectarSolicitudBiblica(query);
-    if (solicitada) {
-      const render = biblia.renderizarCita(solicitada, true);
-      if (!render.includes('No se encontró')) {
-        let textResult = render + `\n\n*Cita extraída del corpus bíblico oficial (Biblia de Navarra).*`;
-        // Recomendar recursos también para citas
-        const recomendados = obtenerRecursosRelacionados(query);
-        const htmlCards = renderRelacionadosHtml(recomendados);
-        if (htmlCards) textResult += "\n\n" + htmlCards;
-        res.write(textResult);
-        return res.end();
-      }
-    }
-
-    // 2. Realizar búsqueda en base doctrinal local para Grounding adicional
-    const groundingsLocal = recursos.consultarRecursosLocales(query);
-    let localContext = '';
-    if (groundingsLocal && groundingsLocal.length > 0) {
-      localContext = groundingsLocal.slice(0, 3).map(g => 
-        `DOCUMENTO: ${g.titulo}\nCONTENIDO: ${g.contenido}\nMETADATA: ${JSON.stringify(g.metadata)}`
-      ).join('\n\n');
-    }
-
-    // 3. Obtener respuesta de Magisterium con el motor dual de Búsqueda y Chat
-    let magisteriumSourceResponse = '';
-    let usedMagisteriumAPI = false;
-
-    if (process.env.MAGISTERIUM_API_KEY) {
-      const systemInstructionMagisterium = `Eres un teólogo católico erudito, fiel servidor del Magisterio de la Iglesia y del Papa León XIV. 
-Tus respuestas deben estar profundamente ancladas en la verdad doctrinal y pastoral de las Sagradas Escrituras, el Catecismo y los santos pontífices.`;
-
-      let searchContext = '';
-      try {
-        console.log('[Magisterium Search API] Buscando fuentes doctrinales relativas...');
-        let resSearch = await fetch('https://api.magisterium.com/v1/search', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY}`
-          },
-          body: JSON.stringify({
-            query: query,
-            top_k: 5
-          }),
-          signal: AbortSignal.timeout(1200)
-        });
-        
-        if (resSearch.ok) {
-          const dataS = await resSearch.json();
-          const items = dataS.results || dataS.citations || dataS.documents || [];
-          if (items.length > 0) {
-            searchContext = items.map(cit => 
-              `CITA DE ORIGEN: ${cit.source || cit.title || 'Magisterio Oficial'}\nCONTENIDO: ${cit.text || cit.content || ''}`
-            ).join('\n\n');
-            console.log('[Magisterium Search API] Encontrados pasajes oficiales en la base de datos.');
-          }
-        }
-      } catch (searchErr) {
-        console.log('[Magisterium Search API] No se pudo conectar a la búsqueda de vectores (timeout o desconexión). Fallback a chat.');
-      }
-
-      const finalPromptMagisterium = `Consulta del Católico: "${query}"\n\n${searchContext ? `CITAS CIENTÍFICAS DEL CATECISMO/BÍBLICAS OBTENIDAS DE MAGISTERIUM SEARCH:\n${searchContext}\n\n` : ''}${localContext ? `CONTEXTO LOCAL COMPLEMENTARIO:\n${localContext}\n\n` : ''}`;
-
-      try {
-        console.log('[Magisterium Chat API] Buscando en la nube doctrinal (timeout 1.2s)...');
-        let resM = await fetch('https://api.magisterium.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.MAGISTERIUM_API_KEY}`
-          },
-          body: JSON.stringify({
-            messages: [
-              { role: 'system', content: systemInstructionMagisterium },
-              { role: 'user', content: finalPromptMagisterium }
-            ],
-            model: 'magisterium-v1'
-          }),
-          signal: AbortSignal.timeout(1200)
-        });
-
-        if (resM.ok) {
-          const d = await resM.json();
-          magisteriumSourceResponse = d.choices?.[0]?.message?.content || d.text || d.response || d.content;
-          if (magisteriumSourceResponse) {
-            usedMagisteriumAPI = true;
-            console.log('[Magisterium API] Enlace doctrinal exitoso con motor de Chat.');
-          }
-        }
-      } catch (err) {
-        console.log('[Magisterium Chat API] Canal de contingencia local activado (timeout o desconexión).');
-      }
-    }
-
-    // 4. Si la API de Magisterium no estuvo disponible o no hay clave, usamos el corpus local de grounding
-    if (!magisteriumSourceResponse) {
-      if (localContext) {
-        magisteriumSourceResponse = `Información doctrinal extraída del Corpus Católico Local:\n${localContext}`;
-      } else {
-        magisteriumSourceResponse = `Utilizar los conocimientos doctrinales oficiales de la Iglesia Católica, las Sagradas Escrituras, el Catecismo (CIC), y las encíclicas pontificias incluyendo la "Magnifica Humanitas" y al Papa León XIV (Robert Francis Prevost).`;
-      }
-    }
-
-    let finalResponseText = '';
-
-    // 5. Motor de Presentación Inteligente de Gemini si la clave está provista y el cliente iniciado
-    const aiInstance = getAi();
-    if (aiInstance) {
-      const systemInstructionPresentation = `Eres un sabio, tierno y cálido teólogo católico y consejero espiritual de CatólicosGPT, sirviendo con fidelidad doctrinal bajo el pontificado de León XIV.
-Tu prioridad absoluta es adaptarte de manera sumamente humana y sensible al contexto emocional y espiritual de la consulta del fiel (INTENCIÓN DEL FIEL):
-
-1. **Si el fiel expresa sufrimiento hondo, tristeza extrema, desesperanza o pensamientos tristes de deceso (ej. "me quiero morir", "suicidio", "estoy desesperado/a", "no tengo fuerzas")**:
-   - Actúa de inmediato con la máxima compasión, ternura, calor humano y consuelo evangélico. NUNCA uses un tono distante o clínico. No hables fríamente de "el suicidio según el catecismo".
-   - Queda ESTRICTAMENTE PROHIBIDO incluir encabezados académicos como "Sinopsis", análisis científicos, cuadros comparativos o raras tablas de vicios o virtudes. Eso aleja al alma sedienta.
-   - Háblale directamente con el corazón de un pastor bondadoso que camina a su lado en el dolor. Consuélale con el amor infinito y eterno de Dios, asegurándole que ante el Padre Celestial su vida es un tesoro inestimable de valor infinito.
-   - Invítale con dulzura a compartir qué le duele y dale citas de consuelo (ej. Mateo 11, 28; Salmo 34, 18) junto a consejos consoladores de santos (ej. el "Nada te turbe" de Santa Teresa, o el "Reza, ten fe y no te preocupes" de San Padre Pío).
-   - Proporciona de forma CLARA y VISIBLE información de ayuda práctica y prevención: recomiéndale comunicarse las 24 horas con la línea de ayuda nacional de crisis o de prevención del suicidio de su país (ej. el 988 si aplica) e invítalo a ampararse en su comunidad parroquial o de salud para no llevar esta carga a solas.
-   - Cierra con una oración íntima de sanación por él/ella en el texto.
-
-2. **Si el fiel pide una GUÍA DEVOCIONAL o VISITA (ej. "visita al santisimo", "adoracion")**:
-   - Descarta análisis doctrinarios secos o tablas de clasificación teológica de oraciones.
-   - Ofrece directamente una hermosa, completa y cuidada guía espiritual paso a paso para la oración y adoración (que incluya acto de fe, lectura espiritual o preces, comunión espiritual tradicional y jaculatoria final), facilitando que el usuario ore en recogimiento íntimo en ese momento.
-
-3. **Si el fiel pide ORACIONES (ej. "oración a San José", "rezos a la Virgen María", "oracion por los enfermos", etc.)**:
-   - Proporciona de inmediato las oraciones tradicionales católicas completas (ej. las oraciones del Papa León XIII o de los santos), escritas con impecable elevación espiritual y formato limpio.
-   - NO añadas apologías académicas ni desgloses comparativos innecesarios. Mantén el foco 100% en el fervor del fiel.
-
-4. **Para consultas doctrinarias, debates, dudas teológicas o morales generales (ej. Dogmas, Sacramentos, ¿Qué es el Purgatorio?, la Gracia)**:
-   - Organiza la respuesta de manera académica, estética y ordenada:
-     - "### Sinopsis" (1-2 párrafos que sinteticen conceptualmente el corazón del tema)
-     - Análisis o desgloses con subtítulos y viñetas elegantes
-     - Tablas comparativas útiles que sinteticen conceptos, sacramentos o virtudes
-     - Cierre breve con una jaculatoria o sentida súplica.
-
-NORMAS TEOLÓGICAS DE ALINEACIÓN PASTORAL (ESTRICTAS Y ABSOLUTAS):
-- NUNCA hables mal del Santo Padre el Papa, ni de la Iglesia, los cardenales, obispos, sacerdotes, ni de los hermanos protestantes. Conserva siempre la máxima mansedumbre y caridad ecuménica.
-- NO ofrezcas opiniones políticas sobre partidos, candidatos ni ideologías seculares. Somos un portal espiritual que trasciende debates de poder terrenal.
-- DEFIENDE SIEMPRE de forma inquebrantable la vida humana desde la concepción hasta la muerte natural, la institución sagrada del matrimonio y la familia. Oponte con celo pastoral, ternura y claridad magisterial al aborto, la eutanasia, las uniones civiles homosexuales y el uso de anticonceptivos artificiales.
-- Queda prohibida cualquier mención sobre claves API o configuraciones.`;
-
-      const presentationPrompt = `CONSULTA ORIGINAL DEL FIEL: "${query}"
-
-FUENTE DOCTRINAL DE REFERENCIA (MAGISTERIUM):
-"""
-${magisteriumSourceResponse}
-"""
-
-Por favor, determina la intención del fiel y presenta la respuesta adaptando el formato al 100%. Si es apoyo en crisis o dolor humano extrema, habla como consejero pastoral muy cálido, amoroso, sin "Sinopsis" ni tablas académicas. Si pide visitas o rezo, proporciónalos íntegros y listos para orar. Si es duda de catecismo general, usa Sinopsis, cuadros comparativos y tablas. Devuelve Markdown devoto e impecable.`;
-
-      try {
-        console.log('[Gemini Presentation Engine] Iniciando stream de oratoria sagrada...');
-        const gResStream = await aiInstance.models.generateContentStream({
-          model: 'gemini-3.5-flash',
-          contents: presentationPrompt,
-          config: {
-            systemInstruction: systemInstructionPresentation,
-            temperature: 0.3
-          }
-        });
-
-        for await (const chunk of gResStream) {
-          if (chunk.text) {
-            res.write(chunk.text);
-          }
-        }
-        finalResponseText = 'stream-completed';
-      } catch (gemIniErr) {
-        console.error('[Gemini Presentation Engine Error]', gemIniErr.message);
-      }
-    }
-
-    // 6. Último recurso offline: Generador Teológico de Alta Fidelidad Local (Ultra-Fast)
-    if (!finalResponseText) {
-      console.log('[Local Engine] Generando respuesta teológica con motor local de alta fidelidad.');
-      finalResponseText = generateOfflineTheologicalResponse(query, magisteriumSourceResponse, groundingsLocal);
-      res.write(finalResponseText);
-    }
-
-    // 7. Descubrir infografías, blogs, videos, podcasts relacionados de forma interactiva y agregarlos al pie
-    const recomendados = obtenerRecursosRelacionados(query);
-    const recomendadosHtml = renderRelacionadosHtml(recomendados);
-    if (recomendadosHtml) {
-      res.write("\n\n" + recomendadosHtml);
-    }
-
-    return res.end();
-
-  } catch (globalError) {
-    console.error('[Global Chat Endpoint Error]', globalError);
-    res.write(`⚠️ **CatólicosGPT:** Ocurrió un inconveniente temporal al procesar tu consulta. Por favor, reintenta en breve. Toda la sabiduría de la Iglesia está a tu disposición.`);
-    return res.end();
+function localFallbackResponse(query) {
+  const resources = recursos.buscarRecursosDeRespaldo(query, { limit: 4 });
+  if (!resources.length) {
+    return {
+      answer: 'No puedo elaborar una respuesta doctrinal verificable en este momento: Magisterium no está disponible y el corpus local no ofrece una fuente identificada adecuada para esta consulta. Intenta de nuevo en unos minutos o formula una pregunta más concreta.',
+      citations: [],
+      relatedQuestions: [],
+      provider: 'unavailable',
+      presentation: 'source-required'
+    };
   }
+
+  const extracts = resources.map((resource, index) => {
+    const excerpt = String(resource.contenido || '').replace(/\s+/g, ' ').trim().slice(0, 1100);
+    const reference = resource.referencia ? ` (${resource.referencia})` : '';
+    return `### ${index + 1}. ${resource.titulo}${reference}\n\n${excerpt}`;
+  });
+  return {
+    answer: `> **Modo de respaldo local.** Magisterium no está disponible en este momento. A continuación se muestran extractos del corpus local con origen identificado; no deben confundirse con una respuesta ni con citas emitidas por Magisterium.\n\n${extracts.join('\n\n')}`,
+    citations: resources.map(citationFromLocalResource),
+    relatedQuestions: [],
+    provider: 'local',
+    presentation: 'local-source-extracts'
+  };
+}
+
+async function resolveAgentAnswer({ messages, mode }) {
+  const query = latestAgentQuestion(messages);
+  if (!magisteriumAgent.isConfigured()) return localFallbackResponse(query);
+
+  try {
+    const result = await magisteriumAgent.completeChat({ messages, mode });
+    let answer = result.answer;
+    let presentation = 'magisterium';
+
+    // OpenAI sólo puede editar una respuesta que Magisterium ya devolvió. Si
+    // falla, conservamos palabra por palabra la respuesta fuente y sus citas.
+    if (answer && result.citations?.length && openaiPresentation.isConfigured()) {
+      try {
+        answer = await openaiPresentation.present({ query, authoritativeAnswer: answer, mode });
+        presentation = 'openai';
+      } catch (error) {
+        console.warn('[OpenAI Presentation] Se conserva la respuesta de Magisterium:', error.code || error.message);
+      }
+    }
+
+    return {
+      answer,
+      citations: result.citations || [],
+      relatedQuestions: result.relatedQuestions || [],
+      provider: 'magisterium',
+      presentation
+    };
+  } catch (error) {
+    console.warn('[Magisterium Agent] Se activa respaldo local:', error.code || error.message);
+    return localFallbackResponse(query);
+  }
+}
+
+function beginSSE(res) {
+  res.status(200);
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  if (typeof res.flushHeaders === 'function') res.flushHeaders();
+}
+
+function writeSSE(res, payload) {
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+}
+
+function nextTick() {
+  return new Promise(resolve => setImmediate(resolve));
+}
+
+async function writeAnswerAsSSE(res, answer) {
+  const characters = Array.from(String(answer || ''));
+  for (let index = 0; index < characters.length; index += 180) {
+    writeSSE(res, { type: 'delta', delta: characters.slice(index, index + 180).join('') });
+    await nextTick();
+  }
+}
+
+async function writeAnswerAsText(res, answer) {
+  const characters = Array.from(String(answer || ''));
+  for (let index = 0; index < characters.length; index += 240) {
+    res.write(characters.slice(index, index + 240).join(''));
+    await nextTick();
+  }
+}
+
+// Contrato nuevo: { messages, mode, stream: true } devuelve SSE estructurado
+// (delta, meta, done). El contrato histórico { query } sigue siendo texto
+// progresivo para no romper las interfaces internas existentes.
+async function streamMagisteriumSource(res, messages, mode) {
+  beginSSE(res);
+  let wroteSourceText = false;
+  try {
+    const result = await magisteriumAgent.streamChat({
+      messages,
+      mode,
+      onDelta(delta) {
+        wroteSourceText = true;
+        writeSSE(res, { type: 'delta', delta });
+      }
+    });
+    writeSSE(res, {
+      type: 'meta',
+      citations: result.citations || [],
+      related_questions: result.relatedQuestions || [],
+      provider: 'magisterium',
+      presentation: 'magisterium'
+    });
+  } catch (error) {
+    console.warn('[Magisterium Stream] Se activa contingencia:', error.code || error.message);
+    if (wroteSourceText) {
+      // Una caída posterior a los primeros bytes no se puede sustituir sin
+      // mezclar dos respuestas. Avisamos con honestidad y conservamos lo ya
+      // recibido en vez de fabricar una continuación.
+      writeSSE(res, { type: 'delta', delta: '\n\n> La transmisión se interrumpió antes de completarse. Vuelve a intentarlo para obtener una respuesta y fuentes completas.' });
+      writeSSE(res, { type: 'meta', citations: [], related_questions: [], provider: 'magisterium', presentation: 'partial' });
+    } else {
+      const fallback = localFallbackResponse(latestAgentQuestion(messages));
+      await writeAnswerAsSSE(res, fallback.answer);
+      writeSSE(res, {
+        type: 'meta',
+        citations: fallback.citations,
+        related_questions: fallback.relatedQuestions,
+        provider: fallback.provider,
+        presentation: fallback.presentation
+      });
+    }
+  }
+  writeSSE(res, { type: 'done' });
+  return res.end();
+}
+
+app.post('/api/chat', async (req, res) => {
+  const legacyRequest = !Array.isArray(req.body?.messages);
+  let messages;
+  try {
+    messages = normalizeAgentMessages(req.body || {});
+  } catch (error) {
+    const detail = magisteriumAgent.publicError(error);
+    return res.status(400).json({ error: detail });
+  }
+
+  const mode = safeAgentMode(req.body?.mode);
+  const wantsStream = !legacyRequest && req.body?.stream === true;
+
+  try {
+    // Sin OpenAI activo podemos retransmitir el flujo oficial de Magisterium
+    // inmediatamente y conservar sus citas/preguntas del bloque final.
+    if (wantsStream && magisteriumAgent.isConfigured() && !openaiPresentation.isConfigured()) {
+      return streamMagisteriumSource(res, messages, mode);
+    }
+
+    const result = await resolveAgentAnswer({ messages, mode });
+    if (wantsStream) {
+      beginSSE(res);
+      await writeAnswerAsSSE(res, result.answer);
+      writeSSE(res, {
+        type: 'meta',
+        citations: result.citations,
+        related_questions: result.relatedQuestions,
+        provider: result.provider,
+        presentation: result.presentation
+      });
+      writeSSE(res, { type: 'done' });
+      return res.end();
+    }
+
+    if (legacyRequest) {
+      res.status(200);
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      await writeAnswerAsText(res, result.answer);
+      return res.end();
+    }
+
+    return res.json({
+      answer: result.answer,
+      citations: result.citations,
+      related_questions: result.relatedQuestions,
+      provider: result.provider,
+      presentation: result.presentation
+    });
+  } catch (error) {
+    console.error('[Agent Chat] Error no controlado:', error);
+    if (wantsStream) {
+      beginSSE(res);
+      writeSSE(res, { type: 'error', error: { code: 'AGENT_UNAVAILABLE', message: 'No se pudo completar la consulta. Inténtalo de nuevo en unos instantes.' } });
+      return res.end();
+    }
+    return res.status(503).json({ error: { code: 'AGENT_UNAVAILABLE', message: 'No se pudo completar la consulta. Inténtalo de nuevo en unos instantes.' } });
+  }
+});
+
+app.post('/api/magisterium/search', async (req, res) => {
+  const query = String(req.body?.query || '').replace(/\u0000/g, '').trim();
+  if (!query || query.length > 4000) {
+    return res.status(400).json({ error: { code: 'INVALID_QUERY', message: 'Escribe una consulta de entre 1 y 4000 caracteres.' } });
+  }
+  const category = ['auto', 'magisterial', 'scholarly'].includes(req.body?.category) ? req.body.category : 'auto';
+  const requestedResults = Math.max(1, Math.min(Number(req.body?.numResults) || 6, 25));
+
+  if (magisteriumAgent.isConfigured()) {
+    try {
+      const searchResult = await magisteriumAgent.search({ query, category, numResults: requestedResults });
+      return res.json({ results: searchResult.results, provider: 'magisterium', category: searchResult.category });
+    } catch (error) {
+      console.warn('[Magisterium Search] Se activa respaldo local:', error.code || error.message);
+    }
+  }
+
+  const results = recursos.buscarRecursosDeRespaldo(query, { limit: requestedResults }).map(resource => ({
+    title: resource.titulo,
+    author: resource.metadata?.fuente || 'Corpus local de respaldo',
+    year: resource.metadata?.año || null,
+    reference: resource.referencia || null,
+    excerpt: String(resource.contenido || '').replace(/\s+/g, ' ').trim().slice(0, 500),
+    source_url: resource.url || null,
+    category: resource.tipo
+  }));
+  return res.json({ results, provider: 'local', category });
+});
+
+app.get('/api/agent/status', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  return res.json({
+    magisterium: {
+      configured: magisteriumAgent.isConfigured(),
+      model: magisteriumAgent.getSettings().model
+    },
+    openai: {
+      configured: openaiPresentation.isConfigured(),
+      model: openaiPresentation.isConfigured() ? openaiPresentation.configuredModelLabel() : null
+    },
+    localFallback: { available: true, label: 'Corpus local con origen identificado' }
+  });
 });
 
 // GENERADOR TEOLÓGICO LOCAL DE ALTA FIDELIDAD (OFFLINE / HÍBRIDO ULTRA-RAPIDO)

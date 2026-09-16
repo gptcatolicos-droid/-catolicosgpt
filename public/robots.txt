@@ -1,13 +1,16 @@
+# CatólicosGPT — directrices de rastreo público
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /admin
+Disallow: /login
+Disallow: /register
+Disallow: /logout
 
-# Sitemap
-Sitemap: https://catolicosgpt.com/sitemap.xml
-Sitemap: https://catolicosgpt.com/sitemap-seo.xml
+# Sitemap canónico generado con las páginas públicas actuales.
+Sitemap: https://www.catolicosgpt.com/sitemap.xml
 
-# Archivos para asistentes de IA (GEO)
-# ChatGPT, Claude, Perplexity, Gemini pueden leer llms.txt
+# Los resúmenes públicos de contenido pueden ser leídos por asistentes de IA.
 User-agent: GPTBot
 Allow: /
 
@@ -22,10 +25,3 @@ Allow: /
 
 User-agent: anthropic-ai
 Allow: /
-
-User-agent: Omgilibot
-Allow: /
-
-# Archivo específico para LLMs
-# https://catolicosgpt.com/llms.txt
-# https://catolicosgpt.com/llms-full.txt

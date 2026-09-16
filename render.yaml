@@ -1,0 +1,40 @@
+# Render Blueprint — CatólicosGPT
+# Los secretos se solicitan de forma segura por Render al crear el Blueprint;
+# nunca se almacenan en este repositorio.
+services:
+  - type: web
+    name: catolicosgpt
+    runtime: docker
+    branch: main
+    plan: 0.5c-512mb
+    healthCheckPath: /healthz
+    # Sólo promueve commits cuyo workflow de GitHub Actions haya aprobado.
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 60
+    disk:
+      name: catolicosgpt-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATA_DIR
+        value: /data
+      - key: APP_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MAGISTERIUM_API_KEY
+        sync: false
+      - key: MAGISTERIUM_API_BASE
+        value: https://www.magisterium.com/api/v1
+      - key: MAGISTERIUM_MODEL
+        value: magisterium-1
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_PRESENTATION_ENABLED
+        value: "1"
+      - key: OPENAI_CHAT_MODEL
+        value: gpt-4.1-mini
