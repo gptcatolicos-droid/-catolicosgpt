@@ -36,6 +36,10 @@ docker run --rm -p 3000:3000 --env-file .env catolicosgpt
 
 Configura en el proveedor, como mínimo, `MAGISTERIUM_API_KEY`, `APP_URL` y un `JWT_SECRET` único. Añade `OPENAI_API_KEY` si se desea la capa de presentación. Usa `GET /healthz` como comprobación de vida del contenedor y `GET /readyz` como comprobación de que Magisterium quedó configurado. **No es recomendable desplegar la versión pública del chat sin `MAGISTERIUM_API_KEY`**, porque entonces sólo ofrecerá el respaldo local etiquetado.
 
+### Render
+
+El repositorio incluye `render.yaml`. En Render, crea o sincroniza un **Blueprint** desde la rama `main`; el archivo crea un web service Docker, monta un disco persistente en `/data` y usa `/healthz` como health check. Render solicitará los valores marcados con `sync: false` al crear el Blueprint. El Blueprint espera que el workflow `Verify CatólicosGPT` de GitHub Actions apruebe el commit antes de desplegar. Antes de publicar el dominio, establece `APP_URL` con la URL canónica final y comprueba que `GET /readyz` responda `200` y `"status":"ready"`.
+
 ### Variables principales
 
 | Variable | Uso |
