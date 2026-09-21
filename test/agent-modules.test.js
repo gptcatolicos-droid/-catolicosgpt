@@ -26,6 +26,18 @@ test('normaliza mensajes de cliente y rechaza instrucciones system', () => {
   );
 });
 
+test('el prompt del sistema cubre crisis emocional, talleres completos, niños fuera de modo y preguntas sobre la app', () => {
+  for (const mode of [undefined, 'auto', 'study', 'children']) {
+    const [system] = magisterium.normalizeMessages([{ role: 'user', content: 'hola' }], mode);
+    assert.match(system.content, /ideación suicida/);
+    assert.match(system.content, /línea de prevención del suicidio/);
+    assert.doesNotMatch(system.content, /\b988\b/, 'no debe inventar un número de emergencia fijo');
+    assert.match(system.content, /taller, guía didáctica, planificación catequética, dinámica de grupo/);
+    assert.match(system.content, /contenido para niños .* aunque no haya activado un modo específico para niños/);
+    assert.match(system.content, /CatólicosGPT como aplicación/);
+  }
+});
+
 test('completeChat usa el endpoint y el modelo oficiales, manteniendo citas y preguntas', async () => {
   const originalFetch = global.fetch;
   const previousKey = process.env.MAGISTERIUM_API_KEY;
