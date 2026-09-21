@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "nota": "Catálogo de referencia de los recursos PDF publicados en /catequesis-ia (página que vive en la app de producción, fuera de este checkout de git). Se usa solo para poder enlazar desde los artículos del blog a /catequesis-ia/recursos/:slug cuando el tema coincide. Si se agregan o quitan recursos en /catequesis-ia, actualizar esta lista a mano.",
+  "recursos": [
+    {
+      "slug": "el-sacramento-del-bautismo",
+      "titulo": "El Sacramento del Bautismo",
+      "descripcion": "Guía catequética visual sobre qué es el Bautismo, para qué es, su fundamento bíblico, el rito esencial, sus signos y sus principales efectos según la doctrina de la Iglesia y el Catecismo.",
+      "categoria": "sacramentos",
+      "publico": "General"
+    },
+    {
+      "slug": "eucaristia-para-ninos-primera-comunion",
+      "titulo": "Eucaristía para Niños - Primera Comunión",
+      "descripcion": "Guía PDF de catequesis sobre la Eucaristía para niños. Ideal para preparar la Primera Comunión con apoyo de CatólicosGPT y la doctrina católica.",
+      "categoria": "sacramentos",
+      "publico": "Niños"
+    },
+    {
+      "slug": "san-juan-pablo-ii-vida-y-obra",
+      "titulo": "San Juan Pablo II Vida y Obra",
+      "descripcion": "La vida y obra de San Juan Pablo II en un recurso de catequesis fiel al Magisterio.",
+      "categoria": "santos",
+      "publico": "General"
+    },
+    {
+      "slug": "historia-de-la-iglesia-libro-digital",
+      "titulo": "Historia de la Iglesia (libro digital)",
+      "descripcion": "La Historia de la Iglesia en un libro digital para catequesis, claro y fiel al Magisterio.",
+      "categoria": "historia-iglesia",
+      "publico": "General"
+    },
+    {
+      "slug": "la-historia-de-la-iglesia-timeline-visual",
+      "titulo": "La Historia de la Iglesia — Timeline visual",
+      "descripcion": "Línea de tiempo visual de la historia de la Iglesia, ideal como apoyo de catequesis.",
+      "categoria": "historia-iglesia",
+      "publico": "General"
+    },
+    {
+      "slug": "historia-de-los-papas-1-10",
+      "titulo": "Historia de los Papas 1-10",
+      "descripcion": "La historia de los primeros diez Papas, recurso PDF de catequesis fiel al Magisterio.",
+      "categoria": "historia-iglesia",
+      "publico": "General"
+    },
+    {
+      "slug": "parabola-hijo-prodigo-ninos",
+      "titulo": "Parábola del Hijo Pródigo para niños",
+      "descripcion": "La parábola del Hijo Pródigo explicada para niños, recurso PDF ideal para aprender en familia.",
+      "categoria": "biblia-ninos",
+      "publico": "Niños"
+    },
+    {
+      "slug": "parabola-del-sembrador-para-ninos",
+      "titulo": "Parábola del Sembrador para niños",
+      "descripcion": "Explicación sencilla de la Parábola del Sembrador para niños.",
+      "categoria": "biblia-ninos",
+      "publico": "Niños"
+    }
+  ]
+}

@@ -69,3 +69,24 @@ test('infografiasRelacionadas no revienta si no se pasa función de búsqueda', 
   const p = post('san-jose-patrono-iglesia-universal');
   assert.deepEqual(seoEnlaces.infografiasRelacionadas(p, undefined, 2), []);
 });
+
+test('recursosPdfRelacionados enlaza al PDF de Bautismo desde un artículo sobre sacramentos', () => {
+  const p = post('sacramento-confirmacion-sello-espiritu');
+  const recursos = seoEnlaces.recursosPdfRelacionados(p, 2);
+  assert.ok(recursos.some(r => r.slug === 'el-sacramento-del-bautismo'));
+});
+
+test('recursosPdfRelacionados prioriza el recurso "Niños" en un artículo de catequesis infantil', () => {
+  const p = { slug: 'ficticio', titulo: 'Explicando la Parábola del Sembrador a los Niños de la Parroquia', categoria: 'catequesis-ninos', keywords: 'parabola, sembrador, niños' };
+  const recursos = seoEnlaces.recursosPdfRelacionados(p, 3);
+  assert.ok(recursos.length > 0);
+  assert.equal(recursos[0].slug, 'parabola-del-sembrador-para-ninos');
+});
+
+test('renderBloqueSEO incluye la tarjeta de guías PDF cuando hay coincidencia', () => {
+  const p = post('sacramento-confirmacion-sello-espiritu');
+  const bloque = seoEnlaces.renderBloqueSEO(p, { todosLosPosts, getInfografiasFn: undefined });
+  assert.ok(bloque.recursosPdf.length > 0);
+  assert.match(bloque.tarjetasRelacionadas, /Guías en PDF para descargar/);
+  assert.match(bloque.tarjetasRelacionadas, /\/catequesis-ia\/recursos\//);
+});

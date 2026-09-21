@@ -5,7 +5,27 @@
 // haya en el catálogo) recibe esto de inmediato, sin reescribir lo guardado.
 // ════════════════════════════════════════════════════════════════════════════
 
+const fs = require('fs');
+const path = require('path');
 const { escapeHtml } = require('./blog-module');
+
+// Catálogo estático de los recursos PDF publicados en /catequesis-ia, una
+// página que existe en la app de producción pero fuera de este checkout de
+// git (no hay ningún módulo de servidor para ella en este repositorio). Se
+// mantiene una copia mínima aquí solo para poder enlazar desde el blog a
+// /catequesis-ia/recursos/:slug cuando el tema coincide.
+const RECURSOS_PDF_PATH = path.join(__dirname, 'data', 'catequesis-ia-catalog.json');
+let recursosPdfCache = null;
+function cargarRecursosPdf() {
+  if (recursosPdfCache) return recursosPdfCache;
+  try {
+    const data = JSON.parse(fs.readFileSync(RECURSOS_PDF_PATH, 'utf-8'));
+    recursosPdfCache = data.recursos || [];
+  } catch (e) {
+    recursosPdfCache = [];
+  }
+  return recursosPdfCache;
+}
 
 function normalizar(texto) {
   return (texto || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -13,7 +33,7 @@ function normalizar(texto) {
 
 function palabrasClave(post) {
   const base = `${post.titulo || ''} ${post.keywords || ''} ${post.categoria || ''}`;
-  const vacias = new Set(['para', 'como', 'sobre', 'desde', 'entre', 'este', 'esta', 'estos', 'estas', 'catolico', 'catolica', 'catolicos', 'catolicas', 'guia', 'completa', 'completo', 'practica', 'practico']);
+  const vacias = new Set(['para', 'como', 'sobre', 'desde', 'entre', 'este', 'esta', 'estos', 'estas', 'catolico', 'catolica', 'catolicos', 'catolicas', 'guia', 'completa', 'completo', 'practica', 'practico', 'catequesis', 'recurso', 'recursos']);
   return normalizar(base).split(/[^a-z0-9]+/).filter(w => w.length > 3 && !vacias.has(w));
 }
 
@@ -50,6 +70,30 @@ function infografiasRelacionadas(post, getInfografiasFn, max = 2) {
     if (encontradas.size >= max) break;
   }
   return Array.from(encontradas.values()).slice(0, max);
+}
+
+function puntuarRecursoPdf(post, recurso) {
+  // Solo título y categoría: la descripción de estos recursos es copy
+  // publicitario repetido ("recurso PDF de catequesis católica...") que
+  // ahogaría cualquier coincidencia temática real si se incluyera aquí.
+  const textoRecurso = normalizar(`${recurso.titulo} ${recurso.categoria}`);
+  let puntos = 0;
+  palabrasClave(post).forEach(p => { if (textoRecurso.includes(p)) puntos += 1; });
+  const esParaNinos = /ni[ñn]os/.test(normalizar(`${post.categoria} ${post.titulo}`));
+  if (recurso.publico === 'Niños' && esParaNinos) puntos += 3;
+  if (recurso.publico === 'General' && esParaNinos) puntos -= 2;
+  return puntos;
+}
+
+// Hasta `max` recursos PDF de /catequesis-ia relacionados con `post`, según
+// el catálogo de referencia en data/catequesis-ia-catalog.json.
+function recursosPdfRelacionados(post, max = 2) {
+  return cargarRecursosPdf()
+    .map(recurso => ({ recurso, puntos: puntuarRecursoPdf(post, recurso) }))
+    .filter(x => x.puntos > 0)
+    .sort((a, b) => b.puntos - a.puntos)
+    .slice(0, max)
+    .map(x => x.recurso);
 }
 
 function extraerSeccionesMarkdown(md) {
@@ -128,6 +172,7 @@ function tarjetaLista(titulo, emoji, items, hrefDe, tituloDe) {
 function renderBloqueSEO(post, { todosLosPosts = [], getInfografiasFn } = {}) {
   const relacionados = articulosRelacionados(post, todosLosPosts, 4);
   const infografias = infografiasRelacionadas(post, getInfografiasFn, 2);
+  const recursosPdf = recursosPdfRelacionados(post, 2);
   const preguntas = preguntasFrecuentes(post, 4);
 
   let enlacesEnElCuerpo = '';
@@ -142,13 +187,14 @@ function renderBloqueSEO(post, { todosLosPosts = [], getInfografiasFn } = {}) {
   }
 
   let tarjetasRelacionadas = '';
-  if (relacionados.length || infografias.length) {
+  if (relacionados.length || infografias.length || recursosPdf.length) {
     tarjetasRelacionadas = `
       <div class="mt-8 pt-6 border-t border-border">
         <h3 class="font-display font-semibold text-base text-maroon uppercase tracking-wider mb-4">Sigue leyendo y profundizando</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs sm:text-sm">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs sm:text-sm">
           ${relacionados.length ? tarjetaLista('Artículos relacionados', '📖', relacionados, p => `/blog/${p.slug}`, p => p.titulo) : ''}
           ${infografias.length ? tarjetaLista('Infografías relacionadas', '🖼️', infografias, i => `/infografias/${i.slug}`, i => i.titulo) : ''}
+          ${recursosPdf.length ? tarjetaLista('Guías en PDF para descargar', '📕', recursosPdf, r => `/catequesis-ia/recursos/${r.slug}`, r => r.titulo) : ''}
         </div>
       </div>
     `;
@@ -182,13 +228,14 @@ function renderBloqueSEO(post, { todosLosPosts = [], getInfografiasFn } = {}) {
     })}</script>`;
   }
 
-  return { enlacesEnElCuerpo, tarjetasRelacionadas, faqHtml, faqJsonLd, preguntas, relacionados, infografias };
+  return { enlacesEnElCuerpo, tarjetasRelacionadas, faqHtml, faqJsonLd, preguntas, relacionados, infografias, recursosPdf };
 }
 
 module.exports = {
   palabrasClave,
   articulosRelacionados,
   infografiasRelacionadas,
+  recursosPdfRelacionados,
   preguntasFrecuentes,
   renderBloqueSEO
 };
