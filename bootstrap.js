@@ -55,5 +55,57 @@ function mergePendingInfografias() {
   }
 }
 
+function mergePendingBlogPosts() {
+  const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
+  const livePath = path.join(dataDir, 'blog-catalog.json');
+  const repoCatalogPath = path.join(__dirname, 'data', 'blog-catalog.json');
+  const pendingPath = path.join(__dirname, 'data', 'blog-pending.json');
+
+  try {
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+    let catalog = { version: '1.0', total: 0, posts: [] };
+    if (fs.existsSync(livePath)) {
+      try {
+        const live = JSON.parse(fs.readFileSync(livePath, 'utf8'));
+        if (live && Array.isArray(live.posts)) catalog = live;
+      } catch (e) {
+        console.error('[Bootstrap] No se pudo leer catálogo de blog persistente:', e.message);
+      }
+    } else if (fs.existsSync(repoCatalogPath)) {
+      try {
+        const backup = JSON.parse(fs.readFileSync(repoCatalogPath, 'utf8'));
+        if (backup && Array.isArray(backup.posts)) catalog = backup;
+      } catch (e) {
+        console.error('[Bootstrap] No se pudo leer catálogo de blog del repositorio:', e.message);
+      }
+    }
+
+    if (!fs.existsSync(pendingPath)) return;
+    const pending = JSON.parse(fs.readFileSync(pendingPath, 'utf8'));
+    const incoming = Array.isArray(pending.posts) ? pending.posts : [];
+    if (!incoming.length) return;
+
+    catalog.posts = Array.isArray(catalog.posts) ? catalog.posts : [];
+    const existingSlugs = new Set(catalog.posts.map(p => p.slug).filter(Boolean));
+    const missing = incoming.filter(p => !existingSlugs.has(p.slug));
+
+    if (!missing.length) {
+      console.log('[Bootstrap] Artículos de blog pendientes ya publicados.');
+      return;
+    }
+
+    catalog.posts = [...missing, ...catalog.posts];
+    catalog.total = catalog.posts.length;
+    catalog.version = String(catalog.version || '1.0');
+
+    fs.writeFileSync(livePath, JSON.stringify(catalog, null, 2), 'utf8');
+    console.log(`[Bootstrap] Publicados ${missing.length} artículo(s) de blog pendiente(s). Total: ${catalog.total}`);
+  } catch (e) {
+    console.error('[Bootstrap] Error integrando artículos de blog pendientes:', e.message);
+  }
+}
+
 mergePendingInfografias();
+mergePendingBlogPosts();
 require('./server');
