@@ -22,6 +22,7 @@ const recursos      = require('./recursos-module');
 const seo           = require('./seo-module');
 const seoTopics     = require('./seo-topics');
 const biblia        = require('./biblia-module');
+const seoEnlaces    = require('./seo-enlaces-internos');
 const magisteriumAgent = require('./magisterium-agent');
 const openaiPresentation = require('./openai-presentation');
 const { GoogleGenAI } = require('@google/genai');
@@ -2091,13 +2092,23 @@ app.get('/blog/:slug', (req, res) => {
     getPodcast: podcast.getPodcastBySlug
   });
 
+  // Enlaces internos, infografías relacionadas y preguntas frecuentes,
+  // calculados al vuelo desde el propio contenido del artículo (no
+  // dependen de que el post tenga guardado nada adicional).
+  const todosLosPosts = (blog.loadBlog().posts || []);
+  const bloqueSEO = seoEnlaces.renderBloqueSEO(post, {
+    todosLosPosts,
+    getInfografiasFn: infografias.getInfografias
+  });
+
   const html = `
+    ${bloqueSEO.faqJsonLd}
     <div class="max-w-3xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
       <a href="/blog" class="text-xs font-semibold flex items-center gap-1.5 text-ink2 hover:text-maroon self-start">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><line x1="19" x2="5" y1="12" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         Volver al blog
       </a>
-      
+
       <div class="flex flex-col gap-3 border-b pb-5">
         <div class="text-xs font-semibold text-gold font-mono uppercase tracking-widest">${post.categoria}</div>
         <h1 class="font-display font-bold text-2xl sm:text-3xl text-espresso leading-tight">${post.titulo}</h1>
@@ -2107,12 +2118,15 @@ app.get('/blog/:slug', (req, res) => {
           <span>Publicado: ${post.fechaCreacion ? post.fechaCreacion.slice(0, 10) : ''}</span>
         </div>
       </div>
-      
+
       <!-- CUERPO DEL POST -->
       <article class="prose max-w-none text-ink leading-relaxed space-y-4 font-serif text-sm sm:text-base">
         ${renderedBody}
+        ${bloqueSEO.enlacesEnElCuerpo}
+        ${bloqueSEO.faqHtml}
+        ${bloqueSEO.tarjetasRelacionadas}
       </article>
-      
+
       <!-- COMPARTIR -->
       <div class="border-t pt-5 mt-6 flex items-center justify-between text-xs text-ink2">
         <span>CatólicosGPT v77 — Fe constante.</span>
